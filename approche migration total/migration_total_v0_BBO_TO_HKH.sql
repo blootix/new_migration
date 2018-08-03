@@ -4,7 +4,7 @@ declare
   v_ville_name       varchar2(400);
   v_code_cli         varchar2(400);
   v_code_br          varchar2(400);
-  v_police           varchar2(400);
+  v_police           varchar2(400); --
   -------
   v_pk_etape         varchar2(400);
   v_age_id           number := 0;
