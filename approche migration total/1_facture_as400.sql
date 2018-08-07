@@ -174,7 +174,6 @@ Procedure Genere_genimp (Newgenimp genimp%rowtype ,genimpId  in out   number ,re
       and     nvl(ORG_ID,0)  = nvl(Newgenimp.ORG_ID ,0) ;
 Exception
   WHEN NO_DATA_FOUND THEN
-        --genimpId   := genimpId+1;
         ref_genimp := genimpId;
 		
       insert into genimp (
@@ -246,10 +245,10 @@ begin
                          lpad(facture_.ord,3,'0') ||
                          lpad(facture_.pol,5,'0');			  
 						  
-				select count(*) 
-				into v_nbr
-				from genbill b
-				where b.BIL_CODE=v_ID_FACTURE;
+			select count(*) 
+			into v_nbr
+			from genbill b
+			where b.BIL_CODE=v_ID_FACTURE;
 			
 			if v_nbr=0 then 
 			 
@@ -260,37 +259,36 @@ begin
 				
 			    select g.org_id
 				into v_ORG_ID 
-				from genorganization g 
+				from GENORGANIZATION g 
 				where upper (g.org_code)=lpad(trim(facture_.dist),2,'0');
 				
-				 
 				select cag.par_id  
 				into v_PAR_ID
-				from agrcustomeragr cag
+				from AGRCUSTOMERAGR cag
 				where cag.cag_id in (
 									 select sag.cag_id
-									 from tecservicepoint spt,AGRSERVICEAGR sag
+									 from TECSERVICEPOINT spt,AGRSERVICEAGR sag
 									 where spt.spt_id=sag.spt_id
 									 and spt.spt_refe=V_pdl_ref
 									);
-				select  par.adr_id
-				into V_ADR_ID
-				from genparty  par
+				select par.adr_id
+				into   V_ADR_ID
+				from   GENPARTY  par
 				where par.par_id=v_PAR_ID;		
 
 				select sag.sag_id ,sag.sag_startdt
 				into v_SAG_ID,v_ABN_DT_DEB
 				from AGRSERVICEAGR sag,
-					TECSERVICEPOINT spt
+					 TECSERVICEPOINT spt
 				where sag.spt_id=spt.spt_id 
 				and spt.spt_refe=V_pdl_ref;				
 				
 				V_TRAIN_FACT :='ANNEE:'||trim(anneereel_)||' TRIM:'||trim(periode_)||
                                ' TIER:'||trim(tiers_)||' SIX:'||trim(six_ );
-				V_REF_ABN := lpad(trim(facture_.DIST),2,'0') ||
-                          lpad(to_char(facture_.pol),5,'0') ||
-                          lpad(trim(facture_.tou),3,'0') ||
-                          lpad(trim(facture_.ORD),3,'0');			   
+				V_REF_ABN :=lpad(trim(facture_.DIST),2,'0') ||
+                            lpad(to_char(facture_.pol),5,'0') ||
+                            lpad(trim(facture_.tou),3,'0') ||
+                            lpad(trim(facture_.ORD),3,'0');			   
 				V_COMPTEAUX:='IMP_MIG'			   
 				v_TOTHTE:=(facture_.net-(v_tva+facture_.arriere))/1000;
 				v_TVA:=(facture_.tva_ff+facture_.tva_capit+facture_.tva_pfin+facture_.tvacons+facture_.tva_preav+ facture_.tvaferm+facture_.tvadeplac+facture_.tvadepose_dem+facture_.tvadepose_def)/1000;
@@ -306,7 +304,7 @@ begin
 					select to_date(lpad(trim(DATEXP),8,'0'),'ddmmyyyy'),
 					to_date(lpad(trim(DATL),8,'0'),'ddmmyyyy')   
 					into V_FAC_DATECALCUL,V_FAC_DATELIM
-					from role_trim
+					from ROLE_TRIM
 					where trim(facture_.Dist)= DISTR
 					and to_number(facture_.pol)=POLICE
 					and to_number(facture_.tou )=TOUR
@@ -325,8 +323,9 @@ begin
 					V_FAC_DATELIM    := '01/01/2016';
 					END;
 				END;
-			    New_genrun  := null;
-				New_Det    := null;
+			      New_Det     := null;
+				  New_Genbill := null;
+				  New_genrun  := null;
 			    --------------------------------------------------------Traitement Role
 				If (anneereel_ is not null and periode_ is not null and V_TRAIN_FACT is not null) then			
 					New_genrun.RUN_EXERCICE   :=  anneereel_;
@@ -373,7 +372,6 @@ begin
 				New_agrsagaco.SAG_ID     :=  V_SAG_ID ;
 				New_agrsagaco.SCO_STARTDT:= v_ABN_DT_DEB ;
 				Genere_genaccount (New_genaccount ,genaccount_id ,genaccount_ref ,agrsagaco_id,New_agrsagaco);
-				
 				New_Det.ACO_ID           := genaccount_ref ;
 				New_Det.DEB_NORECOVERY   := 0;
 				begin  
@@ -458,7 +456,7 @@ begin
 				New_Genbill.BIL_STATUS        :=  1;
 				New_Genbill.DEB_ID            :=  Debt_Id;
 				New_Genbill.PAR_ID            :=  V_PAR_ID ;
-				New_Genbill.BIL_DEBTDT        := V_FAC_DATECALCUL;
+				New_Genbill.BIL_DEBTDT        :=  V_FAC_DATECALCUL;
 				New_Genbill.RUN_ID            :=  genrun_ref  ;
 		 
 				Insert into genbill (
@@ -1844,7 +1842,8 @@ begin
 											in (select PTA_ID 
 												from genitemperiodtarif
 												where TAR_id in (select tar_id from genitemtarif where ITE_ID=WITE_Id) 
-											   )and rownum=1;
+											   )
+											and rownum=1;
 										 
 										end if;
 
@@ -2011,22 +2010,2399 @@ begin
 																	END;
 											END;
 				end if;
+	            
+				
+-------------------------------------------------------------------------------------------
+-----------------------------------FRAIS FIXE SONEDE---------------------------------------
+-------------------------------------------------------------------------------------------					
+				
+				if to_number(facture_.fraisctr) <> 0then
+											v := v+1;
+							WPTA_ID := null;
+							WPSL_RANK := null;
+										begin
+										select ITE_ID,ite_name,VOW_UNIT  
+										INTO WITE_ID,wite_name,WVOW_UNIT  
+										from genitem s 
+										where s.ITE_CODE ='FRS_FIX_CSM';
+										exception when no_data_found then null;
+										end;
+										begin
+										select tva_id 
+										into wtva_id 
+										from gentva 
+										where tva_taux= 18;
+										exception when no_data_found then 
+										wtva_id := 25;
+										end;
+
+										select count(*) 
+										into nbr 
+										from genptaslice 
+										where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
+														 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=WITE_ID )
+														);
+										if nbr=1 then
+										
+											select PTA_ID,PSL_RANK  
+											into WPTA_ID,WPSL_RANK 
+											from genptaslice 
+											where PTA_ID in (select PTA_ID 
+															 from genitemperiodtarif 
+															 where TAR_id in (select tar_id from genitemtarif where ITE_ID=WITE_ID)
+															)
+											and rownum=1;
+										
+										end if;
+
+										if nbr>1 then
+											select PTA_ID,PSL_RANK  
+											into WPTA_ID,WPSL_RANK 
+											from genptaslice 
+											where   PTA_ID
+											in (select PTA_ID 
+												from genitemperiodtarif
+												where TAR_id in (select tar_id from genitemtarif where ITE_ID=WITE_Id) 
+											   )and rownum=1;
+										 
+										end if;
+
+										BEGIN
+											insert into genbilline
+																	(
+																	BIL_ID			    ,--1   NUMBER(10) not null,
+																	BLI_REVERSEBLI_ID	,--2   NUMBER(10),
+																	BLI_NUMBER		    ,--3   NUMBER(4) not null,
+																	BLI_REVERSEBLINUMBER,--4   NUMBER(4),
+																	BLI_NAME            ,--5   VARCHAR2(200),
+																	BLI_EXERCICE		,--6   NUMBER(4),
+																	ITE_ID				,--7   NUMBER(10) not null,
+																	PTA_ID				,-- 8  NUMBER(10) not null,
+																	PSL_RANK			,--9   NUMBER(2),
+																	IMP_ID				,--10  NUMBER(10),
+																	BLI_VOLUMEBASE		,--11  NUMBER(17,10),
+																	BLI_VOLUMEFACT		,--12  NUMBER(17,10),
+																	BLI_PUHT			,--13  NUMBER(17,3),
+																	TVA_ID				,--14  NUMBER(10) not null,
+																	BLI_MHT				,--15  NUMBER(17,10),
+																	BLI_MTTVA			,--16  NUMBER(17,10),
+																	BLI_MTTC			,--17  NUMBER(17,10),
+																	BLI_STARTDT			,--18  DATE,
+																	BLI_ENDDT			,--19  DATE,
+																	VOW_UNIT			,--20  NUMBER(10),
+																	BLI_NBUNITES		,--21  NUMBER(10),
+																	BLI_DETAIL			,--22  NUMBER(1) default 0 not null,
+																	BLI_CANCEL			,--23  NUMBER(1) default 0 not null,
+																	IMC_ID				,--24  NUMBER(10),
+																	IMP_ANALYTIQUE_ID	,--25  NUMBER(10),
+																	BLI_PERIODEINIT		,--26  VARCHAR2(20),
+																	BLI_PERIODE			,--27  VARCHAR2(20),
+																	BLI_REVERSEDT		,--28  DATE,
+																	BLI_CREDT			,--29  DATE default sysdate,
+																	BLI_UPDTDT			,--30  DATE,
+																	BLI_UPDTBY			,--31  NUMBER(10),
+																	MEU_ID				,--32  NUMBER(10),
+																	BLI_NAME_A			,--33  VARCHAR2(200),
+																	BLI_REVERSEBLIDEC_ID,--34  NUMBER(10),
+																	BLI_REVERSEBLINUMBERDEC,--35 NUMBER(4),
+																	BLI_REVERSEDECDT    ,--35 
+																	)
+															values
+																	(
+																	New_Genbill.BIL_ID,--1
+																	null				,--2
+																	v					,--3
+																	null				,--4
+																	wite_name			,--5
+																	anneereel_    		,--6
+																	WITE_ID			    ,--7
+																	WPTA_ID			    ,--8
+																	WPSL_RANK			,--9
+																	null				,--10
+																	1		            ,--11
+																	1		            ,--12
+																	facture_.fraisctr/1000,--13
+																	WTVA_ID			    ,--14
+																	facture_.fraisctr/1000,--15
+																	facture_.TVA_ff/1000  ,--16
+																	(facture_.fraisctr/1000)+(facture_.tva_ff/1000)		    ,--17
+																	New_genrun.RUN_STARTDT,--18
+																	V_FAC_DATECALCUL		,--19
+																	WVOW_UNIT			,--20
+																	null				,--21
+																	0					,--22
+																	0					,--23
+																	null				,--24
+																	null				,--25
+																	null				,--26
+																	null				,--27
+																	null				,--28
+																	null				,--29
+																	null				,--30
+																	null				,--31
+																	null				,--32
+																	null				,--33
+																	null				,--34
+																	null				,--35
+																	null				 --36
+																	);
+																EXCEPTION WHEN OTHERS THEN
+																	BEGIN
+																	insert into genbilline
+																		(
+																			BIL_ID			    ,--1   
+																			BLI_REVERSEBLI_ID	,--2   
+																			BLI_NUMBER			,--3   
+																			BLI_REVERSEBLINUMBER,--4 
+																			BLI_NAME          	,--5   
+																			BLI_EXERCICE		,--6   
+																			ITE_ID				,--7   
+																			PTA_ID				,--8  
+																			PSL_RANK			,--9   
+																			IMP_ID				,--10  
+																			BLI_VOLUMEBASE		,--11  
+																			BLI_VOLUMEFACT		,--12  
+																			BLI_PUHT			,--13  
+																			TVA_ID				,--14  
+																			BLI_MHT				,--15  
+																			BLI_MTTVA			,--16  
+																			BLI_MTTC			,--17  
+																			BLI_STARTDT			,--18  
+																			BLI_ENDDT			,--19  
+																			VOW_UNIT			,--20  
+																			BLI_NBUNITES		,--21  
+																			BLI_DETAIL			,--22  
+																			BLI_CANCEL			,--23  
+																			IMC_ID				,--24  
+																			IMP_ANALYTIQUE_ID	,--25  
+																			BLI_PERIODEINIT		,--26  
+																			BLI_PERIODE			,--27  
+																			BLI_REVERSEDT		,--28  
+																			BLI_CREDT			,--29  
+																			BLI_UPDTDT			,--30  
+																			BLI_UPDTBY			,--31  
+																			MEU_ID				,--32  
+																			BLI_NAME_A			,--33  
+																			BLI_REVERSEBLIDEC_ID,--34  
+																			BLI_REVERSEBLINUMBERDEC,--35 
+																			BLI_REVERSEDECDT    --36
+																			)
+																			values
+																			(
+																			New_Genbill.BIL_ID    ,--1
+																			null				  ,--2
+																			v+1					  ,--3
+																			null				  ,--4
+																			wite_name			  ,--5
+																			c.MFAL_EXER		      ,--6
+																			WITE_ID			      ,--7
+																			WPTA_ID			      ,--8
+																			WPSL_RANK			  ,--9
+																			null				  ,--10
+																			1		              ,--11
+																			1		              ,--12
+																			facture_.fraisctr/1000,--13
+																			WTVA_ID			      ,--14
+																			facture_.fraisctr/1000,--15
+																			facture_.TVA_ff/1000  ,--16
+																			(facture_.fraisctr/1000)+(facture_.tva_ff/1000)		    ,--17
+																			New_genrun.RUN_STARTDT,--18
+																			V_FAC_DATECALCUL		,--19
+																			WVOW_UNIT			,--20
+																			null				,--21
+																			0					,--22
+																			0					,--23
+																			null				,--24
+																			null				,--25
+																			null				,--26
+																			null				,--27
+																			null				,--28
+																			null				,--29
+																			null				,--30
+																			null				,--31
+																			null				,--32
+																			null				,--33
+																			null				,--34
+																			null				,--35
+																			null				 --36
+																			);
+																	EXCEPTION WHEN OTHERS THEN NULL;
+																	END;
+											END;
+				end if;
+-------------------------------------------------------------------------------------------
+-----------------------------------Frais FERMETURE---------------------------------------
+-------------------------------------------------------------------------------------------	
+				if to_number(facture_.fermeture) <> 0 then
+							v := v+1;
+							WPTA_ID := null;
+							WPSL_RANK := null;
+										begin
+										select ITE_ID,ite_name,VOW_UNIT  
+										INTO WITE_ID,wite_name,WVOW_UNIT  
+										from genitem s 
+										where s.ITE_CODE = 'FRS_FIX_PAVI_CPR';
+										exception when no_data_found then null;
+										end;
+										begin
+										select tva_id 
+										into wtva_id 
+										from gentva 
+										where tva_taux= 18;
+										exception when no_data_found then 
+										wtva_id := 25;
+										end;
+
+										select count(*) 
+										into nbr 
+										from genptaslice 
+										where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
+														 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=WITE_ID )
+														);
+										if nbr=1 then
+										
+											select PTA_ID,PSL_RANK  
+											into WPTA_ID,WPSL_RANK 
+											from genptaslice 
+											where PTA_ID in (select PTA_ID 
+															 from genitemperiodtarif 
+															 where TAR_id in (select tar_id from genitemtarif where ITE_ID=WITE_ID)
+															)
+											and rownum=1;
+										
+										end if;
+
+										if nbr>1 then
+											select PTA_ID,PSL_RANK  
+											into WPTA_ID,WPSL_RANK 
+											from genptaslice 
+											where   PTA_ID
+											in (select PTA_ID 
+												from genitemperiodtarif
+												where TAR_id in (select tar_id from genitemtarif where ITE_ID=WITE_Id) 
+											   )and rownum=1;
+										 
+										end if;
+
+										BEGIN
+											insert into genbilline
+																(
+																	BIL_ID			    ,--1   NUMBER(10) not null,
+																	BLI_REVERSEBLI_ID	,--2   NUMBER(10),
+																	BLI_NUMBER		    ,--3   NUMBER(4) not null,
+																	BLI_REVERSEBLINUMBER,--4   NUMBER(4),
+																	BLI_NAME            ,--5   VARCHAR2(200),
+																	BLI_EXERCICE		,--6   NUMBER(4),
+																	ITE_ID				,--7   NUMBER(10) not null,
+																	PTA_ID				,-- 8  NUMBER(10) not null,
+																	PSL_RANK			,--9   NUMBER(2),
+																	IMP_ID				,--10  NUMBER(10),
+																	BLI_VOLUMEBASE		,--11  NUMBER(17,10),
+																	BLI_VOLUMEFACT		,--12  NUMBER(17,10),
+																	BLI_PUHT			,--13  NUMBER(17,3),
+																	TVA_ID				,--14  NUMBER(10) not null,
+																	BLI_MHT				,--15  NUMBER(17,10),
+																	BLI_MTTVA			,--16  NUMBER(17,10),
+																	BLI_MTTC			,--17  NUMBER(17,10),
+																	BLI_STARTDT			,--18  DATE,
+																	BLI_ENDDT			,--19  DATE,
+																	VOW_UNIT			,--20  NUMBER(10),
+																	BLI_NBUNITES		,--21  NUMBER(10),
+																	BLI_DETAIL			,--22  NUMBER(1) default 0 not null,
+																	BLI_CANCEL			,--23  NUMBER(1) default 0 not null,
+																	IMC_ID				,--24  NUMBER(10),
+																	IMP_ANALYTIQUE_ID	,--25  NUMBER(10),
+																	BLI_PERIODEINIT		,--26  VARCHAR2(20),
+																	BLI_PERIODE			,--27  VARCHAR2(20),
+																	BLI_REVERSEDT		,--28  DATE,
+																	BLI_CREDT			,--29  DATE default sysdate,
+																	BLI_UPDTDT			,--30  DATE,
+																	BLI_UPDTBY			,--31  NUMBER(10),
+																	MEU_ID				,--32  NUMBER(10),
+																	BLI_NAME_A			,--33  VARCHAR2(200),
+																	BLI_REVERSEBLIDEC_ID,--34  NUMBER(10),
+																	BLI_REVERSEBLINUMBERDEC,--35 NUMBER(4),
+																	BLI_REVERSEDECDT    ,--35 
+																)
+															values
+																(
+																	New_Genbill.BIL_ID,--1
+																	null				,--2
+																	v					,--3
+																	null				,--4
+																	wite_name			,--5
+																	anneereel_   		,--6
+																	WITE_ID			    ,--7
+																	WPTA_ID			    ,--8
+																	WPSL_RANK			,--9
+																	null				,--10
+																	1		            ,--11
+																	1		            ,--12
+																	facture_.fermeture/1000	,--13
+																	WTVA_ID			,--14
+																	facture_.fermeture/1000,--15
+																	facture_.tvaferm/1000,--16
+																	(facture_.fermeture/1000)+(facture_.tvaferm/1000),--17
+																	New_genrun.RUN_STARTDT,--18
+																	V_FAC_DATECALCUL	,--19
+																	WVOW_UNIT			,--20
+																	null				,--21
+																	0					,--22
+																	0					,--23
+																	null				,--24
+																	null				,--25
+																	null				,--26
+																	null				,--27
+																	null				,--28
+																	null				,--29
+																	null				,--30
+																	null				,--31
+																	null				,--32
+																	null				,--33
+																	null				,--34
+																	null				,--35
+																	null				 --36
+																	);
+																EXCEPTION WHEN OTHERS THEN
+																	BEGIN
+																	insert into genbilline
+																		(
+																			BIL_ID			    ,--1   
+																			BLI_REVERSEBLI_ID	,--2   
+																			BLI_NUMBER			,--3   
+																			BLI_REVERSEBLINUMBER,--4 
+																			BLI_NAME          	,--5   
+																			BLI_EXERCICE		,--6   
+																			ITE_ID				,--7   
+																			PTA_ID				,--8  
+																			PSL_RANK			,--9   
+																			IMP_ID				,--10  
+																			BLI_VOLUMEBASE		,--11  
+																			BLI_VOLUMEFACT		,--12  
+																			BLI_PUHT			,--13  
+																			TVA_ID				,--14  
+																			BLI_MHT				,--15  
+																			BLI_MTTVA			,--16  
+																			BLI_MTTC			,--17  
+																			BLI_STARTDT			,--18  
+																			BLI_ENDDT			,--19  
+																			VOW_UNIT			,--20  
+																			BLI_NBUNITES		,--21  
+																			BLI_DETAIL			,--22  
+																			BLI_CANCEL			,--23  
+																			IMC_ID				,--24  
+																			IMP_ANALYTIQUE_ID	,--25  
+																			BLI_PERIODEINIT		,--26  
+																			BLI_PERIODE			,--27  
+																			BLI_REVERSEDT		,--28  
+																			BLI_CREDT			,--29  
+																			BLI_UPDTDT			,--30  
+																			BLI_UPDTBY			,--31  
+																			MEU_ID				,--32  
+																			BLI_NAME_A			,--33  
+																			BLI_REVERSEBLIDEC_ID,--34  
+																			BLI_REVERSEBLINUMBERDEC,--35 
+																			BLI_REVERSEDECDT    --36
+																			)
+																			values
+																			(
+																			New_Genbill.BIL_ID,--1
+																			null				,--2
+																			v+1					,--3
+																			null				,--4
+																			wite_name			,--5
+																			c.MFAL_EXER		,--6
+																			WITE_ID			,--7
+																			WPTA_ID			,--8
+																			WPSL_RANK			,--9
+																			null				,--10
+																			1		            ,--11
+																			1		            ,--12
+																			facture_.fermeture/1000	,--13
+																			WTVA_ID			,--14
+																			facture_.fermeture/1000,--15
+																			facture_.tvaferm/1000,--16
+																			(facture_.fermeture/1000)+(facture_.tvaferm/1000),--17
+																			New_genrun.RUN_STARTDT,--18
+																			V_FAC_DATECALCUL		,--19
+																			WVOW_UNIT			,--20
+																			null				,--21
+																			0					,--22
+																			0					,--23
+																			null				,--24
+																			null				,--25
+																			null				,--26
+																			null				,--27
+																			null				,--28
+																			null				,--29
+																			null				,--30
+																			null				,--31
+																			null				,--32
+																			null				,--33
+																			null				,--34
+																			null				,--35
+																			null				 --36
+																			);
+																	EXCEPTION WHEN OTHERS THEN NULL;
+																	END;
+											END;
+				end if;
+-------------------------------------------------------------------------------------------
+-----------------------------------Frais de déplacement---------------------------------------
+-------------------------------------------------------------------------------------------		
+				if to_number(facture_.deplacement) <> 0 then  
+											v := v+1;
+							WPTA_ID := null;
+							WPSL_RANK := null;
+										begin
+										select ITE_ID,ite_name,VOW_UNIT  
+										INTO WITE_ID,wite_name,WVOW_UNIT  
+										from genitem s 
+										where s.ITE_CODE = 'F_DEPLACEMNT';
+										exception when no_data_found then null;
+										end;
+										begin
+										select tva_id 
+										into wtva_id 
+										from gentva 
+										where tva_taux= 18;
+										exception when no_data_found then 
+										wtva_id := 25;
+										end;
+
+										select count(*) 
+										into nbr 
+										from genptaslice 
+										where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
+														 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=WITE_ID )
+														);
+										if nbr=1 then
+										
+											select PTA_ID,PSL_RANK  
+											into WPTA_ID,WPSL_RANK 
+											from genptaslice 
+											where PTA_ID in (select PTA_ID 
+															 from genitemperiodtarif 
+															 where TAR_id in (select tar_id from genitemtarif where ITE_ID=WITE_ID)
+															)
+											and rownum=1;
+										
+										end if;
+
+										if nbr>1 then
+											select PTA_ID,PSL_RANK  
+											into WPTA_ID,WPSL_RANK 
+											from genptaslice 
+											where   PTA_ID
+											in (select PTA_ID 
+												from genitemperiodtarif
+												where TAR_id in (select tar_id from genitemtarif where ITE_ID=WITE_Id) 
+											   )and rownum=1;
+										 
+										end if;
+
+										BEGIN
+											insert into genbilline
+																	(
+																	BIL_ID			    ,--1   NUMBER(10) not null,
+																	BLI_REVERSEBLI_ID	,--2   NUMBER(10),
+																	BLI_NUMBER		    ,--3   NUMBER(4) not null,
+																	BLI_REVERSEBLINUMBER,--4   NUMBER(4),
+																	BLI_NAME            ,--5   VARCHAR2(200),
+																	BLI_EXERCICE		,--6   NUMBER(4),
+																	ITE_ID				,--7   NUMBER(10) not null,
+																	PTA_ID				,-- 8  NUMBER(10) not null,
+																	PSL_RANK			,--9   NUMBER(2),
+																	IMP_ID				,--10  NUMBER(10),
+																	BLI_VOLUMEBASE		,--11  NUMBER(17,10),
+																	BLI_VOLUMEFACT		,--12  NUMBER(17,10),
+																	BLI_PUHT			,--13  NUMBER(17,3),
+																	TVA_ID				,--14  NUMBER(10) not null,
+																	BLI_MHT				,--15  NUMBER(17,10),
+																	BLI_MTTVA			,--16  NUMBER(17,10),
+																	BLI_MTTC			,--17  NUMBER(17,10),
+																	BLI_STARTDT			,--18  DATE,
+																	BLI_ENDDT			,--19  DATE,
+																	VOW_UNIT			,--20  NUMBER(10),
+																	BLI_NBUNITES		,--21  NUMBER(10),
+																	BLI_DETAIL			,--22  NUMBER(1) default 0 not null,
+																	BLI_CANCEL			,--23  NUMBER(1) default 0 not null,
+																	IMC_ID				,--24  NUMBER(10),
+																	IMP_ANALYTIQUE_ID	,--25  NUMBER(10),
+																	BLI_PERIODEINIT		,--26  VARCHAR2(20),
+																	BLI_PERIODE			,--27  VARCHAR2(20),
+																	BLI_REVERSEDT		,--28  DATE,
+																	BLI_CREDT			,--29  DATE default sysdate,
+																	BLI_UPDTDT			,--30  DATE,
+																	BLI_UPDTBY			,--31  NUMBER(10),
+																	MEU_ID				,--32  NUMBER(10),
+																	BLI_NAME_A			,--33  VARCHAR2(200),
+																	BLI_REVERSEBLIDEC_ID,--34  NUMBER(10),
+																	BLI_REVERSEBLINUMBERDEC,--35 NUMBER(4),
+																	BLI_REVERSEDECDT    ,--35 
+																	)
+															values
+																	(
+																	New_Genbill.BIL_ID,--1
+																	null				,--2
+																	v					,--3
+																	null				,--4
+																	wite_name			,--5
+																	anneereel_			,--6
+																	WITE_ID				,--7
+																	WPTA_ID				,--8
+																	WPSL_RANK			,--9
+																	null				,--10
+																	1					,--11
+																	1					,--12
+																	facture_.deplacement/1000,--13
+																	WTVA_ID					 ,--14
+																	facture_.deplacement/1000,--15
+																	facture_.tvadeplac/1000,--16
+																	(facture_.deplacement/1000)+(facture_.tvadeplac/1000),--17
+																	New_genrun.RUN_STARTDT,--18
+																	V_FAC_DATECALCUL		,--19
+																	WVOW_UNIT			,--20
+																	null				,--21
+																	0					,--22
+																	0					,--23
+																	null				,--24
+																	null				,--25
+																	null				,--26
+																	null				,--27
+																	null				,--28
+																	null				,--29
+																	null				,--30
+																	null				,--31
+																	null				,--32
+																	null				,--33
+																	null				,--34
+																	null				,--35
+																	null				 --36
+																	);
+																EXCEPTION WHEN OTHERS THEN
+																	BEGIN
+																	insert into genbilline
+																		(
+																			BIL_ID			    ,--1   
+																			BLI_REVERSEBLI_ID	,--2   
+																			BLI_NUMBER			,--3   
+																			BLI_REVERSEBLINUMBER,--4 
+																			BLI_NAME          	,--5   
+																			BLI_EXERCICE		,--6   
+																			ITE_ID				,--7   
+																			PTA_ID				,--8  
+																			PSL_RANK			,--9   
+																			IMP_ID				,--10  
+																			BLI_VOLUMEBASE		,--11  
+																			BLI_VOLUMEFACT		,--12  
+																			BLI_PUHT			,--13  
+																			TVA_ID				,--14  
+																			BLI_MHT				,--15  
+																			BLI_MTTVA			,--16  
+																			BLI_MTTC			,--17  
+																			BLI_STARTDT			,--18  
+																			BLI_ENDDT			,--19  
+																			VOW_UNIT			,--20  
+																			BLI_NBUNITES		,--21  
+																			BLI_DETAIL			,--22  
+																			BLI_CANCEL			,--23  
+																			IMC_ID				,--24  
+																			IMP_ANALYTIQUE_ID	,--25  
+																			BLI_PERIODEINIT		,--26  
+																			BLI_PERIODE			,--27  
+																			BLI_REVERSEDT		,--28  
+																			BLI_CREDT			,--29  
+																			BLI_UPDTDT			,--30  
+																			BLI_UPDTBY			,--31  
+																			MEU_ID				,--32  
+																			BLI_NAME_A			,--33  
+																			BLI_REVERSEBLIDEC_ID,--34  
+																			BLI_REVERSEBLINUMBERDEC,--35 
+																			BLI_REVERSEDECDT    --36
+																			)
+																			values
+																			(
+																			New_Genbill.BIL_ID,--1
+																			null				,--2
+																			v+1					,--3
+																			null				,--4
+																			wite_name			,--5
+																			c.MFAL_EXER		,--6
+																			WITE_ID			,--7
+																			WPTA_ID			,--8
+																			WPSL_RANK			,--9
+																			null				,--10
+																			1					,--11
+																			1					,--12
+																			facture_.deplacement/1000,--13
+																			WTVA_ID					 ,--14
+																			facture_.deplacement/1000,--15
+																			facture_.tvadeplac/1000,--16
+																			(facture_.deplacement/1000)+(facture_.tvadeplac/1000),--17
+																			New_genrun.RUN_STARTDT,--18
+																			V_FAC_DATECALCUL	  ,--19
+																			WVOW_UNIT			  ,--20
+																			null				,--21
+																			0					,--22
+																			0					,--23
+																			null				,--24
+																			null				,--25
+																			null				,--26
+																			null				,--27
+																			null				,--28
+																			null				,--29
+																			null				,--30
+																			null				,--31
+																			null				,--32
+																			null				,--33
+																			null				,--34
+																			null				,--35
+																			null				 --36
+																			);
+																	EXCEPTION WHEN OTHERS THEN NULL;
+																	END;
+											END;
+				end if;
 	
+-------------------------------------------------------------------------------------------
+-----------------------------------Frais de dépose suite à la demande du client---------------------------------------
+-------------------------------------------------------------------------------------------	
+				if to_number(facture_.depose_dem) <> 0 then  
+											v := v+1;
+							WPTA_ID := null;
+							WPSL_RANK := null;
+										begin
+										select ITE_ID,ite_name,VOW_UNIT  
+										INTO WITE_ID,wite_name,WVOW_UNIT  
+										from genitem s 
+										where s.ITE_CODE = 'FRAIS_FRM_DEP';
+										exception when no_data_found then null;
+										end;
+										begin
+										select tva_id 
+										into wtva_id 
+										from gentva 
+										where tva_taux= 18;
+										exception when no_data_found then
+										wtva_id := 25;
+										end;
+
+										select count(*) 
+										into nbr 
+										from genptaslice 
+										where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
+														 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=WITE_ID )
+														);
+										if nbr=1 then
+										
+											select PTA_ID,PSL_RANK  
+											into WPTA_ID,WPSL_RANK 
+											from genptaslice 
+											where PTA_ID in (select PTA_ID 
+															 from genitemperiodtarif 
+															 where TAR_id in (select tar_id from genitemtarif where ITE_ID=WITE_ID)
+															)
+											and rownum=1;
+										
+										end if;
+
+										if nbr>1 then
+											select PTA_ID,PSL_RANK  
+											into WPTA_ID,WPSL_RANK 
+											from genptaslice 
+											where   PTA_ID
+											in (select PTA_ID 
+												from genitemperiodtarif
+												where TAR_id in (select tar_id from genitemtarif where ITE_ID=WITE_Id) 
+											   )and rownum=1;
+										 
+										end if;
+
+										BEGIN
+											insert into genbilline
+																	(
+																	BIL_ID			    ,--1   NUMBER(10) not null,
+																	BLI_REVERSEBLI_ID	,--2   NUMBER(10),
+																	BLI_NUMBER		    ,--3   NUMBER(4) not null,
+																	BLI_REVERSEBLINUMBER,--4   NUMBER(4),
+																	BLI_NAME            ,--5   VARCHAR2(200),
+																	BLI_EXERCICE		,--6   NUMBER(4),
+																	ITE_ID				,--7   NUMBER(10) not null,
+																	PTA_ID				,-- 8  NUMBER(10) not null,
+																	PSL_RANK			,--9   NUMBER(2),
+																	IMP_ID				,--10  NUMBER(10),
+																	BLI_VOLUMEBASE		,--11  NUMBER(17,10),
+																	BLI_VOLUMEFACT		,--12  NUMBER(17,10),
+																	BLI_PUHT			,--13  NUMBER(17,3),
+																	TVA_ID				,--14  NUMBER(10) not null,
+																	BLI_MHT				,--15  NUMBER(17,10),
+																	BLI_MTTVA			,--16  NUMBER(17,10),
+																	BLI_MTTC			,--17  NUMBER(17,10),
+																	BLI_STARTDT			,--18  DATE,
+																	BLI_ENDDT			,--19  DATE,
+																	VOW_UNIT			,--20  NUMBER(10),
+																	BLI_NBUNITES		,--21  NUMBER(10),
+																	BLI_DETAIL			,--22  NUMBER(1) default 0 not null,
+																	BLI_CANCEL			,--23  NUMBER(1) default 0 not null,
+																	IMC_ID				,--24  NUMBER(10),
+																	IMP_ANALYTIQUE_ID	,--25  NUMBER(10),
+																	BLI_PERIODEINIT		,--26  VARCHAR2(20),
+																	BLI_PERIODE			,--27  VARCHAR2(20),
+																	BLI_REVERSEDT		,--28  DATE,
+																	BLI_CREDT			,--29  DATE default sysdate,
+																	BLI_UPDTDT			,--30  DATE,
+																	BLI_UPDTBY			,--31  NUMBER(10),
+																	MEU_ID				,--32  NUMBER(10),
+																	BLI_NAME_A			,--33  VARCHAR2(200),
+																	BLI_REVERSEBLIDEC_ID,--34  NUMBER(10),
+																	BLI_REVERSEBLINUMBERDEC,--35 NUMBER(4),
+																	BLI_REVERSEDECDT    ,--35 
+																	)
+															values
+																	(
+																	New_Genbill.BIL_ID,--1
+																	null				,--2
+																	v					,--3
+																	null				,--4
+																	wite_name			,--5
+																	anneereel_		,--6
+																	WITE_ID			,--7
+																	WPTA_ID			,--8
+																	WPSL_RANK			,--9
+																	null				,--10
+																	1		,--11
+																	1		,--12
+																	facture_.depose_dem/1000			,--13
+																	WTVA_ID			,--14
+																	facture_.depose_dem/1000		,--15
+																	facture_.tvadepose_dem/1000		,--16
+																	facture_.depose_dem/1000 + (facture_.tvadepose_dem/1000),--17
+																	New_genrun.RUN_STARTDT,--18
+																	V_FAC_DATECALCUL		,--19
+																	WVOW_UNIT			,--20
+																	null				,--21
+																	0					,--22
+																	0					,--23
+																	null				,--24
+																	null				,--25
+																	null				,--26
+																	null				,--27
+																	null				,--28
+																	null				,--29
+																	null				,--30
+																	null				,--31
+																	null				,--32
+																	null				,--33
+																	null				,--34
+																	null				,--35
+																	null				 --36
+																	);
+																EXCEPTION WHEN OTHERS THEN
+																	BEGIN
+																	insert into genbilline
+																		(
+																			BIL_ID			    ,--1   
+																			BLI_REVERSEBLI_ID	,--2   
+																			BLI_NUMBER			,--3   
+																			BLI_REVERSEBLINUMBER,--4 
+																			BLI_NAME          	,--5   
+																			BLI_EXERCICE		,--6   
+																			ITE_ID				,--7   
+																			PTA_ID				,--8  
+																			PSL_RANK			,--9   
+																			IMP_ID				,--10  
+																			BLI_VOLUMEBASE		,--11  
+																			BLI_VOLUMEFACT		,--12  
+																			BLI_PUHT			,--13  
+																			TVA_ID				,--14  
+																			BLI_MHT				,--15  
+																			BLI_MTTVA			,--16  
+																			BLI_MTTC			,--17  
+																			BLI_STARTDT			,--18  
+																			BLI_ENDDT			,--19  
+																			VOW_UNIT			,--20  
+																			BLI_NBUNITES		,--21  
+																			BLI_DETAIL			,--22  
+																			BLI_CANCEL			,--23  
+																			IMC_ID				,--24  
+																			IMP_ANALYTIQUE_ID	,--25  
+																			BLI_PERIODEINIT		,--26  
+																			BLI_PERIODE			,--27  
+																			BLI_REVERSEDT		,--28  
+																			BLI_CREDT			,--29  
+																			BLI_UPDTDT			,--30  
+																			BLI_UPDTBY			,--31  
+																			MEU_ID				,--32  
+																			BLI_NAME_A			,--33  
+																			BLI_REVERSEBLIDEC_ID,--34  
+																			BLI_REVERSEBLINUMBERDEC,--35 
+																			BLI_REVERSEDECDT    --36
+																			)
+																			values
+																			(
+																			New_Genbill.BIL_ID,--1
+																			null				,--2
+																			v+1					,--3
+																			null				,--4
+																			wite_name			,--5
+																			c.MFAL_EXER		,--6
+																			WITE_ID			,--7
+																			WPTA_ID			,--8
+																			WPSL_RANK			,--9
+																			null				,--10
+																			1		,--11
+																			1		,--12
+																			facture_.depose_dem/1000			,--13
+																			WTVA_ID			,--14
+																			facture_.depose_dem/1000		,--15
+																			facture_.tvadepose_dem/1000		,--16
+																			facture_.depose_dem/1000 + (facture_.tvadepose_dem/1000),--17
+																			New_genrun.RUN_STARTDT,--18
+																			V_FAC_DATECALCUL		,--19
+																			WVOW_UNIT			,--20
+																			null				,--21
+																			0					,--22
+																			0					,--23
+																			null				,--24
+																			null				,--25
+																			null				,--26
+																			null				,--27
+																			null				,--28
+																			null				,--29
+																			null				,--30
+																			null				,--31
+																			null				,--32
+																			null				,--33
+																			null				,--34
+																			null				,--35
+																			null				 --36
+																			);
+																	EXCEPTION WHEN OTHERS THEN NULL;
+																	END;
+											END;
+				end if;
+				
+-------------------------------------------------------------------------------------------
+-----------------------------------FRAIS DE DÉPOSE SUITE AU NON PAIEMENT---------------------------------------
+-------------------------------------------------------------------------------------------	
+				if to_number(facture_.depose_def) <> 0 then  
+							v := v+1;
+							WPTA_ID := null;
+							WPSL_RANK := null;
+										begin
+										select ITE_ID,ite_name,VOW_UNIT  
+										INTO WITE_ID,wite_name,WVOW_UNIT  
+										from genitem s 
+										where s.ITE_CODE = 'FRS_DPOZ_RPOZ';
+										exception when no_data_found then null;
+										end;
+										begin
+										select tva_id 
+										into wtva_id 
+										from gentva 
+										where tva_taux= 18;
+										exception when no_data_found then 
+										wtva_id := 25;
+										end;
+
+										select count(*) 
+										into nbr 
+										from genptaslice 
+										where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
+														 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=WITE_ID )
+														);
+										if nbr=1 then
+										
+											select PTA_ID,PSL_RANK  
+											into WPTA_ID,WPSL_RANK 
+											from genptaslice 
+											where PTA_ID in (select PTA_ID 
+															 from genitemperiodtarif 
+															 where TAR_id in (select tar_id from genitemtarif where ITE_ID=WITE_ID)
+															)
+											and rownum=1;
+										
+										end if;
+
+										if nbr>1 then
+											select PTA_ID,PSL_RANK  
+											into WPTA_ID,WPSL_RANK 
+											from genptaslice 
+											where  PTA_ID
+											in (select PTA_ID 
+												from genitemperiodtarif
+												where TAR_id in (select tar_id from genitemtarif where ITE_ID=WITE_Id) 
+											   )
+											 and rownum=1;
+										 
+										end if;
+
+										BEGIN
+											insert into genbilline
+																	(
+																	BIL_ID			    ,--1   NUMBER(10) not null,
+																	BLI_REVERSEBLI_ID	,--2   NUMBER(10),
+																	BLI_NUMBER		    ,--3   NUMBER(4) not null,
+																	BLI_REVERSEBLINUMBER,--4   NUMBER(4),
+																	BLI_NAME            ,--5   VARCHAR2(200),
+																	BLI_EXERCICE		,--6   NUMBER(4),
+																	ITE_ID				,--7   NUMBER(10) not null,
+																	PTA_ID				,-- 8  NUMBER(10) not null,
+																	PSL_RANK			,--9   NUMBER(2),
+																	IMP_ID				,--10  NUMBER(10),
+																	BLI_VOLUMEBASE		,--11  NUMBER(17,10),
+																	BLI_VOLUMEFACT		,--12  NUMBER(17,10),
+																	BLI_PUHT			,--13  NUMBER(17,3),
+																	TVA_ID				,--14  NUMBER(10) not null,
+																	BLI_MHT				,--15  NUMBER(17,10),
+																	BLI_MTTVA			,--16  NUMBER(17,10),
+																	BLI_MTTC			,--17  NUMBER(17,10),
+																	BLI_STARTDT			,--18  DATE,
+																	BLI_ENDDT			,--19  DATE,
+																	VOW_UNIT			,--20  NUMBER(10),
+																	BLI_NBUNITES		,--21  NUMBER(10),
+																	BLI_DETAIL			,--22  NUMBER(1) default 0 not null,
+																	BLI_CANCEL			,--23  NUMBER(1) default 0 not null,
+																	IMC_ID				,--24  NUMBER(10),
+																	IMP_ANALYTIQUE_ID	,--25  NUMBER(10),
+																	BLI_PERIODEINIT		,--26  VARCHAR2(20),
+																	BLI_PERIODE			,--27  VARCHAR2(20),
+																	BLI_REVERSEDT		,--28  DATE,
+																	BLI_CREDT			,--29  DATE default sysdate,
+																	BLI_UPDTDT			,--30  DATE,
+																	BLI_UPDTBY			,--31  NUMBER(10),
+																	MEU_ID				,--32  NUMBER(10),
+																	BLI_NAME_A			,--33  VARCHAR2(200),
+																	BLI_REVERSEBLIDEC_ID,--34  NUMBER(10),
+																	BLI_REVERSEBLINUMBERDEC,--35 NUMBER(4),
+																	BLI_REVERSEDECDT    ,--35 
+																	)
+															values
+																	(
+																	New_Genbill.BIL_ID,--1
+																	null				,--2
+																	v					,--3
+																	null				,--4
+																	wite_name			,--5
+																	anneereel_			,--6
+																	WITE_ID				,--7
+																	WPTA_ID				,--8
+																	WPSL_RANK			,--9
+																	null				,--10
+																	1					,--11
+																	1					,--12
+																	facture_.depose_def/1000,--13
+																	WTVA_ID			    ,--14
+																	facture_.depose_def/1000,--15
+																	facture_.tvadepose_def/1000		    ,--16
+																	facture_.depose_def/1000 + (facture_.tvadepose_def/1000),--17
+																	New_genrun.RUN_STARTDT,--18
+																	V_FAC_DATECALCUL		,--19
+																	WVOW_UNIT			,--20
+																	null				,--21
+																	0					,--22
+																	0					,--23
+																	null				,--24
+																	null				,--25
+																	null				,--26
+																	null				,--27
+																	null				,--28
+																	null				,--29
+																	null				,--30
+																	null				,--31
+																	null				,--32
+																	null				,--33
+																	null				,--34
+																	null				,--35
+																	null				 --36
+																	);
+																EXCEPTION WHEN OTHERS THEN
+																	BEGIN
+																	insert into genbilline
+																		(
+																			BIL_ID			    ,--1   
+																			BLI_REVERSEBLI_ID	,--2   
+																			BLI_NUMBER			,--3   
+																			BLI_REVERSEBLINUMBER,--4 
+																			BLI_NAME          	,--5   
+																			BLI_EXERCICE		,--6   
+																			ITE_ID				,--7   
+																			PTA_ID				,--8  
+																			PSL_RANK			,--9   
+																			IMP_ID				,--10  
+																			BLI_VOLUMEBASE		,--11  
+																			BLI_VOLUMEFACT		,--12  
+																			BLI_PUHT			,--13  
+																			TVA_ID				,--14  
+																			BLI_MHT				,--15  
+																			BLI_MTTVA			,--16  
+																			BLI_MTTC			,--17  
+																			BLI_STARTDT			,--18  
+																			BLI_ENDDT			,--19  
+																			VOW_UNIT			,--20  
+																			BLI_NBUNITES		,--21  
+																			BLI_DETAIL			,--22  
+																			BLI_CANCEL			,--23  
+																			IMC_ID				,--24  
+																			IMP_ANALYTIQUE_ID	,--25  
+																			BLI_PERIODEINIT		,--26  
+																			BLI_PERIODE			,--27  
+																			BLI_REVERSEDT		,--28  
+																			BLI_CREDT			,--29  
+																			BLI_UPDTDT			,--30  
+																			BLI_UPDTBY			,--31  
+																			MEU_ID				,--32  
+																			BLI_NAME_A			,--33  
+																			BLI_REVERSEBLIDEC_ID,--34  
+																			BLI_REVERSEBLINUMBERDEC,--35 
+																			BLI_REVERSEDECDT    --36
+																			)
+																			values
+																			(
+																			New_Genbill.BIL_ID,--1
+																			null				,--2
+																			v+1					,--3
+																			null				,--4
+																			wite_name			,--5
+																			anneereel_			,--6
+																			WITE_ID				,--7
+																			WPTA_ID				,--8
+																			WPSL_RANK			,--9
+																			null				,--10
+																			1					,--11
+																			1					,--12
+																			facture_.depose_def/1000,--13
+																			WTVA_ID			    ,--14
+																			facture_.depose_def/1000,--15
+																			facture_.tvadepose_def/1000,--16
+																			(facture_.depose_def/1000)+ (facture_.tvadepose_def/1000),--17
+																			New_genrun.RUN_STARTDT,--18
+																			V_FAC_DATECALCUL	,--19
+																			WVOW_UNIT			,--20
+																			null				,--21
+																			0					,--22
+																			0					,--23
+																			null				,--24
+																			null				,--25
+																			null				,--26
+																			null				,--27
+																			null				,--28
+																			null				,--29
+																			null				,--30
+																			null				,--31
+																			null				,--32
+																			null				,--33
+																			null				,--34
+																			null				,--35
+																			null				 --36
+																			);
+																	EXCEPTION WHEN OTHERS THEN NULL;
+																	END;
+											END;
+				end if;	
 	
+-------------------------------------------------------------------------------------------
+-----------------------------------MONTANT CAPITAL---------------------------------------
+-------------------------------------------------------------------------------------------	
+				if to_number(facture_.CAPIT) <> 0 then
+											v := v+1;
+							WPTA_ID := null;
+							WPSL_RANK := null;
+										begin
+										select ITE_ID,ite_name,VOW_UNIT  
+										INTO WITE_ID,wite_name,WVOW_UNIT  
+										from genitem s 
+										where s.ITE_CODE = 'CAPITAL';
+										exception when no_data_found then null;
+										end;
+										begin
+										select tva_id 
+										into wtva_id 
+										from gentva 
+										where tva_taux= 0;
+										exception when no_data_found then wtva_id := 25;
+										end;
+
+										select count(*) 
+										into nbr 
+										from genptaslice 
+										where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
+														 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=WITE_ID )
+														);
+										if nbr=1 then
+										
+											select PTA_ID,PSL_RANK  
+											into WPTA_ID,WPSL_RANK 
+											from genptaslice 
+											where PTA_ID in (select PTA_ID 
+															 from genitemperiodtarif 
+															 where TAR_id in (select tar_id from genitemtarif where ITE_ID=WITE_ID)
+															)
+											and rownum=1;
+										
+										end if;
+
+										if nbr>1 then
+											select PTA_ID,PSL_RANK  
+											into WPTA_ID,WPSL_RANK 
+											from genptaslice 
+											where   PTA_ID
+											in (select PTA_ID 
+												from genitemperiodtarif
+												where TAR_id in (select tar_id from genitemtarif where ITE_ID=WITE_Id) 
+											   )and rownum=1;
+										 
+										end if;
+
+										BEGIN
+											insert into genbilline
+																	(
+																	BIL_ID			    ,--1   NUMBER(10) not null,
+																	BLI_REVERSEBLI_ID	,--2   NUMBER(10),
+																	BLI_NUMBER		    ,--3   NUMBER(4) not null,
+																	BLI_REVERSEBLINUMBER,--4   NUMBER(4),
+																	BLI_NAME            ,--5   VARCHAR2(200),
+																	BLI_EXERCICE		,--6   NUMBER(4),
+																	ITE_ID				,--7   NUMBER(10) not null,
+																	PTA_ID				,-- 8  NUMBER(10) not null,
+																	PSL_RANK			,--9   NUMBER(2),
+																	IMP_ID				,--10  NUMBER(10),
+																	BLI_VOLUMEBASE		,--11  NUMBER(17,10),
+																	BLI_VOLUMEFACT		,--12  NUMBER(17,10),
+																	BLI_PUHT			,--13  NUMBER(17,3),
+																	TVA_ID				,--14  NUMBER(10) not null,
+																	BLI_MHT				,--15  NUMBER(17,10),
+																	BLI_MTTVA			,--16  NUMBER(17,10),
+																	BLI_MTTC			,--17  NUMBER(17,10),
+																	BLI_STARTDT			,--18  DATE,
+																	BLI_ENDDT			,--19  DATE,
+																	VOW_UNIT			,--20  NUMBER(10),
+																	BLI_NBUNITES		,--21  NUMBER(10),
+																	BLI_DETAIL			,--22  NUMBER(1) default 0 not null,
+																	BLI_CANCEL			,--23  NUMBER(1) default 0 not null,
+																	IMC_ID				,--24  NUMBER(10),
+																	IMP_ANALYTIQUE_ID	,--25  NUMBER(10),
+																	BLI_PERIODEINIT		,--26  VARCHAR2(20),
+																	BLI_PERIODE			,--27  VARCHAR2(20),
+																	BLI_REVERSEDT		,--28  DATE,
+																	BLI_CREDT			,--29  DATE default sysdate,
+																	BLI_UPDTDT			,--30  DATE,
+																	BLI_UPDTBY			,--31  NUMBER(10),
+																	MEU_ID				,--32  NUMBER(10),
+																	BLI_NAME_A			,--33  VARCHAR2(200),
+																	BLI_REVERSEBLIDEC_ID,--34  NUMBER(10),
+																	BLI_REVERSEBLINUMBERDEC,--35 NUMBER(4),
+																	BLI_REVERSEDECDT    ,--35 
+																	)
+															values
+																	(
+																	New_Genbill.BIL_ID,--1
+																	null				,--2
+																	v					,--3
+																	null				,--4
+																	wite_name			,--5
+																	anneereel_			,--6
+																	WITE_ID				,--7
+																	WPTA_ID				,--8
+																	WPSL_RANK			,--9
+																	null				,--10
+																	1					,--11
+																	1					,--12
+																	facture_.CAPIT/1000	,--13
+																	WTVA_ID			    ,--14
+																	facture_.CAPIT/1000	,--15
+																	facture_.tva_capit/1000,--16
+																	facture_.CAPIT/1000	,--17
+																	New_genrun.RUN_STARTDT,--18
+																	V_FAC_DATECALCUL	,--19
+																	WVOW_UNIT			,--20
+																	null				,--21
+																	0					,--22
+																	0					,--23
+																	null				,--24
+																	null				,--25
+																	null				,--26
+																	null				,--27
+																	null				,--28
+																	null				,--29
+																	null				,--30
+																	null				,--31
+																	null				,--32
+																	null				,--33
+																	null				,--34
+																	null				,--35
+																	null				 --36
+																	);
+																EXCEPTION WHEN OTHERS THEN
+																	BEGIN
+																	insert into genbilline
+																		(
+																			BIL_ID			    ,--1   
+																			BLI_REVERSEBLI_ID	,--2   
+																			BLI_NUMBER			,--3   
+																			BLI_REVERSEBLINUMBER,--4 
+																			BLI_NAME          	,--5   
+																			BLI_EXERCICE		,--6   
+																			ITE_ID				,--7   
+																			PTA_ID				,--8  
+																			PSL_RANK			,--9   
+																			IMP_ID				,--10  
+																			BLI_VOLUMEBASE		,--11  
+																			BLI_VOLUMEFACT		,--12  
+																			BLI_PUHT			,--13  
+																			TVA_ID				,--14  
+																			BLI_MHT				,--15  
+																			BLI_MTTVA			,--16  
+																			BLI_MTTC			,--17  
+																			BLI_STARTDT			,--18  
+																			BLI_ENDDT			,--19  
+																			VOW_UNIT			,--20  
+																			BLI_NBUNITES		,--21  
+																			BLI_DETAIL			,--22  
+																			BLI_CANCEL			,--23  
+																			IMC_ID				,--24  
+																			IMP_ANALYTIQUE_ID	,--25  
+																			BLI_PERIODEINIT		,--26  
+																			BLI_PERIODE			,--27  
+																			BLI_REVERSEDT		,--28  
+																			BLI_CREDT			,--29  
+																			BLI_UPDTDT			,--30  
+																			BLI_UPDTBY			,--31  
+																			MEU_ID				,--32  
+																			BLI_NAME_A			,--33  
+																			BLI_REVERSEBLIDEC_ID,--34  
+																			BLI_REVERSEBLINUMBERDEC,--35 
+																			BLI_REVERSEDECDT    --36
+																			)
+																			values
+																			(
+																			New_Genbill.BIL_ID,--1
+																			null				,--2
+																			v+1					,--3
+																			null				,--4
+																			wite_name			,--5
+																			anneereel_			,--6
+																			WITE_ID				,--7
+																			WPTA_ID				,--8
+																			WPSL_RANK			,--9
+																			null				,--10
+																			1					,--11
+																			1					,--12
+																			facture_.CAPIT/1000	,--13
+																			WTVA_ID			    ,--14
+																			facture_.CAPIT/1000	,--15
+																			facture_.tva_capit/1000,--16
+																			facture_.CAPIT/1000	,--17
+																			New_genrun.RUN_STARTDT,--18
+																			V_FAC_DATECALCUL	,--19
+																			WVOW_UNIT			,--20
+																			null				,--21
+																			0					,--22
+																			0					,--23
+																			null				,--24
+																			null				,--25
+																			null				,--26
+																			null				,--27
+																			null				,--28
+																			null				,--29
+																			null				,--30
+																			null				,--31
+																			null				,--32
+																			null				,--33
+																			null				,--34
+																			null				,--35
+																			null				 --36
+																			);
+																	EXCEPTION WHEN OTHERS THEN NULL;
+																	END;
+											END;
+				end if;	
+-------------------------------------------------------------------------------------------
+-----------------------------------Montant Interet---------------------------------------
+-------------------------------------------------------------------------------------------	
+				if to_number(facture_.INTER) <> 0 then
+											v := v+1;
+							WPTA_ID := null;
+							WPSL_RANK := null;
+										begin
+										select ITE_ID,ite_name,VOW_UNIT  
+										INTO WITE_ID,wite_name,WVOW_UNIT  
+										from genitem s 
+										where s.ITE_CODE = 'INTERET';
+										exception when no_data_found then null;
+										end;
+										begin
+										select tva_id 
+										into wtva_id 
+										from gentva 
+										where tva_taux= c.MFAL_TTVA;
+										exception when no_data_found then wtva_id := 25;
+										end;
+
+										select count(*) 
+										into nbr 
+										from genptaslice 
+										where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
+														 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=WITE_ID )
+														);
+										if nbr=1 then
+										
+											select PTA_ID,PSL_RANK  
+											into WPTA_ID,WPSL_RANK 
+											from genptaslice 
+											where PTA_ID in (select PTA_ID 
+															 from genitemperiodtarif 
+															 where TAR_id in (select tar_id from genitemtarif where ITE_ID=WITE_ID)
+															)
+											and rownum=1;
+										
+										end if;
+
+										if nbr>1 then
+											select PTA_ID,PSL_RANK  
+											into WPTA_ID,WPSL_RANK 
+											from genptaslice 
+											where   PTA_ID
+											in (select PTA_ID 
+												from genitemperiodtarif
+												where TAR_id in (select tar_id from genitemtarif where ITE_ID=WITE_Id) 
+											   )and rownum=1;
+										 
+										end if;
+
+										BEGIN
+											insert into genbilline
+																	(
+																	BIL_ID			    ,--1   NUMBER(10) not null,
+																	BLI_REVERSEBLI_ID	,--2   NUMBER(10),
+																	BLI_NUMBER		    ,--3   NUMBER(4) not null,
+																	BLI_REVERSEBLINUMBER,--4   NUMBER(4),
+																	BLI_NAME            ,--5   VARCHAR2(200),
+																	BLI_EXERCICE		,--6   NUMBER(4),
+																	ITE_ID				,--7   NUMBER(10) not null,
+																	PTA_ID				,-- 8  NUMBER(10) not null,
+																	PSL_RANK			,--9   NUMBER(2),
+																	IMP_ID				,--10  NUMBER(10),
+																	BLI_VOLUMEBASE		,--11  NUMBER(17,10),
+																	BLI_VOLUMEFACT		,--12  NUMBER(17,10),
+																	BLI_PUHT			,--13  NUMBER(17,3),
+																	TVA_ID				,--14  NUMBER(10) not null,
+																	BLI_MHT				,--15  NUMBER(17,10),
+																	BLI_MTTVA			,--16  NUMBER(17,10),
+																	BLI_MTTC			,--17  NUMBER(17,10),
+																	BLI_STARTDT			,--18  DATE,
+																	BLI_ENDDT			,--19  DATE,
+																	VOW_UNIT			,--20  NUMBER(10),
+																	BLI_NBUNITES		,--21  NUMBER(10),
+																	BLI_DETAIL			,--22  NUMBER(1) default 0 not null,
+																	BLI_CANCEL			,--23  NUMBER(1) default 0 not null,
+																	IMC_ID				,--24  NUMBER(10),
+																	IMP_ANALYTIQUE_ID	,--25  NUMBER(10),
+																	BLI_PERIODEINIT		,--26  VARCHAR2(20),
+																	BLI_PERIODE			,--27  VARCHAR2(20),
+																	BLI_REVERSEDT		,--28  DATE,
+																	BLI_CREDT			,--29  DATE default sysdate,
+																	BLI_UPDTDT			,--30  DATE,
+																	BLI_UPDTBY			,--31  NUMBER(10),
+																	MEU_ID				,--32  NUMBER(10),
+																	BLI_NAME_A			,--33  VARCHAR2(200),
+																	BLI_REVERSEBLIDEC_ID,--34  NUMBER(10),
+																	BLI_REVERSEBLINUMBERDEC,--35 NUMBER(4),
+																	BLI_REVERSEDECDT    ,--35 
+																	)
+															values
+																	(
+																	New_Genbill.BIL_ID	,--1
+																	null				,--2
+																	v					,--3
+																	null				,--4
+																	wite_name			,--5
+																	anneereel_			,--6
+																	WITE_ID				,--7
+																	WPTA_ID				,--8
+																	WPSL_RANK			,--9
+																	null				,--10
+																	1					,--11
+																	1					,--12
+																	facture_.INTER/1000	,--13
+																	WTVA_ID				,--14
+																	facture_.INTER/1000	,--15
+																	0					,--16
+																	facture_.INTER/1000	,--17
+																	New_genrun.RUN_STARTDT,--18
+																	V_FAC_DATECALCUL	,--19
+																	WVOW_UNIT			,--20
+																	null				,--21
+																	0					,--22
+																	0					,--23
+																	null				,--24
+																	null				,--25
+																	null				,--26
+																	null				,--27
+																	null				,--28
+																	null				,--29
+																	null				,--30
+																	null				,--31
+																	null				,--32
+																	null				,--33
+																	null				,--34
+																	null				,--35
+																	null				 --36
+																	);
+																EXCEPTION WHEN OTHERS THEN
+																	BEGIN
+																	insert into genbilline
+																		(
+																			BIL_ID			    ,--1   
+																			BLI_REVERSEBLI_ID	,--2   
+																			BLI_NUMBER			,--3   
+																			BLI_REVERSEBLINUMBER,--4 
+																			BLI_NAME          	,--5   
+																			BLI_EXERCICE		,--6   
+																			ITE_ID				,--7   
+																			PTA_ID				,--8  
+																			PSL_RANK			,--9   
+																			IMP_ID				,--10  
+																			BLI_VOLUMEBASE		,--11  
+																			BLI_VOLUMEFACT		,--12  
+																			BLI_PUHT			,--13  
+																			TVA_ID				,--14  
+																			BLI_MHT				,--15  
+																			BLI_MTTVA			,--16  
+																			BLI_MTTC			,--17  
+																			BLI_STARTDT			,--18  
+																			BLI_ENDDT			,--19  
+																			VOW_UNIT			,--20  
+																			BLI_NBUNITES		,--21  
+																			BLI_DETAIL			,--22  
+																			BLI_CANCEL			,--23  
+																			IMC_ID				,--24  
+																			IMP_ANALYTIQUE_ID	,--25  
+																			BLI_PERIODEINIT		,--26  
+																			BLI_PERIODE			,--27  
+																			BLI_REVERSEDT		,--28  
+																			BLI_CREDT			,--29  
+																			BLI_UPDTDT			,--30  
+																			BLI_UPDTBY			,--31  
+																			MEU_ID				,--32  
+																			BLI_NAME_A			,--33  
+																			BLI_REVERSEBLIDEC_ID,--34  
+																			BLI_REVERSEBLINUMBERDEC,--35 
+																			BLI_REVERSEDECDT    --36
+																			)
+																			values
+																			(
+																			New_Genbill.BIL_ID,--1
+																			null				,--2
+																			v+1					,--3
+																			null				,--4
+																			wite_name			,--5
+																			anneereel_			,--6
+																			WITE_ID				,--7
+																			WPTA_ID				,--8
+																			WPSL_RANK			,--9
+																			null				,--10
+																			1					,--11
+																			1					,--12
+																			facture_.INTER/1000	,--13
+																			WTVA_ID				,--14
+																			facture_.INTER/1000	,--15
+																			0					,--16
+																			facture_.INTER/1000	,--17
+																			New_genrun.RUN_STARTDT,--18
+																			V_FAC_DATECALCUL		,--19
+																			WVOW_UNIT			,--20
+																			null				,--21
+																			0					,--22
+																			0					,--23
+																			null				,--24
+																			null				,--25
+																			null				,--26
+																			null				,--27
+																			null				,--28
+																			null				,--29
+																			null				,--30
+																			null				,--31
+																			null				,--32
+																			null				,--33
+																			null				,--34
+																			null				,--35
+																			null				 --36
+																			);
+																	EXCEPTION WHEN OTHERS THEN NULL;
+																	END;
+											END;
+				end if;	
+				
+-------------------------------------------------------------------------------------------
+-----------------------------------MONTANT BRANCHEMENT---------------------------------------
+-------------------------------------------------------------------------------------------	
+				if to_number(facture_.RBRANCHE) <> 0 then
+											v := v+1;
+							WPTA_ID := null;
+							WPSL_RANK := null;
+										begin
+										select ITE_ID,ite_name,VOW_UNIT  
+										INTO WITE_ID,wite_name,WVOW_UNIT  
+										from genitem s 
+										where s.ITE_CODE = 'COURETABBR';
+										exception when no_data_found then null;
+										end;
+										begin
+										select tva_id 
+										into wtva_id 
+										from gentva 
+										where tva_taux= 0;
+										exception when no_data_found then wtva_id := 25;
+										end;
+
+										select count(*) 
+										into nbr 
+										from genptaslice 
+										where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
+														 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=WITE_ID )
+														);
+										if nbr=1 then
+										
+											select PTA_ID,PSL_RANK  
+											into WPTA_ID,WPSL_RANK 
+											from genptaslice 
+											where PTA_ID in (select PTA_ID 
+															 from genitemperiodtarif 
+															 where TAR_id in (select tar_id from genitemtarif where ITE_ID=WITE_ID)
+															)
+											and rownum=1;
+										
+										end if;
+
+										if nbr>1 then
+											select PTA_ID,PSL_RANK  
+											into WPTA_ID,WPSL_RANK 
+											from genptaslice 
+											where   PTA_ID
+											in (select PTA_ID 
+												from genitemperiodtarif
+												where TAR_id in (select tar_id from genitemtarif where ITE_ID=WITE_Id) 
+											   )and rownum=1;
+										 
+										end if;
+
+										BEGIN
+											insert into genbilline
+																	(
+																	BIL_ID			    ,--1   NUMBER(10) not null,
+																	BLI_REVERSEBLI_ID	,--2   NUMBER(10),
+																	BLI_NUMBER		    ,--3   NUMBER(4) not null,
+																	BLI_REVERSEBLINUMBER,--4   NUMBER(4),
+																	BLI_NAME            ,--5   VARCHAR2(200),
+																	BLI_EXERCICE		,--6   NUMBER(4),
+																	ITE_ID				,--7   NUMBER(10) not null,
+																	PTA_ID				,-- 8  NUMBER(10) not null,
+																	PSL_RANK			,--9   NUMBER(2),
+																	IMP_ID				,--10  NUMBER(10),
+																	BLI_VOLUMEBASE		,--11  NUMBER(17,10),
+																	BLI_VOLUMEFACT		,--12  NUMBER(17,10),
+																	BLI_PUHT			,--13  NUMBER(17,3),
+																	TVA_ID				,--14  NUMBER(10) not null,
+																	BLI_MHT				,--15  NUMBER(17,10),
+																	BLI_MTTVA			,--16  NUMBER(17,10),
+																	BLI_MTTC			,--17  NUMBER(17,10),
+																	BLI_STARTDT			,--18  DATE,
+																	BLI_ENDDT			,--19  DATE,
+																	VOW_UNIT			,--20  NUMBER(10),
+																	BLI_NBUNITES		,--21  NUMBER(10),
+																	BLI_DETAIL			,--22  NUMBER(1) default 0 not null,
+																	BLI_CANCEL			,--23  NUMBER(1) default 0 not null,
+																	IMC_ID				,--24  NUMBER(10),
+																	IMP_ANALYTIQUE_ID	,--25  NUMBER(10),
+																	BLI_PERIODEINIT		,--26  VARCHAR2(20),
+																	BLI_PERIODE			,--27  VARCHAR2(20),
+																	BLI_REVERSEDT		,--28  DATE,
+																	BLI_CREDT			,--29  DATE default sysdate,
+																	BLI_UPDTDT			,--30  DATE,
+																	BLI_UPDTBY			,--31  NUMBER(10),
+																	MEU_ID				,--32  NUMBER(10),
+																	BLI_NAME_A			,--33  VARCHAR2(200),
+																	BLI_REVERSEBLIDEC_ID,--34  NUMBER(10),
+																	BLI_REVERSEBLINUMBERDEC,--35 NUMBER(4),
+																	BLI_REVERSEDECDT    ,--35 
+																	)
+															values
+																	(
+																	New_Genbill.BIL_ID,--1
+																	null				,--2
+																	v					,--3
+																	null				,--4
+																	wite_name			,--5
+																	anneereel_			,--6
+																	WITE_ID				,--7
+																	WPTA_ID				,--8
+																	WPSL_RANK			,--9
+																	null				,--10
+																	1					,--11
+																	1					,--12
+																	facture_.RBRANCHE/1000,--13
+																	WTVA_ID			    ,--14
+																	facture_.RBRANCHE/1000,--15
+																	0					,--16
+																	facture_.RBRANCHE/1000,--17
+																	New_genrun.RUN_STARTDT,--18
+																	V_FAC_DATECALCUL	,--19
+																	WVOW_UNIT			,--20
+																	null				,--21
+																	0					,--22
+																	0					,--23
+																	null				,--24
+																	null				,--25
+																	null				,--26
+																	null				,--27
+																	null				,--28
+																	null				,--29
+																	null				,--30
+																	null				,--31
+																	null				,--32
+																	null				,--33
+																	null				,--34
+																	null				,--35
+																	null				 --36
+																	);
+																EXCEPTION WHEN OTHERS THEN
+																	BEGIN
+																	insert into genbilline
+																		(
+																			BIL_ID			    ,--1   
+																			BLI_REVERSEBLI_ID	,--2   
+																			BLI_NUMBER			,--3   
+																			BLI_REVERSEBLINUMBER,--4 
+																			BLI_NAME          	,--5   
+																			BLI_EXERCICE		,--6   
+																			ITE_ID				,--7   
+																			PTA_ID				,--8  
+																			PSL_RANK			,--9   
+																			IMP_ID				,--10  
+																			BLI_VOLUMEBASE		,--11  
+																			BLI_VOLUMEFACT		,--12  
+																			BLI_PUHT			,--13  
+																			TVA_ID				,--14  
+																			BLI_MHT				,--15  
+																			BLI_MTTVA			,--16  
+																			BLI_MTTC			,--17  
+																			BLI_STARTDT			,--18  
+																			BLI_ENDDT			,--19  
+																			VOW_UNIT			,--20  
+																			BLI_NBUNITES		,--21  
+																			BLI_DETAIL			,--22  
+																			BLI_CANCEL			,--23  
+																			IMC_ID				,--24  
+																			IMP_ANALYTIQUE_ID	,--25  
+																			BLI_PERIODEINIT		,--26  
+																			BLI_PERIODE			,--27  
+																			BLI_REVERSEDT		,--28  
+																			BLI_CREDT			,--29  
+																			BLI_UPDTDT			,--30  
+																			BLI_UPDTBY			,--31  
+																			MEU_ID				,--32  
+																			BLI_NAME_A			,--33  
+																			BLI_REVERSEBLIDEC_ID,--34  
+																			BLI_REVERSEBLINUMBERDEC,--35 
+																			BLI_REVERSEDECDT    --36
+																			)
+																			values
+																			(
+																			New_Genbill.BIL_ID	,--1
+																			null				,--2
+																			v+1					,--3
+																			null				,--4
+																			wite_name			,--5
+																			anneereel_			,--6
+																			WITE_ID				,--7
+																			WPTA_ID				,--8
+																			WPSL_RANK			,--9
+																			null				,--10
+																			1					,--11
+																			1					,--12
+																			facture_.RBRANCHE/1000,--13
+																			WTVA_ID			    ,--14
+																			facture_.RBRANCHE/1000,--15
+																			0					,--16
+																			facture_.RBRANCHE/1000,--17
+																			New_genrun.RUN_STARTDT,--18
+																			V_FAC_DATECALCUL	,--19
+																			WVOW_UNIT			,--20
+																			null				,--21
+																			0					,--22
+																			0					,--23
+																			null				,--24
+																			null				,--25
+																			null				,--26
+																			null				,--27
+																			null				,--28
+																			null				,--29
+																			null				,--30
+																			null				,--31
+																			null				,--32
+																			null				,--33
+																			null				,--34
+																			null				,--35
+																			null				 --36
+																			);
+																	EXCEPTION WHEN OTHERS THEN NULL;
+																	END;
+											END;
+				end if;
 	
+-------------------------------------------------------------------------------------------
+-----------------------------------PRODUIT FINANCIER---------------------------------------
+-------------------------------------------------------------------------------------------	
+				if to_number(facture_.PFINANCIER) <> 0 then
+											v := v+1;
+							WPTA_ID := null;
+							WPSL_RANK := null;
+										begin
+										select ITE_ID,ite_name,VOW_UNIT  
+										INTO WITE_ID,wite_name,WVOW_UNIT  
+										from genitem s 
+										where s.ITE_CODE ='PFINANCIER';
+										exception when no_data_found then null;
+										end;
+										begin
+										select tva_id 
+										into wtva_id 
+										from gentva 
+										where tva_taux=0;
+										exception when no_data_found then 
+										wtva_id := 25;
+										end;
+
+										select count(*) 
+										into nbr 
+										from genptaslice 
+										where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
+														 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=WITE_ID )
+														);
+										if nbr=1 then
+										
+											select PTA_ID,PSL_RANK  
+											into WPTA_ID,WPSL_RANK 
+											from genptaslice 
+											where PTA_ID in (select PTA_ID 
+															 from genitemperiodtarif 
+															 where TAR_id in (select tar_id from genitemtarif where ITE_ID=WITE_ID)
+															)
+											and rownum=1;
+										
+										end if;
+
+										if nbr>1 then
+											select PTA_ID,PSL_RANK  
+											into WPTA_ID,WPSL_RANK 
+											from genptaslice 
+											where   PTA_ID
+											in (select PTA_ID 
+												from genitemperiodtarif
+												where TAR_id in (select tar_id from genitemtarif where ITE_ID=WITE_Id) 
+											   )and rownum=1;
+										 
+										end if;
+
+										BEGIN
+											insert into genbilline
+																	(
+																	BIL_ID			    ,--1   NUMBER(10) not null,
+																	BLI_REVERSEBLI_ID	,--2   NUMBER(10),
+																	BLI_NUMBER		    ,--3   NUMBER(4) not null,
+																	BLI_REVERSEBLINUMBER,--4   NUMBER(4),
+																	BLI_NAME            ,--5   VARCHAR2(200),
+																	BLI_EXERCICE		,--6   NUMBER(4),
+																	ITE_ID				,--7   NUMBER(10) not null,
+																	PTA_ID				,-- 8  NUMBER(10) not null,
+																	PSL_RANK			,--9   NUMBER(2),
+																	IMP_ID				,--10  NUMBER(10),
+																	BLI_VOLUMEBASE		,--11  NUMBER(17,10),
+																	BLI_VOLUMEFACT		,--12  NUMBER(17,10),
+																	BLI_PUHT			,--13  NUMBER(17,3),
+																	TVA_ID				,--14  NUMBER(10) not null,
+																	BLI_MHT				,--15  NUMBER(17,10),
+																	BLI_MTTVA			,--16  NUMBER(17,10),
+																	BLI_MTTC			,--17  NUMBER(17,10),
+																	BLI_STARTDT			,--18  DATE,
+																	BLI_ENDDT			,--19  DATE,
+																	VOW_UNIT			,--20  NUMBER(10),
+																	BLI_NBUNITES		,--21  NUMBER(10),
+																	BLI_DETAIL			,--22  NUMBER(1) default 0 not null,
+																	BLI_CANCEL			,--23  NUMBER(1) default 0 not null,
+																	IMC_ID				,--24  NUMBER(10),
+																	IMP_ANALYTIQUE_ID	,--25  NUMBER(10),
+																	BLI_PERIODEINIT		,--26  VARCHAR2(20),
+																	BLI_PERIODE			,--27  VARCHAR2(20),
+																	BLI_REVERSEDT		,--28  DATE,
+																	BLI_CREDT			,--29  DATE default sysdate,
+																	BLI_UPDTDT			,--30  DATE,
+																	BLI_UPDTBY			,--31  NUMBER(10),
+																	MEU_ID				,--32  NUMBER(10),
+																	BLI_NAME_A			,--33  VARCHAR2(200),
+																	BLI_REVERSEBLIDEC_ID,--34  NUMBER(10),
+																	BLI_REVERSEBLINUMBERDEC,--35 NUMBER(4),
+																	BLI_REVERSEDECDT    ,--35 
+																	)
+															values
+																	(
+																	New_Genbill.BIL_ID	,--1
+																	null				,--2
+																	v					,--3
+																	null				,--4
+																	wite_name			,--5
+																	anneereel_			,--6
+																	WITE_ID				,--7
+																	WPTA_ID				,--8
+																	WPSL_RANK			,--9
+																	null				,--10
+																	1					,--11
+																	1					,--12
+																	facture_.PFINANCIER/1000,--13
+																	WTVA_ID			    ,--14
+																	facture_.PFINANCIER/1000,--15
+																	facture_.tva_pfin/1000  ,--16
+																	facture_.PFINANCIER/1000,--17
+																	New_genrun.RUN_STARTDT,--18
+																	V_FAC_DATECALCUL		,--19
+																	WVOW_UNIT			,--20
+																	null				,--21
+																	0					,--22
+																	0					,--23
+																	null				,--24
+																	null				,--25
+																	null				,--26
+																	null				,--27
+																	null				,--28
+																	null				,--29
+																	null				,--30
+																	null				,--31
+																	null				,--32
+																	null				,--33
+																	null				,--34
+																	null				,--35
+																	null				 --36
+																	);
+																EXCEPTION WHEN OTHERS THEN
+																	BEGIN
+																	insert into genbilline
+																		(
+																			BIL_ID			    ,--1   
+																			BLI_REVERSEBLI_ID	,--2   
+																			BLI_NUMBER			,--3   
+																			BLI_REVERSEBLINUMBER,--4 
+																			BLI_NAME          	,--5   
+																			BLI_EXERCICE		,--6   
+																			ITE_ID				,--7   
+																			PTA_ID				,--8  
+																			PSL_RANK			,--9   
+																			IMP_ID				,--10  
+																			BLI_VOLUMEBASE		,--11  
+																			BLI_VOLUMEFACT		,--12  
+																			BLI_PUHT			,--13  
+																			TVA_ID				,--14  
+																			BLI_MHT				,--15  
+																			BLI_MTTVA			,--16  
+																			BLI_MTTC			,--17  
+																			BLI_STARTDT			,--18  
+																			BLI_ENDDT			,--19  
+																			VOW_UNIT			,--20  
+																			BLI_NBUNITES		,--21  
+																			BLI_DETAIL			,--22  
+																			BLI_CANCEL			,--23  
+																			IMC_ID				,--24  
+																			IMP_ANALYTIQUE_ID	,--25  
+																			BLI_PERIODEINIT		,--26  
+																			BLI_PERIODE			,--27  
+																			BLI_REVERSEDT		,--28  
+																			BLI_CREDT			,--29  
+																			BLI_UPDTDT			,--30  
+																			BLI_UPDTBY			,--31  
+																			MEU_ID				,--32  
+																			BLI_NAME_A			,--33  
+																			BLI_REVERSEBLIDEC_ID,--34  
+																			BLI_REVERSEBLINUMBERDEC,--35 
+																			BLI_REVERSEDECDT    --36
+																			)
+																			values
+																			(
+																			New_Genbill.BIL_ID  ,--1
+																			null				,--2
+																			v+1					,--3
+																			null				,--4
+																			wite_name			,--5
+																			anneereel_			,--6
+																			WITE_ID				,--7
+																			WPTA_ID				,--8
+																			WPSL_RANK			,--9
+																			null				,--10
+																			1					,--11
+																			1					,--12
+																			facture_.PFINANCIER/1000,--13
+																			WTVA_ID			    ,--14
+																			facture_.PFINANCIER/1000,--15
+																			facture_.tva_pfin/1000  ,--16
+																			facture_.PFINANCIER/1000,--17
+																			New_genrun.RUN_STARTDT,--18
+																			V_FAC_DATECALCUL		,--19
+																			WVOW_UNIT			,--20
+																			null				,--21
+																			0					,--22
+																			0					,--23
+																			null				,--24
+																			null				,--25
+																			null				,--26
+																			null				,--27
+																			null				,--28
+																			null				,--29
+																			null				,--30
+																			null				,--31
+																			null				,--32
+																			null				,--33
+																			null				,--34
+																			null				,--35
+																			null				 --36
+																			);
+																	EXCEPTION WHEN OTHERS THEN NULL;
+																	END;
+											END;
+				end if;	
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+-------------------------------------------------------------------------------------------
+-----------------------------------MONTANT REPORT---------------------------------------
+-------------------------------------------------------------------------------------------	
+				if to_number(facture_.AREPOR) <> 0 then
+							v := v+1;
+							WPTA_ID := null;
+							WPSL_RANK := null;
+										begin
+										select ITE_ID,ite_name,VOW_UNIT  
+										INTO WITE_ID,wite_name,WVOW_UNIT  
+										from genitem s 
+										where s.ITE_CODE = 'AREPOR';
+										exception when no_data_found then null;
+										end;
+										begin
+										select tva_id 
+										into wtva_id 
+										from gentva 
+										where tva_taux= 0;
+										exception when no_data_found then 
+										wtva_id := 25;
+										end;
+
+										select count(*) 
+										into nbr 
+										from genptaslice 
+										where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
+														 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=WITE_ID )
+														);
+										if nbr=1 then
+										
+											select PTA_ID,PSL_RANK  
+											into WPTA_ID,WPSL_RANK 
+											from genptaslice 
+											where PTA_ID in (select PTA_ID 
+															 from genitemperiodtarif 
+															 where TAR_id in (select tar_id from genitemtarif where ITE_ID=WITE_ID)
+															)
+											and rownum=1;
+										
+										end if;
+
+										if nbr>1 then
+											select PTA_ID,PSL_RANK  
+											into WPTA_ID,WPSL_RANK 
+											from genptaslice 
+											where   PTA_ID
+											in (select PTA_ID 
+												from genitemperiodtarif
+												where TAR_id in (select tar_id from genitemtarif where ITE_ID=WITE_Id) 
+											   )and rownum=1;
+										 
+										end if;
+
+										BEGIN
+											insert into genbilline
+																	(
+																	BIL_ID			    ,--1   NUMBER(10) not null,
+																	BLI_REVERSEBLI_ID	,--2   NUMBER(10),
+																	BLI_NUMBER		    ,--3   NUMBER(4) not null,
+																	BLI_REVERSEBLINUMBER,--4   NUMBER(4),
+																	BLI_NAME            ,--5   VARCHAR2(200),
+																	BLI_EXERCICE		,--6   NUMBER(4),
+																	ITE_ID				,--7   NUMBER(10) not null,
+																	PTA_ID				,-- 8  NUMBER(10) not null,
+																	PSL_RANK			,--9   NUMBER(2),
+																	IMP_ID				,--10  NUMBER(10),
+																	BLI_VOLUMEBASE		,--11  NUMBER(17,10),
+																	BLI_VOLUMEFACT		,--12  NUMBER(17,10),
+																	BLI_PUHT			,--13  NUMBER(17,3),
+																	TVA_ID				,--14  NUMBER(10) not null,
+																	BLI_MHT				,--15  NUMBER(17,10),
+																	BLI_MTTVA			,--16  NUMBER(17,10),
+																	BLI_MTTC			,--17  NUMBER(17,10),
+																	BLI_STARTDT			,--18  DATE,
+																	BLI_ENDDT			,--19  DATE,
+																	VOW_UNIT			,--20  NUMBER(10),
+																	BLI_NBUNITES		,--21  NUMBER(10),
+																	BLI_DETAIL			,--22  NUMBER(1) default 0 not null,
+																	BLI_CANCEL			,--23  NUMBER(1) default 0 not null,
+																	IMC_ID				,--24  NUMBER(10),
+																	IMP_ANALYTIQUE_ID	,--25  NUMBER(10),
+																	BLI_PERIODEINIT		,--26  VARCHAR2(20),
+																	BLI_PERIODE			,--27  VARCHAR2(20),
+																	BLI_REVERSEDT		,--28  DATE,
+																	BLI_CREDT			,--29  DATE default sysdate,
+																	BLI_UPDTDT			,--30  DATE,
+																	BLI_UPDTBY			,--31  NUMBER(10),
+																	MEU_ID				,--32  NUMBER(10),
+																	BLI_NAME_A			,--33  VARCHAR2(200),
+																	BLI_REVERSEBLIDEC_ID,--34  NUMBER(10),
+																	BLI_REVERSEBLINUMBERDEC,--35 NUMBER(4),
+																	BLI_REVERSEDECDT    ,--35 
+																	)
+															values
+																	(
+																	New_Genbill.BIL_ID  ,--1
+																	null				,--2
+																	v					,--3
+																	null				,--4
+																	wite_name			,--5
+																	anneereel_			,--6
+																	WITE_ID				,--7
+																	WPTA_ID				,--8
+																	WPSL_RANK			,--9
+																	null				,--10
+																	1					,--11
+																	1					,--12
+																	decode(facture_.caron,'1',1,-1)* (facture_.AREPOR/1000)			,--13
+																	WTVA_ID				,--14
+																	decode(facture_.caron,'1',1,-1)* (facture_.AREPOR/1000)		,--15
+																	0					 ,--16
+																	decode(facture_.caron,'1',1,-1)* (facture_.AREPOR/1000)	,--17
+																	New_genrun.RUN_STARTDT,--18
+																	V_FAC_DATECALCUL		,--19
+																	WVOW_UNIT			,--20
+																	null				,--21
+																	0					,--22
+																	0					,--23
+																	null				,--24
+																	null				,--25
+																	null				,--26
+																	null				,--27
+																	null				,--28
+																	null				,--29
+																	null				,--30
+																	null				,--31
+																	null				,--32
+																	null				,--33
+																	null				,--34
+																	null				,--35
+																	null				 --36
+																	);
+																EXCEPTION WHEN OTHERS THEN
+																	BEGIN
+																	insert into genbilline
+																		(
+																			BIL_ID			    ,--1   
+																			BLI_REVERSEBLI_ID	,--2   
+																			BLI_NUMBER			,--3   
+																			BLI_REVERSEBLINUMBER,--4 
+																			BLI_NAME          	,--5   
+																			BLI_EXERCICE		,--6   
+																			ITE_ID				,--7   
+																			PTA_ID				,--8  
+																			PSL_RANK			,--9   
+																			IMP_ID				,--10  
+																			BLI_VOLUMEBASE		,--11  
+																			BLI_VOLUMEFACT		,--12  
+																			BLI_PUHT			,--13  
+																			TVA_ID				,--14  
+																			BLI_MHT				,--15  
+																			BLI_MTTVA			,--16  
+																			BLI_MTTC			,--17  
+																			BLI_STARTDT			,--18  
+																			BLI_ENDDT			,--19  
+																			VOW_UNIT			,--20  
+																			BLI_NBUNITES		,--21  
+																			BLI_DETAIL			,--22  
+																			BLI_CANCEL			,--23  
+																			IMC_ID				,--24  
+																			IMP_ANALYTIQUE_ID	,--25  
+																			BLI_PERIODEINIT		,--26  
+																			BLI_PERIODE			,--27  
+																			BLI_REVERSEDT		,--28  
+																			BLI_CREDT			,--29  
+																			BLI_UPDTDT			,--30  
+																			BLI_UPDTBY			,--31  
+																			MEU_ID				,--32  
+																			BLI_NAME_A			,--33  
+																			BLI_REVERSEBLIDEC_ID,--34  
+																			BLI_REVERSEBLINUMBERDEC,--35 
+																			BLI_REVERSEDECDT    --36
+																			)
+																			values
+																			(
+																			New_Genbill.BIL_ID,--1
+																			null				,--2
+																			v+1					,--3
+																			null				,--4
+																			wite_name			,--5
+																			anneereel_			,--6
+																			WITE_ID				,--7
+																			WPTA_ID				,--8
+																			WPSL_RANK			,--9
+																			null				,--10
+																			1					,--11
+																			1					,--12
+																			decode(facture_.caron,'1',1,-1)* (facture_.AREPOR/1000)			,--13
+																			WTVA_ID				,--14
+																			decode(facture_.caron,'1',1,-1)* (facture_.AREPOR/1000)		,--15
+																			0					,--16
+																			decode(facture_.caron,'1',1,-1)* (facture_.AREPOR/1000)	,--17
+																			New_genrun.RUN_STARTDT,--18
+																			V_FAC_DATECALCUL	,--19
+																			WVOW_UNIT			,--20
+																			null				,--21
+																			0					,--22
+																			0					,--23
+																			null				,--24
+																			null				,--25
+																			null				,--26
+																			null				,--27
+																			null				,--28
+																			null				,--29
+																			null				,--30
+																			null				,--31
+																			null				,--32
+																			null				,--33
+																			null				,--34
+																			null				,--35
+																			null				 --36
+																			);
+																	EXCEPTION WHEN OTHERS THEN NULL;
+																	END;
+											END;
+				end if;	
+-------------------------------------------------------------------------------------------
+-----------------------------------ARRONDISSEMENT---------------------------------------
+-------------------------------------------------------------------------------------------	
+				if to_number(facture_.NAROND) <> 0 then
+							v := v+1;
+							WPTA_ID := null;
+							WPSL_RANK := null;
+										begin
+										select ITE_ID,ite_name,VOW_UNIT  
+										INTO WITE_ID,wite_name,WVOW_UNIT  
+										from genitem s 
+										where s.ITE_CODE = 'NAROND';
+										exception when no_data_found then null;
+										end;
+										begin
+										select tva_id 
+										into wtva_id 
+										from gentva 
+										where tva_taux= 0;
+										exception when no_data_found then wtva_id := 25;
+										end;
+
+										select count(*) 
+										into nbr 
+										from genptaslice 
+										where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
+														 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=WITE_ID )
+														);
+										if nbr=1 then
+										
+											select PTA_ID,PSL_RANK  
+											into WPTA_ID,WPSL_RANK 
+											from genptaslice 
+											where PTA_ID in (select PTA_ID 
+															 from genitemperiodtarif 
+															 where TAR_id in (select tar_id from genitemtarif where ITE_ID=WITE_ID)
+															)
+											and rownum=1;
+										
+										end if;
+
+										if nbr>1 then
+											select PTA_ID,PSL_RANK  
+											into WPTA_ID,WPSL_RANK 
+											from genptaslice 
+											where   PTA_ID
+											in (select PTA_ID 
+												from genitemperiodtarif
+												where TAR_id in (select tar_id from genitemtarif where ITE_ID=WITE_Id) 
+											   )and rownum=1;
+										 
+										end if;
+
+										BEGIN
+											insert into genbilline
+																	(
+																	BIL_ID			    ,--1   NUMBER(10) not null,
+																	BLI_REVERSEBLI_ID	,--2   NUMBER(10),
+																	BLI_NUMBER		    ,--3   NUMBER(4) not null,
+																	BLI_REVERSEBLINUMBER,--4   NUMBER(4),
+																	BLI_NAME            ,--5   VARCHAR2(200),
+																	BLI_EXERCICE		,--6   NUMBER(4),
+																	ITE_ID				,--7   NUMBER(10) not null,
+																	PTA_ID				,-- 8  NUMBER(10) not null,
+																	PSL_RANK			,--9   NUMBER(2),
+																	IMP_ID				,--10  NUMBER(10),
+																	BLI_VOLUMEBASE		,--11  NUMBER(17,10),
+																	BLI_VOLUMEFACT		,--12  NUMBER(17,10),
+																	BLI_PUHT			,--13  NUMBER(17,3),
+																	TVA_ID				,--14  NUMBER(10) not null,
+																	BLI_MHT				,--15  NUMBER(17,10),
+																	BLI_MTTVA			,--16  NUMBER(17,10),
+																	BLI_MTTC			,--17  NUMBER(17,10),
+																	BLI_STARTDT			,--18  DATE,
+																	BLI_ENDDT			,--19  DATE,
+																	VOW_UNIT			,--20  NUMBER(10),
+																	BLI_NBUNITES		,--21  NUMBER(10),
+																	BLI_DETAIL			,--22  NUMBER(1) default 0 not null,
+																	BLI_CANCEL			,--23  NUMBER(1) default 0 not null,
+																	IMC_ID				,--24  NUMBER(10),
+																	IMP_ANALYTIQUE_ID	,--25  NUMBER(10),
+																	BLI_PERIODEINIT		,--26  VARCHAR2(20),
+																	BLI_PERIODE			,--27  VARCHAR2(20),
+																	BLI_REVERSEDT		,--28  DATE,
+																	BLI_CREDT			,--29  DATE default sysdate,
+																	BLI_UPDTDT			,--30  DATE,
+																	BLI_UPDTBY			,--31  NUMBER(10),
+																	MEU_ID				,--32  NUMBER(10),
+																	BLI_NAME_A			,--33  VARCHAR2(200),
+																	BLI_REVERSEBLIDEC_ID,--34  NUMBER(10),
+																	BLI_REVERSEBLINUMBERDEC,--35 NUMBER(4),
+																	BLI_REVERSEDECDT    ,--35 
+																	)
+															values
+																	(
+																	New_Genbill.BIL_ID,--1
+																	null				,--2
+																	v					,--3
+																	null				,--4
+																	wite_name			,--5
+																	anneereel_			,--6
+																	WITE_ID				,--7
+																	WPTA_ID				,--8
+																	WPSL_RANK			,--9
+																	null				,--10
+																	1					,--11
+																	1					,--12
+																	decode(facture_.caron,'1',-1,1)*(facture_.NAROND/1000)			,--13
+																	WTVA_ID				,--14
+																	decode(facture_.caron,'1',-1,1)*(facture_.NAROND/1000)		,--15
+																	0					,--16
+																	decode(facture_.caron,'1',-1,1)*(facture_.NAROND/1000)		,--17
+																	New_genrun.RUN_STARTDT,--18
+																	V_FAC_DATECALCUL	,--19
+																	WVOW_UNIT			,--20
+																	null				,--21
+																	0					,--22
+																	0					,--23
+																	null				,--24
+																	null				,--25
+																	null				,--26
+																	null				,--27
+																	null				,--28
+																	null				,--29
+																	null				,--30
+																	null				,--31
+																	null				,--32
+																	null				,--33
+																	null				,--34
+																	null				,--35
+																	null				 --36
+																	);
+																EXCEPTION WHEN OTHERS THEN
+																	BEGIN
+																	insert into genbilline
+																		(
+																			BIL_ID			    ,--1   
+																			BLI_REVERSEBLI_ID	,--2   
+																			BLI_NUMBER			,--3   
+																			BLI_REVERSEBLINUMBER,--4 
+																			BLI_NAME          	,--5   
+																			BLI_EXERCICE		,--6   
+																			ITE_ID				,--7   
+																			PTA_ID				,--8  
+																			PSL_RANK			,--9   
+																			IMP_ID				,--10  
+																			BLI_VOLUMEBASE		,--11  
+																			BLI_VOLUMEFACT		,--12  
+																			BLI_PUHT			,--13  
+																			TVA_ID				,--14  
+																			BLI_MHT				,--15  
+																			BLI_MTTVA			,--16  
+																			BLI_MTTC			,--17  
+																			BLI_STARTDT			,--18  
+																			BLI_ENDDT			,--19  
+																			VOW_UNIT			,--20  
+																			BLI_NBUNITES		,--21  
+																			BLI_DETAIL			,--22  
+																			BLI_CANCEL			,--23  
+																			IMC_ID				,--24  
+																			IMP_ANALYTIQUE_ID	,--25  
+																			BLI_PERIODEINIT		,--26  
+																			BLI_PERIODE			,--27  
+																			BLI_REVERSEDT		,--28  
+																			BLI_CREDT			,--29  
+																			BLI_UPDTDT			,--30  
+																			BLI_UPDTBY			,--31  
+																			MEU_ID				,--32  
+																			BLI_NAME_A			,--33  
+																			BLI_REVERSEBLIDEC_ID,--34  
+																			BLI_REVERSEBLINUMBERDEC,--35 
+																			BLI_REVERSEDECDT    --36
+																			)
+																			values
+																			(
+																			New_Genbill.BIL_ID	,--1
+																			null				,--2
+																			v+1					,--3
+																			null				,--4
+																			wite_name			,--5
+																			anneereel_			,--6
+																			WITE_ID				,--7
+																			WPTA_ID				,--8
+																			WPSL_RANK			,--9
+																			null				,--10
+																			1					,--11
+																			1					,--12
+																			decode(facture_.caron,'1',-1,1)*(facture_.NAROND/1000)			,--13
+																			WTVA_ID				,--14
+																			decode(facture_.caron,'1',-1,1)*(facture_.NAROND/1000)		,--15
+																			0					,--16
+																			decode(facture_.caron,'1',-1,1)*(facture_.NAROND/1000)		,--17
+																			New_genrun.RUN_STARTDT,--18
+																			V_FAC_DATECALCUL	,--19
+																			WVOW_UNIT			,--20
+																			null				,--21
+																			0					,--22
+																			0					,--23
+																			null				,--24
+																			null				,--25
+																			null				,--26
+																			null				,--27
+																			null				,--28
+																			null				,--29
+																			null				,--30
+																			null				,--31
+																			null				,--32
+																			null				,--33
+																			null				,--34
+																			null				,--35
+																			null				 --36
+																			);
+																	EXCEPTION WHEN OTHERS THEN NULL;
+																	END;
+											END;
+				end if;	
 	
 	
 		end loop;				  
