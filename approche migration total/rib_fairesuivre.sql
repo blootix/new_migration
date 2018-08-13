@@ -1,18 +1,18 @@
 declare
-cursor C_rib_part is select trim(t.banque)||trim(t.agence)||trim(t.num_compte)||trim(t.cle_rib) rib,t.*
-						  from branchement t,abonnees a
-						  where lpad(trim(a.dist),2,'0')=trim(t.district)
-						  and   lpad(trim(a.tou),3,'0')=lpad(trim(t.tourne),3,'0')
-						  and   lpad(trim(a.ord),3,'0')=lpad(trim(t.ordre),3,'0')
-						  and   trim(a.categ)=5
-						  and trim(t.banque)||trim(t.agence)||trim(t.num_compte)||trim(t.cle_rib) in (select trim(p.rib) from rib_part p);
-	cursor C_rib_GC is select trim(t.banque)||trim(t.agence)||trim(t.num_compte)||trim(t.cle_rib) rib,t.*
-					  from branchement t,abonnees_gr a
-					  where lpad(trim(a.dist),2,'0')=trim(t.district)
-					  and   lpad(trim(a.tou),3,'0')=lpad(trim(t.tourne),3,'0')
-					  and   lpad(trim(a.ord),3,'0')=lpad(trim(t.ordre),3,'0')
-					  and   trim(a.categ)=5
-					  and trim(t.banque)||trim(t.agence)||trim(t.num_compte)||trim(t.cle_rib) in (select trim(p.rib) from rib_gr p);
+	cursor C_rib_part is select trim(t.banque)||trim(t.agence)||trim(t.num_compte)||trim(t.cle_rib) rib,t.*
+						 from branchement t,abonnees a
+						 where lpad(trim(a.dist),2,'0')=trim(t.district)
+						 and   lpad(trim(a.tou),3,'0')=lpad(trim(t.tourne),3,'0')
+						 and   lpad(trim(a.ord),3,'0')=lpad(trim(t.ordre),3,'0')
+						 and   trim(a.categ)=5
+						 and trim(t.banque)||trim(t.agence)||trim(t.num_compte)||trim(t.cle_rib) in (select trim(p.rib) from rib_part p);
+	cursor C_rib_GC   is select trim(t.banque)||trim(t.agence)||trim(t.num_compte)||trim(t.cle_rib) rib,t.*
+						 from branchement t,abonnees_gr a
+					     where lpad(trim(a.dist),2,'0')=trim(t.district)
+					     and   lpad(trim(a.tou),3,'0')=lpad(trim(t.tourne),3,'0')
+					     and   lpad(trim(a.ord),3,'0')=lpad(trim(t.ordre),3,'0')
+					     and   trim(a.categ)=5
+					     and trim(t.banque)||trim(t.agence)||trim(t.num_compte)||trim(t.cle_rib) in (select trim(p.rib) from rib_gr p);
 				 																							 
 	cursor branch_(district_ varchar2, tourne_ varchar2, ordre_ varchar2) is 
 	select  b.*
@@ -217,14 +217,9 @@ for c in C_FGC loop
 		end;
  
          insert into genpartyparty(paa_id,par_parent_id,VOW_PARTYTP,ADR_ID,PAA_STARTDT)
-                           values(v_paa_id,v_par_id,pk_genvocword.getidbycode('VOW_PARTYTP','4',null),v_adr_id,v_date_start);
+                            values(v_paa_id,v_par_id,pk_genvocword.getidbycode('VOW_PARTYTP','4',null),v_adr_id,v_date_start);
         commit;
 		end loop;
 end loop; 
-  
-  
-  
-  
-  
 end;
 /
