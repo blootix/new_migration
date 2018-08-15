@@ -1,18 +1,18 @@
 declare 
 cursor branch_(district_ varchar2, tourne_ varchar2, ordre_ varchar2) is 
-    select  b.*
-    from branchement b
-    where  lpad(trim(b.district),2,'0')=district_
-	 and lpad(trim(b.tourne),3,'0') = tourne_
-     and lpad(trim(b.ordre),3,'0') = ordre_;
+select  b.*
+from branchement b
+where  lpad(trim(b.district),2,'0')=district_
+and lpad(trim(b.tourne),3,'0') = tourne_
+and lpad(trim(b.ordre),3,'0') = ordre_;
 	 
 cursor C_ITEM(V_Icode varchar2) is select ITE_ID,ite_name,VOW_UNIT  
-									from genitem s 
-									where s.ITE_CODE=V_Icode;
+								   from genitem s 
+								   where s.ITE_CODE=V_Icode;
 					
 cursor C_TVA(v_taux number) is select tva_id 
-							from gentva 
-							where tva_taux=v_taux;
+							   from gentva 
+							   where tva_taux=v_taux;
 	 
 cursor fact_as400   is select * from facture_as400;
 
@@ -28,16 +28,16 @@ cursor fact_vers    is select distinct b.BIL_CODE,b.BIL_CALCDT,f.*,d.*
 						and b.bil_id=d.bil_id;
 
 cursor fact_IMPPART    is select * from  impayees_part p 
-                       where not exists (select 'X' from genbill b 
-                                         where b.BIL_CODE = (lpad(trim(DISTRICT),2,'0')||lpad(trim(tournee),3,'0')||
-                                         lpad(trim(ORDRE),3,'0')||to_char(annee)||lpad(trim(p.trimestre),2,'0')||0)
-                                         )
-                       and  p.net<>p.mtpaye ; 
+						  where not exists (select 'X' from genbill b 
+											 where b.BIL_CODE = (lpad(trim(DISTRICT),2,'0')||lpad(trim(tournee),3,'0')||
+											 lpad(trim(ORDRE),3,'0')||to_char(annee)||lpad(trim(p.trimestre),2,'0')||0)
+											)
+						  and  p.net<>p.mtpaye; 
 
 cursor fact_IMPGC is select * from impayees_gc  
                      where  not exists (select 'X' from genbill b 
-                                       where b.BIL_CODE =(lpad(trim(DISTRICT),2,'0')||lpad(tournee,3,'0')||
-														lpad(ORDRE,3,'0')||to_char(annee)||lpad(mois,2,'0')||0))
+                                        where b.BIL_CODE =(lpad(trim(DISTRICT),2,'0')||lpad(tournee,3,'0')||
+														   lpad(ORDRE,3,'0')||to_char(annee)||lpad(mois,2,'0')||0))
                       and trim(net)<>trim(mtpaye); 				   
 
 	MEU_ID     		  Number ;
@@ -96,7 +96,6 @@ cursor fact_IMPGC is select * from impayees_gc
     New_Agrbill       agrbill%rowtype;
     Agrbill_Id        Number ;
     ref_Agrbill       Number ;
-
 
     New_genimp        genimp%rowtype ;
     genimp_id         Number ;
@@ -177,7 +176,7 @@ BEGIN
 			else
 				V_anneereel := '20'||to_char((to_number(facture_.refc04)-1));
 			end if;
-			begin
+			BEGIN
 				select TRIM,tier,six
 				into V_periode,V_tiers,V_six
 				from param_tournee p
@@ -189,20 +188,15 @@ BEGIN
 										where trim(t.code)=lpad(facture_.tou,3,'0')
 										and trim(t.district)=trim(p.DISTRICT)
 										and trim(t.district)=facture_.dist
-										);
-			exception
-			when others then
+									   );
+			EXCEPTION WHEN OTHERS THEN
 			V_periode := 1;
-			end;
-			
+			END;
 			V_ID_FACTURE:=lpad(trim(facture_.DIST),2,'0')||lpad(trim(facture_.tou),3,'0')||lpad(trim(facture_.ORD),3,'0')||to_char(V_anneereel)||lpad(to_char(V_periode),2,'0')||to_char(v_version);
-						  
-			V_pdl_ref := lpad(trim(facture_.DIST),2,'0')||lpad(trim(facture_.tou),3,'0')||lpad(trim(facture_.ORD),3,'0')||lpad(trim(facture_.pol),5,'0');			  
-						  
+			V_pdl_ref   := lpad(trim(facture_.DIST),2,'0')||lpad(trim(facture_.tou),3,'0')||lpad(trim(facture_.ORD),3,'0')||lpad(trim(facture_.pol),5,'0');			  
 			select count(*) into v_nbr from genbill b where b.BIL_CODE=V_ID_FACTURE;
 			
 			if v_nbr=0 then 
-			 
 			    V_FAC_DATECALCUL :=null;
 				V_FAC_DATELIM    :=null;
 				V_TRAIN_FACT     :=null;
@@ -232,9 +226,7 @@ BEGIN
 					 TECSERVICEPOINT spt
 				where sag.spt_id=spt.spt_id 
 				and spt.spt_refe=V_pdl_ref;				
-				
 				V_TRAIN_FACT :='ANNEE:'||trim(V_anneereel)||' TRIM:'||trim(V_periode)||' TIER:'||trim(V_tiers)||' SIX:'||trim(V_six );
-				
 				V_REF_ABN :=lpad(trim(facture_.DIST),2,'0')||lpad(to_char(trim(facture_.pol)),5,'0')||lpad(trim(facture_.tou),3,'0')||lpad(trim(facture_.ORD),3,'0');			   
 				V_COMPTEAUX:='IMP_MIG'			   
 				V_TOTHTE:=(facture_.net-(V_TVA+facture_.arriere))/1000;
@@ -242,11 +234,9 @@ BEGIN
 				V_TOTHTA:=0;
 				V_TOTTVAA:=0;
 				V_SOLDE:=(facture_.net-facture_.arriere)/1000;
-				
 				select last_day(to_date('01'||lpad(facture_.refc03,2,'0')||facture_.refc04,'ddmmyy')) 
                 into V_date_
                 from dual;
-				
 				BEGIN
 					select to_date(lpad(trim(DATEXP),8,'0'),'ddmmyyyy'),
 					to_date(lpad(trim(DATL),8,'0'),'ddmmyyyy')   
@@ -273,7 +263,7 @@ BEGIN
 			      New_Det     := null;
 				  New_Genbill := null;
 				  New_genrun  := null;
-			    --------------------------------------------------------Traitement Role
+--------------------------------------------------------Traitement Role
 				If (V_anneereel is not null and V_periode is not null and V_TRAIN_FACT is not null) then			
 					New_genrun.RUN_EXERCICE   :=  V_anneereel;
 					New_genrun.RUN_NUMBER     :=  V_periode ;
@@ -283,7 +273,7 @@ BEGIN
 					New_genrun.RUN_NAME       :=  'Role '||V_TRAIN_FACT;
 				Genere_genrun(New_genrun,genrun_id,genrun_ref);
 				end if ; 			
-				--------------------------------------------------------Traitement Det
+--------------------------------------------------------Traitement Det
 				New_Det.DEB_ID           :=  Debt_Id ;
 				New_Det.DEB_REFE         :=  V_ID_FACTURE;
 				New_Det.ORG_ID           :=  V_ORG_ID;
@@ -331,9 +321,9 @@ BEGIN
 				New_Agrbill.BIL_ID            :=  Agrbill_Id ;
 				New_Agrbill.SAG_ID            :=  V_SAG_ID;
 				New_Agrbill.VOW_AGRBILLTYPE   :=  pk_genvocword.getidbycode('VOW_AGRBILLTYPE','FC',null);
-				New_Agrbill.VOW_MODEFACT      :=  pk_genvocword.getidbycode('VOW_MODEFACT',4,null);
-				Insert into agrbill (BIL_ID,SAG_ID,VOW_AGRBILLTYPE,VOW_MODEFACT)
-							values (New_Agrbill.BIL_ID,New_Agrbill.SAG_ID,New_Agrbill.VOW_AGRBILLTYPE,New_Agrbill.VOW_MODEFACT);	
+				New_Agrbill.VOW_MODEFACT      :=  pk_genvocword.getidbycode('VOW_MODEFACT',4,null);--------NB:(4 ou MIG) a verifier
+				Insert into agrbill(BIL_ID,SAG_ID,VOW_AGRBILLTYPE,VOW_MODEFACT)
+							 values(New_Agrbill.BIL_ID,New_Agrbill.SAG_ID,New_Agrbill.VOW_AGRBILLTYPE,New_Agrbill.VOW_MODEFACT);	
 				commit;
 --------------------------------------------------------Traitement genbill
 				New_Genbill.BIL_ID            :=  Agrbill_Id;
@@ -361,7 +351,7 @@ BEGIN
 				    V := V+1;
 						V_PTA_ID := null;
 						V_PSL_RANK := null;
-						begin
+						BEGIN
 						v_code:='CSM_STD';
 							for x in C_ITEM(v_code) loop
 							V_ITE_ID:=x.ite_id;
@@ -369,25 +359,24 @@ BEGIN
 							V_VOW_UNIT:=x.VOW_UNIT
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-						end;
-						begin
+						END;
+						BEGIN
 						v_tva_taux:= 18;
 							for v in C_TVA(v_tva_taux) loop
 							   V_tva_id:=v.tva_id; 
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN 
 						V_tva_id := 25;
-						end;
+						END;
 
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
 						where PTA_ID in (select PTA_ID 
-										from genitemperiodtarif 
-										where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
+										 from genitemperiodtarif 
+										 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
 										);
-
-						if V_nbr =1 then
+                        if V_nbr =1 then
 							select PTA_ID,PSL_RANK  
 							into V_PTA_ID,V_PSL_RANK 
 							from genptaslice 
@@ -409,7 +398,7 @@ BEGIN
 						end if;
 			   
 					BEGIN
-						insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+						INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 											   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 											   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
 										values(New_Genbill.BIL_ID,null,v,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.const1,facture_.const1,facture_.tauxt1/1000,V_tva_id,
@@ -417,11 +406,11 @@ BEGIN
 											   null,null,null,null,null,null,null,null,null,null,null,null);
 					EXCEPTION WHEN OTHERS THEN
 											BEGIN
-											insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+											INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 																   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 																   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-														    values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.const1,facture_.const1,facture_.tauxt1/1000,V_tva_id,
-																  facture_.montt1/1000,facture_.TVACONS/1000,(facture_.montt1/1000)+(facture_.TVACONS/1000), New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+														    VALUES(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.const1,facture_.const1,facture_.tauxt1/1000,V_tva_id,
+																  facture_.montt1/1000,facture_.TVACONS/1000,(facture_.montt1/1000)+(facture_.TVACONS/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
 																  null,null,null,null,null,null,null,null,null,null,null,null);
 									        EXCEPTION WHEN OTHERS THEN NULL;
 											END;
@@ -435,28 +424,28 @@ BEGIN
 				    v := v+1;
                         V_PTA_ID := null;
                         V_PSL_RANK := null;
-						begin
+						BEGIN
 						v_code:='CSM_STD';
 							for x in C_ITEM(v_code) loop
-							V_ITE_ID:=x.ite_id;
-							V_ite_name:=x.ite_name
-							V_VOW_UNIT:=x.VOW_UNIT
+								V_ITE_ID:=x.ite_id;
+								V_ite_name:=x.ite_name
+								V_VOW_UNIT:=x.VOW_UNIT
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-						end;
-						begin
+						END;
+						BEGIN
 						v_tva_taux:= 18;
 							for v in C_TVA(v_tva_taux) loop
 							   V_tva_id:=v.tva_id; 
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN 
 						V_tva_id := 25;
-						end;
+						END;
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
 						where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-										 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+										 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
 										);
 						if V_nbr =1 then
 							select PTA_ID,PSL_RANK  
@@ -482,17 +471,17 @@ BEGIN
 							insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 												   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 												   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-											values(New_Genbill.BIL_ID,null,v,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.const2,facture_.const2,facture_.tauxt2/1000,V_tva_id			   ,4
+											values(New_Genbill.BIL_ID,null,v,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.const2,facture_.const2,facture_.tauxt2/1000,V_tva_id,
 												   facture_.montt2/1000,facture_.TVACONS/1000,(facture_.montt2/1000)+(facture_.TVACONS/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
 													null,null,null,null,null,null,null,	null,null,null,null,null,);
 						EXCEPTION WHEN OTHERS THEN
 												BEGIN
-												insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-																	   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-																	   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-															   values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.const2,facture_.const2,facture_.tauxt2/1000,V_tva_id,
-																	  facture_.montt2/1000,facture_.TVACONS/1000,(facture_.montt2/1000)+(facture_.TVACONS/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-																	  null,null,null,null,null,null,null,null,null,null,null,null);
+													insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+																		   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+																		   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+																   values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.const2,facture_.const2,facture_.tauxt2/1000,V_tva_id,
+																		  facture_.montt2/1000,facture_.TVACONS/1000,(facture_.montt2/1000)+(facture_.TVACONS/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																		  null,null,null,null,null,null,null,null,null,null,null,null);
 												EXCEPTION WHEN OTHERS THEN NULL;
 												END;
 						END;
@@ -505,7 +494,7 @@ BEGIN
 				    v := v+1;
 					    V_PTA_ID := null;
 					    V_PSL_RANK := null;
-						begin
+						BEGIN
 						v_code:='CSM_STD';
 							for x in C_ITEM(v_code) loop
 							V_ITE_ID:=x.ite_id;
@@ -513,15 +502,15 @@ BEGIN
 							V_VOW_UNIT:=x.VOW_UNIT
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-						end;
-						begin
+						END;
+						BEGIN
 						v_tva_taux:= 18;
 							for v in C_TVA(v_tva_taux) loop
 							   V_tva_id:=v.tva_id; 
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN 
 						V_tva_id := 25;
-						end;
+						END;
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
@@ -557,12 +546,12 @@ BEGIN
 													null,null,null,null,null,null,null,null,null,null,null,null);
 						EXCEPTION WHEN OTHERS THEN
 												BEGIN
-												insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-																	   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-																	   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-																values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.const3,facture_.const3,facture_.tauxt3/1000,V_tva_id,
-																	  facture_.montt3/1000,facture_.TVACONS/1000,facture_.montt3/1000+(facture_.TVACONS/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-																	  null,null,null,null,null,null,null,null,null,null,null,null);
+													insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+																		   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+																		   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+																	values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.const3,facture_.const3,facture_.tauxt3/1000,V_tva_id,
+																		  facture_.montt3/1000,facture_.TVACONS/1000,facture_.montt3/1000+(facture_.TVACONS/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																		  null,null,null,null,null,null,null,null,null,null,null,null);
 												EXCEPTION WHEN OTHERS THEN NULL;
 												END;
 						END;
@@ -575,7 +564,7 @@ BEGIN
 					v := v+1;
 					    V_PTA_ID := null;
 					    V_PSL_RANK := null;	 
-						begin
+						BEGIN
 						v_code:='VAR_ONAS_1';
 							for x in C_ITEM(v_code) loop
 							V_ITE_ID:=x.ite_id;
@@ -583,15 +572,15 @@ BEGIN
 							V_VOW_UNIT:=x.VOW_UNIT
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-						end;
-						begin
+						END;
+						BEGIN
 						v_tva_taux= 0;
 							for v in C_TVA(v_tva_taux) loop
 							   V_tva_id:=v.tva_id; 
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN 
 						V_tva_id := 25;
-						end;
+						END;
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
@@ -620,20 +609,20 @@ BEGIN
 						 
 						end if;
                         BEGIN
-								insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-													   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-														BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-												values(New_Genbill.BIL_ID,null,v,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.volon1,facture_.volon1,facture_.tauon1/1000,V_tva_id,
-													   facture_.mon1/1000,0,facture_.mon1/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-													   null,null,null,null,null,null,null,null,null,null,null,null);
+							insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+												   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+												   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+											values(New_Genbill.BIL_ID,null,v,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.volon1,facture_.volon1,facture_.tauon1/1000,V_tva_id,
+												   facture_.mon1/1000,0,facture_.mon1/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+												   null,null,null,null,null,null,null,null,null,null,null,null);
 						EXCEPTION WHEN OTHERS THEN
 											BEGIN
-											insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-																   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-																   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-															values(	New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.volon1,facture_.volon1,facture_.tauon1/1000,V_tva_id,
-																  facture_.mon1/1000,0,facture_.mon1/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-																  null,null,null,null,null,null,null,null,null,null,null,null);
+												insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+																	   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+																	   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+																values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.volon1,facture_.volon1,facture_.tauon1/1000,V_tva_id,
+																	  facture_.mon1/1000,0,facture_.mon1/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																	  null,null,null,null,null,null,null,null,null,null,null,null);
 											EXCEPTION WHEN OTHERS THEN NULL;
 											END;
 						END;
@@ -646,7 +635,7 @@ BEGIN
 					v := v+1;
 						V_PTA_ID := null;
 						V_PSL_RANK := null;
-						begin
+						BEGIN
 						v_code:='VAR_ONAS_1';
 							for x in C_ITEM(v_code) loop
 							V_ITE_ID:=x.ite_id;
@@ -654,15 +643,15 @@ BEGIN
 							V_VOW_UNIT:=x.VOW_UNIT
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-						end;
-						begin
+						END;
+						BEGIN
 						v_tva_taux= 0;
 							for v in C_TVA(v_tva_taux) loop
 							   V_tva_id:=v.tva_id; 
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN 
 						V_tva_id := 25;
-						end;
+						END;
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
@@ -689,22 +678,21 @@ BEGIN
 										   )
 							and rownum=1;
 						end if;
-
-						BEGIN
+                        BEGIN
 							insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 												   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 												   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
 											values(New_Genbill.BIL_ID,null,v,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.volon2,facture_.volon2,facture_.tauon2/1000,V_tva_id,
-													facture_.mon2/1000,0,facture_.mon2/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-													null,null,null,null,null,null,null,null,null,null,null,null);
+												   facture_.mon2/1000,0,facture_.mon2/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+												   null,null,null,null,null,null,null,null,null,null,null,null);
 						EXCEPTION WHEN OTHERS THEN
 											BEGIN
 											insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 																   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 																   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-														   values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.volon2,facture_.volon2,facture_.tauon2/1000,V_tva_id,
-																 facture_.mon2/1000,0,facture_.mon2/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-																 null,null,null,null,null,null,null,null,null,null,null,null);
+														    values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.volon2,facture_.volon2,facture_.tauon2/1000,V_tva_id,
+																   facture_.mon2/1000,0,facture_.mon2/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																   null,null,null,null,null,null,null,null,null,null,null,null);
 											EXCEPTION WHEN OTHERS THEN NULL;
 											END;
 						END;
@@ -717,7 +705,7 @@ BEGIN
 				    v := v+1;
 					    V_PTA_ID := null;
 					    V_PSL_RANK := null;
-						begin
+						BEGIN
 						v_code:='VAR_ONAS_1';
 							for x in C_ITEM(v_code) loop
 							V_ITE_ID:=x.ite_id;
@@ -725,15 +713,15 @@ BEGIN
 							V_VOW_UNIT:=x.VOW_UNIT
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-						end;
-						begin
+						END;
+						BEGIN
 						v_tva_taux= 0;
 							for v in C_TVA(v_tva_taux) loop
 							   V_tva_id:=v.tva_id; 
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN 
 						V_tva_id := 25;
-						end;
+						END;
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
@@ -783,7 +771,6 @@ BEGIN
 						END;
 						commit;
 				end if;
-	           
 -------------------------------------------------------------------------------------------
 ----------------------------------- FRAIS FIXE ONAS-----------------------------
 -------------------------------------------------------------------------------------------	
@@ -791,7 +778,7 @@ BEGIN
 					v := v+1;
 						V_PTA_ID := null;
 						V_PSL_RANK := null;
-						begin
+						BEGIN
 						v_code:='FIXE_ONAS_1';
 							for x in C_ITEM(v_code) loop
 							V_ITE_ID:=x.ite_id;
@@ -799,15 +786,15 @@ BEGIN
 							V_VOW_UNIT:=x.VOW_UNIT
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-						end;
-						begin
+						END;
+						BEGIN
 						v_tva_taux= 0;
 							for v in C_TVA(v_tva_taux) loop
 							   V_tva_id:=v.tva_id; 
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN 
 						V_tva_id := 25;
-						end;
+						END;
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
@@ -862,7 +849,7 @@ BEGIN
 					v := v+1;
 						V_PTA_ID := null;
 						V_PSL_RANK := null;
-						begin
+						BEGIN
 						v_code:='FRS_FIX_CSM';
 							for x in C_ITEM(v_code) loop
 							V_ITE_ID:=x.ite_id;
@@ -871,14 +858,14 @@ BEGIN
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
 						end;
-						begin
+						BEGIN
 						v_tva_taux:= 18;
 							for v in C_TVA(v_tva_taux) loop
 							   V_tva_id:=v.tva_id; 
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN 
 						V_tva_id := 25;
-						end;
+						END;
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
@@ -906,22 +893,21 @@ BEGIN
 										    )
 							and rownum=1;
 						end if;
-
 						BEGIN
 							insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 												   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 												   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
 											values(New_Genbill.BIL_ID,null,v,null,V_ite_name,V_anneereel ,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.fraisctr/1000,V_tva_id			  
 												   facture_.fraisctr/1000,facture_.TVA_ff/1000,(facture_.fraisctr/1000)+(facture_.tva_ff/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-													null,null,null,null,null,null,null,null,null,null,null,null);
+												   null,null,null,null,null,null,null,null,null,null,null,null);
 						EXCEPTION WHEN OTHERS THEN
 												BEGIN
 												insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 																	   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 																	   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-														values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.fraisctr/1000,V_tva_id,
-															  facture_.fraisctr/1000,facture_.TVA_ff/1000,(facture_.fraisctr/1000)+(facture_.tva_ff/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-															  null,null,null,null,null,null,null,null,null,null,null,null);
+																values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.fraisctr/1000,V_tva_id,
+																	  facture_.fraisctr/1000,facture_.TVA_ff/1000,(facture_.fraisctr/1000)+(facture_.tva_ff/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																	  null,null,null,null,null,null,null,null,null,null,null,null);
 												EXCEPTION WHEN OTHERS THEN NULL;
 												END;
 						END;
@@ -934,7 +920,7 @@ BEGIN
 					v := v+1;
 						V_PTA_ID := null;
 						V_PSL_RANK := null;
-						begin
+						BEGIN
 						v_code:='FRS_FIX_PAVI_CPR';
 							for x in C_ITEM(v_code) loop
 							V_ITE_ID:=x.ite_id;
@@ -942,15 +928,15 @@ BEGIN
 							V_VOW_UNIT:=x.VOW_UNIT
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-						end;
-						begin
+						END;
+						BEGIN
 						v_tva_taux:= 18;
 							for v in C_TVA(v_tva_taux) loop
 							   V_tva_id:=v.tva_id; 
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN 
 						V_tva_id := 25;
-						end;
+						END;
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
@@ -988,12 +974,12 @@ BEGIN
 												   null,null,null,null,null,null,null,null,null,null,null,null);
 						EXCEPTION WHEN OTHERS THEN
 											BEGIN
-											 insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-																	BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-																	BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-															values(New_Genbill.BIL_ID,null,	v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.fermeture/1000,V_tva_id,
-																  facture_.fermeture/1000,facture_.tvaferm/1000,(facture_.fermeture/1000)+(facture_.tvaferm/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-																  null,null,null,null,null,null,null,null,null,null,null,null);
+											    insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+																	   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+																	   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+																values(New_Genbill.BIL_ID,null,	v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.fermeture/1000,V_tva_id,
+																	  facture_.fermeture/1000,facture_.tvaferm/1000,(facture_.fermeture/1000)+(facture_.tvaferm/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																	  null,null,null,null,null,null,null,null,null,null,null,null);
 											EXCEPTION WHEN OTHERS THEN NULL;
 											END;
 						END;
@@ -1006,7 +992,7 @@ BEGIN
 					 v := v+1;
 						V_PTA_ID := null;
 						V_PSL_RANK := null;
-						begin
+						BEGIN
 						v_code:='F_DEPLACEMNT';
 							for x in C_ITEM(v_code) loop
 							V_ITE_ID:=x.ite_id;
@@ -1014,15 +1000,15 @@ BEGIN
 							V_VOW_UNIT:=x.VOW_UNIT
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-						end;
-						begin
+						END;
+						BEGIN
 						v_tva_taux:= 18;
 							for v in C_TVA(v_tva_taux) loop
 							   V_tva_id:=v.tva_id; 
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN 
 						V_tva_id := 25;
-						end;
+						END;
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
@@ -1066,18 +1052,17 @@ BEGIN
 																	null,null,null,null,null,null,null,null,null,null,null,null);
 											EXCEPTION WHEN OTHERS THEN NULL;
 											END;
-							END;
-							commit;
+						END;
+						commit;
 				end if;
-	
 -------------------------------------------------------------------------------------------
------------------------------------Frais de dépose suite à la demande du client---------------------------------------
+-----------------------------------Frais de dépose suite à la demande du client------------
 -------------------------------------------------------------------------------------------	
 				if to_number(facture_.depose_dem) <> 0 then  
 					v := v+1;
 						V_PTA_ID := null;
 						V_PSL_RANK := null;
-						begin
+						BEGIN
 						v_code:='FRAIS_FRM_DEP';
 							for x in C_ITEM(v_code) loop
 							V_ITE_ID:=x.ite_id;
@@ -1085,15 +1070,15 @@ BEGIN
 							V_VOW_UNIT:=x.VOW_UNIT
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-						end;
-						begin
+						END;
+						BEGIN
 						v_tva_taux:= 18;
 							for v in C_TVA(v_tva_taux) loop
 							   V_tva_id:=v.tva_id; 
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN 
 						V_tva_id := 25;
-						end;
+						END;
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
@@ -1101,8 +1086,7 @@ BEGIN
 										 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
 										);
 						if V_nbr =1 then
-						
-							select PTA_ID,PSL_RANK  
+						    select PTA_ID,PSL_RANK  
 							into V_PTA_ID,V_PSL_RANK 
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
@@ -1131,12 +1115,12 @@ BEGIN
 												   null,null,null,null,null,null,null,null,null,null,null,null);
 						EXCEPTION WHEN OTHERS THEN
 											BEGIN
-											 insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-																	BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-																	BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-															values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.depose_dem/1000,V_tva_id,
-																  facture_.depose_dem/1000,facture_.tvadepose_dem/1000,facture_.depose_dem/1000 + (facture_.tvadepose_dem/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-																  null,null,null,null,null,null,null,null,null,null,null,null);
+												insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+																	   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+																	   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+																values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.depose_dem/1000,V_tva_id,
+																	  facture_.depose_dem/1000,facture_.tvadepose_dem/1000,facture_.depose_dem/1000 + (facture_.tvadepose_dem/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																	  null,null,null,null,null,null,null,null,null,null,null,null);
 											EXCEPTION WHEN OTHERS THEN NULL;
 											END;
 						END;
@@ -1149,7 +1133,7 @@ BEGIN
 					v := v+1;
 						V_PTA_ID := null;
 						V_PSL_RANK := null;
-						begin
+						BEGIN
 						v_code:='FRS_DPOZ_RPOZ';
 							for x in C_ITEM(v_code) loop
 							V_ITE_ID:=x.ite_id;
@@ -1157,15 +1141,15 @@ BEGIN
 							V_VOW_UNIT:=x.VOW_UNIT
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-						end;
-						begin
+						END;
+						BEGIN
 						v_tva_taux:= 18;
 							for v in C_TVA(v_tva_taux) loop
 							   V_tva_id:=v.tva_id; 
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN 
 						V_tva_id := 25;
-						end;
+						END;
 
 						select count(*) 
 						into V_nbr 
@@ -1174,8 +1158,7 @@ BEGIN
 										 where TAR_id in(select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
 										);
 						if V_nbr =1 then
-						
-							select PTA_ID,PSL_RANK  
+						    select PTA_ID,PSL_RANK  
 							into V_PTA_ID,V_PSL_RANK 
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
@@ -1203,12 +1186,12 @@ BEGIN
 												   null,null,null,null,null,null,null,null,null,null,null,null);
 						EXCEPTION WHEN OTHERS THEN
 											BEGIN
-											insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-														           BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-														           BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-															values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.depose_def/1000,V_tva_id,
-																  facture_.depose_def/1000,facture_.tvadepose_def/1000,facture_.depose_def/1000 + (facture_.tvadepose_def/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-																  null,null,null,null,null,null,null,null,null,null,null,null);				 
+												insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+																	   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+																	   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+																values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.depose_def/1000,V_tva_id,
+																	  facture_.depose_def/1000,facture_.tvadepose_def/1000,facture_.depose_def/1000 + (facture_.tvadepose_def/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																	  null,null,null,null,null,null,null,null,null,null,null,null);				 
 											EXCEPTION WHEN OTHERS THEN NULL;
 											END;
 						END;
@@ -1221,7 +1204,7 @@ BEGIN
 					v := v+1;
 						V_PTA_ID := null;
 						V_PSL_RANK := null;
-						begin
+						BEGIN
 						v_code:='CAPITAL';
 							for x in C_ITEM(v_code) loop
 							V_ITE_ID:=x.ite_id;
@@ -1229,15 +1212,15 @@ BEGIN
 							V_VOW_UNIT:=x.VOW_UNIT
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-						end;
-						begin
+						END;
+						BEGIN
 						v_tva_taux:=0;
 							for v in C_TVA(v_tva_taux) loop
 							   V_tva_id:=v.tva_id; 
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN 
 						V_tva_id := 25;
-						end;
+						END;
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
@@ -1245,8 +1228,7 @@ BEGIN
 										 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
 										);
 						if V_nbr =1 then
-						
-							select PTA_ID,PSL_RANK  
+						    select PTA_ID,PSL_RANK  
 							into V_PTA_ID,V_PSL_RANK 
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
@@ -1277,7 +1259,7 @@ BEGIN
 											 insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 																    BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 																	BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-															 values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.CAPIT/1000	,V_tva_id,
+															 values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.CAPIT/1000,V_tva_id,
 																   facture_.CAPIT/1000,facture_.tva_capit/1000,facture_.CAPIT/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
 																   null,null,null,null,null,null,null,null,null,null,null,null	);
 											EXCEPTION WHEN OTHERS THEN NULL;
@@ -1292,7 +1274,7 @@ BEGIN
 					v := v+1;
 						V_PTA_ID := null;
 						V_PSL_RANK := null;
-						begin
+						BEGIN
 						v_code:='INTERET';
 							for x in C_ITEM(v_code) loop
 							V_ITE_ID:=x.ite_id;
@@ -1300,15 +1282,15 @@ BEGIN
 							V_VOW_UNIT:=x.VOW_UNIT
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-						end;
-						begin
+						END;
+						BEGIN
 						v_tva_taux:=0;
 							for v in C_TVA(v_tva_taux) loop
 							   V_tva_id:=v.tva_id; 
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN 
 						V_tva_id := 25;
-						end;
+						END;
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
@@ -1316,8 +1298,7 @@ BEGIN
 										 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
 										);
 						if V_nbr =1 then
-						
-							select PTA_ID,PSL_RANK  
+						    select PTA_ID,PSL_RANK  
 							into V_PTA_ID,V_PSL_RANK 
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
@@ -1335,10 +1316,8 @@ BEGIN
 											 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
 							                )
 							and rownum=1;
-						 
 						end if;
-
-						BEGIN
+                        BEGIN
 							INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 												  BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 												  BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
@@ -1357,8 +1336,7 @@ BEGIN
 											END;
 						END;
 						commit;
-				end if;	
-				
+				end if;				
 -------------------------------------------------------------------------------------------
 -----------------------------------MONTANT BRANCHEMENT---------------------------------------
 -------------------------------------------------------------------------------------------	
@@ -1366,7 +1344,7 @@ BEGIN
 					v := v+1;
 						V_PTA_ID   := null;
 						V_PSL_RANK := null;
-						begin
+						BEGIN
 						v_code:='COURETABBR';
 							for x in C_ITEM(v_code) loop
 							V_ITE_ID:=x.ite_id;
@@ -1374,15 +1352,15 @@ BEGIN
 							V_VOW_UNIT:=x.VOW_UNIT
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-						end;
-						begin
+						END;
+						BEGIN
 						v_tva_taux:= 0;
 							for v in C_TVA(v_tva_taux) loop
 							   V_tva_id:=v.tva_id; 
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN 
 						V_tva_id := 25;
-						end;
+						END;
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
@@ -1390,8 +1368,7 @@ BEGIN
 										 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
 										);
 						if V_nbr =1 then
-						
-							select PTA_ID,PSL_RANK  
+						    select PTA_ID,PSL_RANK  
 							into V_PTA_ID,V_PSL_RANK 
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
@@ -1410,7 +1387,6 @@ BEGIN
 							                )
 							and rownum=1;
 						end if;
-
 						BEGIN
 							insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 												   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
@@ -1438,7 +1414,7 @@ BEGIN
 					v := v+1;
 						V_PTA_ID := null;
 						V_PSL_RANK := null;
-						begin
+						BEGIN
 						v_code:='PFINANCIER';
 							for x in C_ITEM(v_code) loop
 							V_ITE_ID:=x.ite_id;
@@ -1446,15 +1422,15 @@ BEGIN
 							V_VOW_UNIT:=x.VOW_UNIT
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-						end;
-						begin
+						END;
+						BEGIN
 						v_tva_taux:= 0;
 							for v in C_TVA(v_tva_taux) loop
 							   V_tva_id:=v.tva_id; 
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN 
 						V_tva_id := 25;
-						end;
+						END;
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
@@ -1509,7 +1485,7 @@ BEGIN
 						V_PTA_ID   := null;
 						V_PSL_RANK := null;
 						V_BLI_MHT  :=null;
-						begin
+						BEGIN
 						v_code:='AREPOR';
 							for x in C_ITEM(v_code) loop
 							V_ITE_ID:=x.ite_id;
@@ -1517,15 +1493,15 @@ BEGIN
 							V_VOW_UNIT:=x.VOW_UNIT
 						end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-						end;
-						begin
+						END;
+						BEGIN
 						v_tva_taux:= 0;
 							for v in C_TVA(v_tva_taux) loop
 							   V_tva_id:=v.tva_id; 
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN 
 						V_tva_id := 25;
-						end;
+						END;
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
@@ -1533,8 +1509,7 @@ BEGIN
 										 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
 										);
 						if V_nbr =1 then
-						
-							select PTA_ID,PSL_RANK  
+						    select PTA_ID,PSL_RANK  
 							into V_PTA_ID,V_PSL_RANK 
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
@@ -1582,7 +1557,7 @@ BEGIN
 						V_PTA_ID   := null;
 						V_PSL_RANK := null;
 						V_BLI_MHT  :=null;
-						begin
+						BEGIN
 						v_code:='NAROND';
 							for x in C_ITEM(v_code) loop
 							V_ITE_ID:=x.ite_id;
@@ -1590,15 +1565,15 @@ BEGIN
 							V_VOW_UNIT:=x.VOW_UNIT
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-						end;
-						begin
+						END;
+						BEGIN
 						v_tva_taux:= 0;
 							for v in C_TVA(v_tva_taux) loop
 							   V_tva_id:=v.tva_id; 
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN 
 						V_tva_id := 25;
-						end;
+						END;
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
@@ -1606,8 +1581,7 @@ BEGIN
 										 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
 										);
 						if V_nbr =1 then
-						
-							select PTA_ID,PSL_RANK  
+						    select PTA_ID,PSL_RANK  
 							into V_PTA_ID,V_PSL_RANK 
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
@@ -1629,20 +1603,20 @@ BEGIN
 						end if;
 						V_BLI_MHT:=(decode(facture_.caron,'1',-1,1)*(facture_.NAROND/1000));
 						BEGIN
-							 insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-													BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-													BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+							insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+												   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+												   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
 											values(New_Genbill.BIL_ID,null,v,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,V_BLI_MHT,V_tva_id,
-													V_BLI_MHT,0,V_BLI_MHT,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-													null,null,null,null,null,null,null,null,null,null,null,null);	
+												   V_BLI_MHT,0,V_BLI_MHT,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+												   null,null,null,null,null,null,null,null,null,null,null,null);	
 						EXCEPTION WHEN OTHERS THEN
 											BEGIN
-											insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-																  BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-																  BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-															values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,V_BLI_MHT,V_tva_id,
-																   V_BLI_MHT,0,V_BLI_MHT,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-																   null,null,null,null,null,null,null,null,null,null,null,null);	
+												insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+																	  BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+																	  BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+																values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,V_BLI_MHT,V_tva_id,
+																	   V_BLI_MHT,0,V_BLI_MHT,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																	   null,null,null,null,null,null,null,null,null,null,null,null);	
 											EXCEPTION WHEN OTHERS THEN NULL;
 											END;
 						END;
@@ -1653,8 +1627,7 @@ BEGIN
 ------------------------------------------------------------------------------------------------------------------------	
 ----------------------Facture_AS400GC----------------------Facture_AS400GC---------------------------Facture_AS400GC-------------
 ------------------------------------------------------------------------------------------------------------------------	
-
-	for facture_ in fact_as400gc loop
+    for facture_ in fact_as400gc loop
 		V_ID_FACTURE :=null;
 		V_date_      :=null;
 		V_periode    :=null;
@@ -1750,8 +1723,7 @@ BEGIN
 					New_genrun.RUN_COMMENT    :=  'Role migré' ;
 					New_genrun.RUN_NAME       :=  'Role '||V_TRAIN_FACT;
 					Genere_genrun(New_genrun,genrun_id,genrun_ref);
-				end if ;
-					
+				end if;
 				--------------------------------------------------------Traitement Det
 				New_Det.DEB_ID           :=  Debt_Id ;
 				New_Det.DEB_REFE         :=  V_ID_FACTURE;
@@ -1770,11 +1742,11 @@ BEGIN
 					New_Det.deb_amount_cash  := -(V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA) ;
 					New_Det.DEB_AMOUNTINIT   := 0;
 					New_Det.VOW_DEBTYPE      := pk_genvocword.getidbycode('VOW_DEBTYPE','AV',null);
-				end if ;
+				end if;
 				New_Det.DEB_AMOUNTREMAIN :=  V_SOLDE ;
 				New_Det.DEB_COMMENT      :=  V_REF_ABN ;
 				New_Det.VOW_SETTLEMODE   := pk_genvocword.getidbycode('VOW_SETTLEMODE',4,null) ;
-				----------------------------------------------------------Traitement GENACCOUNT ,GENIMP
+----------------------------------------------------------Traitement GENACCOUNT ,GENIMP
 				New_genimp.imp_code      :=  V_COMPTEAUX ;
 				New_genimp.imp_name      :=  V_COMPTEAUX ;
 				New_genimp.vow_budgtp    :=  pk_genvocword.getidbycode('VOW_BUDGTP','EA',null);
@@ -1792,14 +1764,14 @@ BEGIN
 				Insert into gendebt(deb_id,deb_refe,org_id,par_id,adr_id,deb_date,deb_duedt,deb_printdt,deb_amountinit,deb_amountremain,bap_id,
 									vow_settlemode,aco_id,deb_norecovery,deb_credt,deb_updtby,deb_updtdt,deb_comment,sag_id,vow_debtype,deb_prel)
 						    values(New_Det.deb_id,New_Det.deb_refe,New_Det.org_id,New_Det.par_id,New_Det.adr_id,New_Det.deb_date,New_Det.deb_duedt,New_Det.deb_printdt,
-								  New_Det.deb_amountinit,New_Det.deb_amountremain,New_Det.bap_id,New_Det.vow_settlemode,New_Det.aco_id,New_Det.deb_norecovery,New_Det.deb_credt, 
-								  New_Det.deb_updtby,New_Det.deb_updtdt,New_Det.DEB_COMMENT,nvl(New_Det.deb_amount_cash,0),New_Det.SAG_ID,New_Det.VOW_DEBTYPE,New_Det.DEB_PREL); 
+								   New_Det.deb_amountinit,New_Det.deb_amountremain,New_Det.bap_id,New_Det.vow_settlemode,New_Det.aco_id,New_Det.deb_norecovery,New_Det.deb_credt, 
+								   New_Det.deb_updtby,New_Det.deb_updtdt,New_Det.DEB_COMMENT,nvl(New_Det.deb_amount_cash,0),New_Det.SAG_ID,New_Det.VOW_DEBTYPE,New_Det.DEB_PREL); 
 							commit;
 --------------------------------------------------------Traitement agrbill
 				New_Agrbill.BIL_ID            :=  Agrbill_Id ;
 				New_Agrbill.SAG_ID            :=  V_SAG_ID;
 				New_Agrbill.VOW_AGRBILLTYPE   :=  pk_genvocword.getidbycode('VOW_AGRBILLTYPE','FC',null) ;
-				New_Agrbill.VOW_MODEFACT      :=  pk_genvocword.getidbycode('VOW_MODEFACT',4,null) ;
+				New_Agrbill.VOW_MODEFACT      :=  pk_genvocword.getidbycode('VOW_MODEFACT',4,null);--------NB:(4 ou MIG) a verifier
 				Insert into agrbill (BIL_ID,SAG_ID,VOW_AGRBILLTYPE,VOW_MODEFACT)
 						     values (New_Agrbill.BIL_ID,New_Agrbill.SAG_ID,New_Agrbill.VOW_AGRBILLTYPE,New_Agrbill.VOW_MODEFACT);	
 			    commit;
@@ -1830,7 +1802,7 @@ BEGIN
 				v := v+1;
 					V_PTA_ID   := null;
 					V_PSL_RANK := null;
-					begin
+					BEGIN
 					v_code:='CSM_STD';
 						for x in C_ITEM(v_code) loop
 						V_ITE_ID:=x.ite_id;
@@ -1838,15 +1810,15 @@ BEGIN
 						V_VOW_UNIT:=x.VOW_UNIT
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-					end;
-					begin
+					END;
+					BEGIN
 					v_tva_taux:= 18;
 						for v in C_TVA(v_tva_taux) loop
 						   V_tva_id:=v.tva_id; 
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN 
 					V_tva_id := 25;
-					end;
+					END;
 					select count(*) 
 					into V_nbr 
 					from genptaslice 
@@ -1864,12 +1836,12 @@ BEGIN
 										 from genitemperiodtarif 
 										 where TAR_id in (select tar_id 
 														  from genitemtarif 
-														  where ITE_ID=V_ITE_ID)
+														  where ITE_ID=V_ITE_ID
+														  )
 										)
 						and rownum=1;
 					end if;
-
-					if V_nbr>1 then
+                    if V_nbr>1 then
 						select PTA_ID,PSL_RANK  
 						into V_PTA_ID,V_PSL_RANK 
 						from genptaslice 
@@ -1880,7 +1852,7 @@ BEGIN
 						and rownum=1;
 					end if;
 					BEGIN
-						insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+						INSERT into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 											   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 											   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
 										Values(New_Genbill.BIL_ID,null,v,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.const1,facture_.const1,facture_.tauxt1/1000,V_tva_id,
@@ -1899,7 +1871,6 @@ BEGIN
 					END;
 					commit;
 			end if; 
-			
 	-------------------------------------------------------------------------------------------
 	------------------------------------CONSOMMATION SONEDE 2EME TRANCHE--------------------------------------
 	-------------------------------------------------------------------------------------------		
@@ -1907,7 +1878,7 @@ BEGIN
 				v := v+1;
 					V_PTA_ID := null;
 					V_PSL_RANK := null;
-					begin
+					BEGIN
 						v_code:='CSM_STD';
 							for x in C_ITEM(v_code) loop
 							V_ITE_ID:=x.ite_id;
@@ -1915,15 +1886,15 @@ BEGIN
 							V_VOW_UNIT:=x.VOW_UNIT
 							end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-					end;
-					begin
+					END;
+					BEGIN
 					v_tva_taux:= 18;
 						for v in C_TVA(v_tva_taux) loop
 						   V_tva_id:=v.tva_id; 
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN 
 					V_tva_id := 25;
-					end;
+					END;
 					select count(*) 
 					into V_nbr 
 					from genptaslice 
@@ -1931,8 +1902,7 @@ BEGIN
 									 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
 									);
 					if V_nbr=1 then
-					
-						select PTA_ID,PSL_RANK  
+					    select PTA_ID,PSL_RANK  
 						into V_PTA_ID,V_PSL_RANK 
 						from genptaslice 
 						where PTA_ID in (select PTA_ID 
@@ -1951,22 +1921,21 @@ BEGIN
 						                )
 						and rownum=1;
 					end if;
-
-					BEGIN
-					insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-									  BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-									  BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-								values(New_Genbill.BIL_ID,null,v,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.const2,facture_.const2,facture_.tauxt2/1000,V_tva_id,
-									  facture_.montt2/1000,facture_.tvacons/1000,facture_.montt2/1000+(facture_.tvacons/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-									  null,null,null,null,null,null,null,null,null,null,null,null);
+                    BEGIN
+						INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+											   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+											   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+										VALUES(New_Genbill.BIL_ID,null,v,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.const2,facture_.const2,facture_.tauxt2/1000,V_tva_id,
+											   facture_.montt2/1000,facture_.tvacons/1000,facture_.montt2/1000+(facture_.tvacons/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+											   null,null,null,null,null,null,null,null,null,null,null,null);
 					EXCEPTION WHEN OTHERS THEN
 										BEGIN
-										insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-															   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-															   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-														values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.const2,facture_.const2,facture_.tauxt2/1000,V_tva_id,
-															  facture_.montt2/1000,facture_.tvacons/1000,facture_.montt2/1000+(facture_.tvacons/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-															  null,null,null,null,null,null,null,null,null,null,null,null);
+											INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+																   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+																   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+															values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.const2,facture_.const2,facture_.tauxt2/1000,V_tva_id,
+																   facture_.montt2/1000,facture_.tvacons/1000,facture_.montt2/1000+(facture_.tvacons/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																   null,null,null,null,null,null,null,null,null,null,null,null);
 										EXCEPTION WHEN OTHERS THEN NULL;
 										END;
 					END;
@@ -1979,7 +1948,7 @@ BEGIN
 				v := v+1;
 					V_PTA_ID := null;
 					V_PSL_RANK := null;
-					begin
+					BEGIN
 					v_code:='CSM_STD';
 						for x in C_ITEM(v_code) loop
 						V_ITE_ID:=x.ite_id;
@@ -1987,15 +1956,15 @@ BEGIN
 						V_VOW_UNIT:=x.VOW_UNIT
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-					end;
-					begin
+					END;
+					BEGIN
 					v_tva_taux:= 18;
 						for v in C_TVA(v_tva_taux) loop
 						   V_tva_id:=v.tva_id; 
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN 
 					V_tva_id := 25;
-					end;
+					END;
 					select count(*) 
 					into V_nbr 
 					from genptaslice 
@@ -2011,9 +1980,7 @@ BEGIN
 										 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
 										)
 						and rownum=1;
-						
 					end if;
-
 					if V_nbr>1 then
 						select PTA_ID,PSL_RANK  
 						into V_PTA_ID,V_PSL_RANK 
@@ -2025,20 +1992,20 @@ BEGIN
 						and rownum=1;
 					end if;						
                     BEGIN
-					insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-										  BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-										  BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-									values(New_Genbill.BIL_ID,null,v,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.const3,facture_.const3,facture_.tauxt3/1000,V_tva_id,
-										  facture_.montt3/1000,facture_.tvacons/1000,facture_.montt3/1000+(facture_.tvacons/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-										  null,null,null,null,null,null,null,null,null,null,null,null);
+						INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+											   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+											   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+										values(New_Genbill.BIL_ID,null,v,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.const3,facture_.const3,facture_.tauxt3/1000,V_tva_id,
+											  facture_.montt3/1000,facture_.tvacons/1000,facture_.montt3/1000+(facture_.tvacons/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+											  null,null,null,null,null,null,null,null,null,null,null,null);
 					EXCEPTION WHEN OTHERS THEN
 										BEGIN
-										insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-															   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-															   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-														values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.const3,facture_.const3,facture_.tauxt3/1000,V_tva_id,
-															  facture_.montt3/1000,facture_.tvacons/1000,facture_.montt3/1000+(facture_.tvacons/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-															  null,null,null,null,null,null,null,null,null,null,null,null);
+											INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+																   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+																   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+															values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.const3,facture_.const3,facture_.tauxt3/1000,V_tva_id,
+																  facture_.montt3/1000,facture_.tvacons/1000,facture_.montt3/1000+(facture_.tvacons/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																  null,null,null,null,null,null,null,null,null,null,null,null);
 										EXCEPTION WHEN OTHERS THEN NULL;
 										END;
 					END;
@@ -2051,7 +2018,7 @@ BEGIN
 				v := v+1;
 					V_PTA_ID := null;
 					V_PSL_RANK := null;
-					begin
+					BEGIN
 					v_code:='VAR_ONAS_1';
 						for x in C_ITEM(v_code) loop
 						V_ITE_ID:=x.ite_id;
@@ -2059,22 +2026,21 @@ BEGIN
 						V_VOW_UNIT:=x.VOW_UNIT
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-					end;
-					begin
+					END;
+					BEGIN
 					v_tva_taux= 0;
 						for v in C_TVA(v_tva_taux) loop
 						   V_tva_id:=v.tva_id; 
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN 
 					V_tva_id := 25;
-					end;
+					END;
 					select count(*) 
 					into V_nbr 
 					from genptaslice 
 					where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
 									 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
 									);
-
 					if V_nbr=1 then
 						select PTA_ID,PSL_RANK  
 						into V_PTA_ID,V_PSL_RANK 
@@ -2097,20 +2063,20 @@ BEGIN
 					end if;	
 
 					BEGIN
-						insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+						INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 											  BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 											  BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
 									   values(New_Genbill.BIL_ID,null,v,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.volon1,facture_.volon1,facture_.tauon1/1000,V_tva_id,
-											facture_.mon1/1000,0,facture_.mon1/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-											 null,null,null,null,null,null,null,null,null,null,null,null);
+											  facture_.mon1/1000,0,facture_.mon1/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+											  null,null,null,null,null,null,null,null,null,null,null,null);
 					EXCEPTION WHEN OTHERS THEN
 										BEGIN
-										insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-															   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-															   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-														  values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.volon1,facture_.volon1,facture_.tauon1/1000,V_tva_id,
-																 facture_.mon1/1000,0,facture_.mon1/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-																 null,null,null,null,null,null,null,null,null,null,null,null);
+											INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+																   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+																   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+															values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.volon1,facture_.volon1,facture_.tauon1/1000,V_tva_id,
+																   facture_.mon1/1000,0,facture_.mon1/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																   null,null,null,null,null,null,null,null,null,null,null,null);
 										EXCEPTION WHEN OTHERS THEN NULL;
 										END;
 					END;
@@ -2123,7 +2089,7 @@ BEGIN
 				v := v+1;
 					V_PTA_ID := null;
 					V_PSL_RANK := null;
-					begin
+					BEGIN
 					v_code:='VAR_ONAS_1';
 						for x in C_ITEM(v_code) loop
 						V_ITE_ID:=x.ite_id;
@@ -2131,15 +2097,15 @@ BEGIN
 						V_VOW_UNIT:=x.VOW_UNIT
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-					end;
-					begin
+					END;
+					BEGIN
 					v_tva_taux= 0;
 						for v in C_TVA(v_tva_taux) loop
 						   V_tva_id:=v.tva_id; 
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN 
 					V_tva_id := 25;
-					end;
+					END;
 					select count(*) 
 					into V_nbr 
 					from genptaslice 
@@ -2168,20 +2134,20 @@ BEGIN
 					end if;	
 
 					BEGIN
-						insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-											  BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-											  BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-										values(New_Genbill.BIL_ID,null,v,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.volon2,facture_.volon2,facture_.tauon2/1000,V_tva_id,
-												facture_.mon2/1000,0,facture_.mon2/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-												null,null,null,null,null,null,null,null,null,null,null,null);
+						INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+											   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+											   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+										VALUES(New_Genbill.BIL_ID,null,v,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.volon2,facture_.volon2,facture_.tauon2/1000,V_tva_id,
+											   facture_.mon2/1000,0,facture_.mon2/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+											   null,null,null,null,null,null,null,null,null,null,null,null);
 					EXCEPTION WHEN OTHERS THEN
 										BEGIN
-											insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-																	BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-																	BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-															values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.volon2,facture_.volon2,facture_.tauon2/1000,V_tva_id,
-																	facture_.mon2/1000,0,facture_.mon2/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-																	null,null,null,null,null,null,null,null,null,null,null,null);
+											INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+																   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+																   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+															VALUES(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.volon2,facture_.volon2,facture_.tauon2/1000,V_tva_id,
+																   facture_.mon2/1000,0,facture_.mon2/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																   null,null,null,null,null,null,null,null,null,null,null,null);
 										EXCEPTION WHEN OTHERS THEN NULL;
 										END;
 					END;
@@ -2194,23 +2160,23 @@ BEGIN
 				v := v+1;
 					V_PTA_ID := null;
 					V_PSL_RANK := null;
-					begin
+					BEGIN
 					v_code:='VAR_ONAS_1';
-						for x in C_ITEM(v_code) loop
+						FOR x in C_ITEM(v_code) LOOP
 						V_ITE_ID:=x.ite_id;
 						V_ite_name:=x.ite_name
 						V_VOW_UNIT:=x.VOW_UNIT
-						end loop;
+						END LOOP;
 					EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-					end;
-					begin
+					END;
+					BEGIN
 					v_tva_taux= 0;
-						for v in C_TVA(v_tva_taux) loop
+						FOR v in C_TVA(v_tva_taux) LOOP
 						   V_tva_id:=v.tva_id; 
-						end loop;
+						END LOOP;
 					EXCEPTION WHEN NO_DATA_FOUND THEN 
 					V_tva_id := 25;
-					end;
+					END;
 					select count(*) 
 					into V_nbr 
 					from genptaslice 
@@ -2239,19 +2205,19 @@ BEGIN
 					end if;	
 					BEGIN
 						insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-											  BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-											  BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+											   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+											   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
 										values(New_Genbill.BIL_ID,null,v,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.volon3,facture_.volon3,facture_.tauon3/1000,V_tva_id,
-												facture_.mon3/1000,0,facture_.mon3/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-												null,null,null,null,null,null,null,null,null,null,null,null);
+											   facture_.mon3/1000,0,facture_.mon3/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+											   null,null,null,null,null,null,null,null,null,null,null,null);
 					EXCEPTION WHEN OTHERS THEN
 										BEGIN
-										insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-															   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-															   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-														values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.volon3,facture_.volon3,facture_.tauon3/1000,V_tva_id,
-																facture_.mon3/1000,0,facture_.mon3/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-																null,null,null,null,null,null,null,null,null,null,null,null);
+											insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+																   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+																   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+															values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.volon3,facture_.volon3,facture_.tauon3/1000,V_tva_id,
+																   facture_.mon3/1000,0,facture_.mon3/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																   null,null,null,null,null,null,null,null,null,null,null,null);
 										EXCEPTION WHEN OTHERS THEN NULL;
 										END;
 					END;
@@ -2264,7 +2230,7 @@ BEGIN
 				v := v+1;
 					V_PTA_ID := null;
 					V_PSL_RANK := null;
-					begin
+					BEGIN
 					v_code:='FIXE_ONAS_1';
 						for x in C_ITEM(v_code) loop
 						V_ITE_ID:=x.ite_id;
@@ -2272,15 +2238,15 @@ BEGIN
 						V_VOW_UNIT:=x.VOW_UNIT
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-					end;
-					begin
+					END;
+					BEGIN
 					v_tva_taux= 0;
 						for v in C_TVA(v_tva_taux) loop
 						   V_tva_id:=v.tva_id; 
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN 
 					V_tva_id := 25;
-					end;
+					END;
 					select count(*) 
 					into V_nbr 
 					from genptaslice 
@@ -2307,22 +2273,21 @@ BEGIN
 										)
 						and rownum=1;
 					end if;	
-
 					BEGIN
 						insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 											   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 											   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
 										values(New_Genbill.BIL_ID,null,v,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.fixonas/1000,V_tva_id,
-												facture_.fixonas/1000,0,facture_.fixonas/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-												null,null,null,null,null,null,null,null,null,null,null,null);
+											   facture_.fixonas/1000,0,facture_.fixonas/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+											   null,null,null,null,null,null,null,null,null,null,null,null);
 					EXCEPTION WHEN OTHERS THEN
 										  BEGIN
-											insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-																   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-																   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-															values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.fixonas/1000,V_tva_id,
-																	facture_.fixonas/1000,0,facture_.fixonas/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-																	null,null,null,null,null,null,null,null,null,null,null,null);
+											  insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+																     BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+																     BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+															  values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.fixonas/1000,V_tva_id,
+																	 facture_.fixonas/1000,0,facture_.fixonas/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																	 null,null,null,null,null,null,null,null,null,null,null,null);
 										  EXCEPTION WHEN OTHERS THEN NULL;
 										  END;
 					END;
@@ -2335,7 +2300,7 @@ BEGIN
 				v := v+1;
 					V_PTA_ID := null;
 					V_PSL_RANK := null;
-					begin
+					BEGIN
 					v_code:='FRS_FIX_CSM';
 						for x in C_ITEM(v_code) loop
 						V_ITE_ID:=x.ite_id;
@@ -2343,15 +2308,15 @@ BEGIN
 						V_VOW_UNIT:=x.VOW_UNIT
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-					end;
-					begin
+					END;
+					BEGIN
 					v_tva_taux:= 18;
 						for v in C_TVA(v_tva_taux) loop
 						   V_tva_id:=v.tva_id; 
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN 
 					V_tva_id := 25;
-					end;
+					END;
 					select count(*) 
 					into V_nbr 
 					from genptaslice 
@@ -2378,22 +2343,21 @@ BEGIN
 										)
 						and rownum=1;
 					end if;	
-
-					BEGIN
+                    BEGIN
 						insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 											   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 											   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
 										values(New_Genbill.BIL_ID,,null,v,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.fraisctr/1000,V_tva_id,
-												facture_.fraisctr/1000,facture_.tva_ff/1000,(facture_.fraisctr/1000)+(facture_.TVA_ff/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-												null,null,null,null,null,null,null,null,null,null,null,null);
+											   facture_.fraisctr/1000,facture_.tva_ff/1000,(facture_.fraisctr/1000)+(facture_.TVA_ff/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+											   null,null,null,null,null,null,null,null,null,null,null,null);
 					EXCEPTION WHEN OTHERS THEN
 										BEGIN
 											insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-																	BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-																	BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+																   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+																   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
 															values(New_Genbill.BIL_ID,,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.fraisctr/1000,V_tva_id,
-																	facture_.fraisctr/1000,facture_.tva_ff/1000,(facture_.fraisctr/1000)+(facture_.TVA_ff/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-																	null,null,null,null,null,null,null,null,null,null,null,null);
+																   facture_.fraisctr/1000,facture_.tva_ff/1000,(facture_.fraisctr/1000)+(facture_.TVA_ff/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																   null,null,null,null,null,null,null,null,null,null,null,null);
 										EXCEPTION WHEN OTHERS THEN NULL;
 										END;
 					END;
@@ -2406,7 +2370,7 @@ BEGIN
 				v := v+1;
 					V_PTA_ID := null;
 					V_PSL_RANK := null;
-					begin
+					BEGIN
 					v_code:='CAPITAL';
 						for x in C_ITEM(v_code) loop
 						V_ITE_ID:=x.ite_id;
@@ -2414,20 +2378,20 @@ BEGIN
 						V_VOW_UNIT:=x.VOW_UNIT
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-					end;
-					begin
+					END;
+					BEGIN
 					v_tva_taux:=0;
 						for v in C_TVA(v_tva_taux) loop
 						   V_tva_id:=v.tva_id; 
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN 
 					V_tva_id := 25;
-					end;
+					END;
 					select count(*) 
 					into V_nbr 
 					from genptaslice 
 					where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-									 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+									 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
 									);
 					if V_nbr=1 then
 					select PTA_ID,PSL_RANK  
@@ -2449,8 +2413,7 @@ BEGIN
 										)
 						and rownum=1;
 					end if;	
-
-					BEGIN
+                    BEGIN
 						insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 											   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 											   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
@@ -2477,7 +2440,7 @@ BEGIN
 				v := v+1;
 					V_PTA_ID := null;
 					V_PSL_RANK := null;
-					begin
+					BEGIN
 					v_code:='INTERET';
 						for x in C_ITEM(v_code) loop
 						V_ITE_ID:=x.ite_id;
@@ -2485,15 +2448,15 @@ BEGIN
 						V_VOW_UNIT:=x.VOW_UNIT
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-					end;
-					begin
+					END;
+					BEGIN
 					v_tva_taux:=0;
 						for v in C_TVA(v_tva_taux) loop
 						   V_tva_id:=v.tva_id; 
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN 
 					V_tva_id := 25;
-					end;
+					END;
 					select count(*) 
 					into V_nbr 
 					from genptaslice 
@@ -2521,20 +2484,20 @@ BEGIN
 						and rownum=1;
 					end if;	
 					BEGIN
-					insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-										   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-										   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-									values(New_Genbill.BIL_ID,null,v,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.INTER/1000,V_TVA_ID,
-										  facture_.INTER/1000,0,facture_.INTER/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-										  null,null,null,null,null,null,null,null,null,null,null,null);
+						INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+											   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+											   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+										VALUES(New_Genbill.BIL_ID,null,v,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.INTER/1000,V_TVA_ID,
+											   facture_.INTER/1000,0,facture_.INTER/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+											   null,null,null,null,null,null,null,null,null,null,null,null);
 					EXCEPTION WHEN OTHERS THEN
 										BEGIN
-										insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-															   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-															   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-														values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.INTER/1000,V_TVA_ID,
-															  facture_.INTER/1000,0,facture_.INTER/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-															  null,null,null,null,null,null,null,null,null,null,null,null);
+											INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+																   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+																   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+															VALUES(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.INTER/1000,V_TVA_ID,
+																  facture_.INTER/1000,0,facture_.INTER/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																  null,null,null,null,null,null,null,null,null,null,null,null);
 										EXCEPTION WHEN OTHERS THEN NULL;
 										END;
 					END;
@@ -2547,7 +2510,7 @@ BEGIN
 				v := v+1;
 					V_PTA_ID := null;
 					V_PSL_RANK := null;
-					begin
+					BEGIN
 					v_code:='COURETABBR';
 						for x in C_ITEM(v_code) loop
 						V_ITE_ID:=x.ite_id;
@@ -2555,15 +2518,15 @@ BEGIN
 						V_VOW_UNIT:=x.VOW_UNIT
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-					end;
-					begin
+					END;
+					BEGIN
 					v_tva_taux:= 0;
 						for v in C_TVA(v_tva_taux) loop
 						   V_tva_id:=v.tva_id; 
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN 
 					V_tva_id := 25;
-					end;
+					END;
 					select count(*) 
 					into V_nbr 
 					from genptaslice 
@@ -2590,22 +2553,21 @@ BEGIN
 										)
 						and rownum=1;
 					end if;	
-
-					BEGIN
-					insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-										   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-										   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-									values(New_Genbill.BIL_ID,null,v,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.RBRANCHE/1000,V_TVA_ID,
-										   facture_.RBRANCHE/1000,0,facture_.RBRANCHE/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-										   null,null,null,null,null,null,null,null,null,null,null,null);
+                    BEGIN
+						INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+											   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+											   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+										values(New_Genbill.BIL_ID,null,v,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.RBRANCHE/1000,V_TVA_ID,
+											   facture_.RBRANCHE/1000,0,facture_.RBRANCHE/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+											   null,null,null,null,null,null,null,null,null,null,null,null);
 					EXCEPTION WHEN OTHERS THEN
 										BEGIN
-											insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+											INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 																   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 																   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
 															values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.RBRANCHE/1000,V_TVA_ID,
 																   facture_.RBRANCHE/1000,0,facture_.RBRANCHE/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-																	null,null,null,null,null,null,null,null,null,null,null,null);
+																   null,null,null,null,null,null,null,null,null,null,null,null);
 										EXCEPTION WHEN OTHERS THEN NULL;
 										END;
 					END;
@@ -2618,7 +2580,7 @@ BEGIN
 				v := v+1;
 					V_PTA_ID := null;
 					V_PSL_RANK := null;
-					begin
+					BEGIN
 					v_code:='RFACADE';
 						for x in C_ITEM(v_code) loop
 						V_ITE_ID:=x.ite_id;
@@ -2626,15 +2588,15 @@ BEGIN
 						V_VOW_UNIT:=x.VOW_UNIT
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-					end;
-					begin
+					END;
+					BEGIN
 					v_tva_taux:= 0;
 						for v in C_TVA(v_tva_taux) loop
 						   V_tva_id:=v.tva_id; 
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN 
 					V_tva_id := 25;
-					end;
+					END;
 					select count(*) 
 					into V_nbr 
 					from genptaslice 
@@ -2662,7 +2624,7 @@ BEGIN
 						and rownum=1;
 					end if;	
 					BEGIN
-						insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+						INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 											   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 											   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
 										values(New_Genbill.BIL_ID,null,v,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.RFACADE/1000,V_TVA_ID,
@@ -2670,12 +2632,12 @@ BEGIN
 											   null,null,null,null,null,null,null,null,null,null,null,null);
 					EXCEPTION WHEN OTHERS THEN
 										BEGIN
-										   insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-																  BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-																  BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-									values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.RFACADE/1000,V_TVA_ID,
-										   facture_.RFACADE/1000,0,facture_.RFACADE/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-										   null,null,null,null,null,null,null,null,null,null,null,null);
+										    INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+																   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+																   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+															values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.RFACADE/1000,V_TVA_ID,
+																   facture_.RFACADE/1000,0,facture_.RFACADE/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																   null,null,null,null,null,null,null,null,null,null,null,null);
 										EXCEPTION WHEN OTHERS THEN NULL;
 										END;
 					END;
@@ -2688,7 +2650,7 @@ BEGIN
 				v := v+1;
 					V_PTA_ID := null;
 					V_PSL_RANK := null;
-					begin
+					BEGIN
 					v_code:='AREPOR';
 						for x in C_ITEM(v_code) loop
 						V_ITE_ID:=x.ite_id;
@@ -2696,15 +2658,15 @@ BEGIN
 						V_VOW_UNIT:=x.VOW_UNIT
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-					end;
-					begin
+					END;
+					BEGIN
 					v_tva_taux:= 0;
 						for v in C_TVA(v_tva_taux) loop
 						   V_tva_id:=v.tva_id; 
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN 
 					V_tva_id := 25;
-					end;
+					END;
 					select count(*) 
 					into V_nbr 
 					from genptaslice 
@@ -2732,7 +2694,7 @@ BEGIN
 						and rownum=1;
 					end if;	
                     BEGIN
-						insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+						INSERT into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 											   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 											   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
 										values(New_Genbill.BIL_ID,null,v,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,decode(facture_.caron,'1',1,-1)* (facture_.AREPOR/1000),V_TVA_ID			,--14
@@ -2740,12 +2702,12 @@ BEGIN
 											   null,null,null,null,null,null,null,null,null,null,null,null);
 					EXCEPTION WHEN OTHERS THEN
 										BEGIN
-										insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-															   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-															   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-														values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,decode(facture_.caron,'1',1,-1)* (facture_.AREPOR/1000),V_TVA_ID			,--14
-															   decode(facture_.caron,'1',1,-1)* (facture_.AREPOR/1000),0,decode(facture_.caron,'1',1,-1)* (facture_.AREPOR/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-															   null,null,null,null,null,null,null,null,null,null,null,null);
+										    INSERT into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+															       BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+															       BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+															values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,decode(facture_.caron,'1',1,-1)* (facture_.AREPOR/1000),V_TVA_ID			,--14
+																   decode(facture_.caron,'1',1,-1)* (facture_.AREPOR/1000),0,decode(facture_.caron,'1',1,-1)* (facture_.AREPOR/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																   null,null,null,null,null,null,null,null,null,null,null,null);
 										EXCEPTION WHEN OTHERS THEN NULL;
 										END;
 					END;
@@ -2758,31 +2720,31 @@ BEGIN
 				v := v+1;
 					V_PTA_ID := null;
 					V_PSL_RANK := null;
-					begin
-						v_code:='NAROND';
-							for x in C_ITEM(v_code) loop
-							V_ITE_ID:=x.ite_id;
-							V_ite_name:=x.ite_name
-							V_VOW_UNIT:=x.VOW_UNIT
-							end loop;
+					BEGIN
+					v_code:='NAROND';
+						FOR x in C_ITEM(v_code) LOOP
+						V_ITE_ID:=x.ite_id;
+						V_ite_name:=x.ite_name
+						V_VOW_UNIT:=x.VOW_UNIT
+						END LOOP;
 					EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-					end;
-					begin
+					END;
+					BEGIN
 					v_tva_taux:= 0;
-						for v in C_TVA(v_tva_taux) loop
+						FOR v in C_TVA(v_tva_taux) LOOP
 						   V_tva_id:=v.tva_id; 
-						end loop;
+						END LOOP;
 					EXCEPTION WHEN NO_DATA_FOUND THEN 
 					V_tva_id := 25;
-					end;
+					END;
 					select count(*) 
 					into V_nbr 
 					from genptaslice 
 					where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-									 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+									 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
 									);
 					if V_nbr=1 then
-					   select PTA_ID,PSL_RANK  
+					    select PTA_ID,PSL_RANK  
 						into V_PTA_ID,V_PSL_RANK 
 						from genptaslice 
 						where PTA_ID in (select PTA_ID 
@@ -2802,24 +2764,24 @@ BEGIN
 						and rownum=1;
 					end if;	
 					BEGIN
-						insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+						INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 											   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 											   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-									   values(New_Genbill.BIL_ID,null,v,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,decode(facture_.caron,'1',-1,1)*(facture_.NAROND/1000),V_TVA_ID,
+									   VALUES(New_Genbill.BIL_ID,null,v,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,decode(facture_.caron,'1',-1,1)*(facture_.NAROND/1000),V_TVA_ID,
 											  decode(facture_.caron,'1',-1,1)*(facture_.NAROND/1000),0,decode(facture_.caron,'1',-1,1)*(facture_.NAROND/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
 											  null,null,null,null,null,null,null,null,null,null,null,null);	 
 					EXCEPTION WHEN OTHERS THEN
 										BEGIN
-										insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-															   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-															   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-													   values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,decode(facture_.caron,'1',-1,1)*(facture_.NAROND/1000),V_TVA_ID,
-															  decode(facture_.caron,'1',-1,1)*(facture_.NAROND/1000),0,decode(facture_.caron,'1',-1,1)*(facture_.NAROND/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-															  null,null,null,null,null,null,null,null,null,null,null,null);	 
+											INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+																   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+																   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+														   VALUES(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,decode(facture_.caron,'1',-1,1)*(facture_.NAROND/1000),V_TVA_ID,
+																  decode(facture_.caron,'1',-1,1)*(facture_.NAROND/1000),0,decode(facture_.caron,'1',-1,1)*(facture_.NAROND/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																  null,null,null,null,null,null,null,null,null,null,null,null);	 
 										EXCEPTION WHEN OTHERS THEN NULL;
 										END;
-						END;
-						commit;
+					END;
+					commit;
 			end if;
 -------------------------------------------------------------------------------------------
 ----------------------------------FRAIS DE DÉPLACEMENT-------------------------------------
@@ -2828,7 +2790,7 @@ BEGIN
 				v := v+1;
 					V_PTA_ID := null;
 					V_PSL_RANK := null;
-					begin
+					BEGIN
 					v_code:='F_DEPLACEMNT';
 						for x in C_ITEM(v_code) loop
 						V_ITE_ID:=x.ite_id;
@@ -2836,20 +2798,20 @@ BEGIN
 						V_VOW_UNIT:=x.VOW_UNIT
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-					end;
-					begin
+					END;
+					BEGIN
 					v_tva_taux:= 18;
 						for v in C_TVA(v_tva_taux) loop
 						   V_tva_id:=v.tva_id; 
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN 
 					V_tva_id := 25;
-					end;				
+					END;				
 					select count(*) 
 					into V_nbr 
 					from genptaslice 
-					where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-									 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+					where PTA_ID in (select PTA_ID from genitemperiodtarif 
+									 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
 									);
 					if V_nbr=1 then
 						select PTA_ID,PSL_RANK  
@@ -2872,20 +2834,20 @@ BEGIN
 						and rownum=1;
 					end if;	
 					BEGIN
-						insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+						INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 											   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 											   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-									  values(New_Genbill.BIL_ID,null,v,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.deplacement/1000,V_TVA_ID,
-											 facture_.deplacement/1000,facture_.tvadeplac/1000 ,facture_.deplacement/1000 + (facture_.tvadeplac/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-											null,null,null,null,null,null,null,null,null,null,null,null);	 
+										values(New_Genbill.BIL_ID,null,v,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.deplacement/1000,V_TVA_ID,
+											   facture_.deplacement/1000,facture_.tvadeplac/1000,facture_.deplacement/1000 + (facture_.tvadeplac/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+											   null,null,null,null,null,null,null,null,null,null,null,null);	 
 					EXCEPTION WHEN OTHERS THEN
 										BEGIN
-										insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+										INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 															   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 															   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-													  values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.deplacement/1000,V_TVA_ID,
-															 facture_.deplacement/1000,facture_.tvadeplac/1000 ,facture_.deplacement/1000 + (facture_.tvadeplac/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-															 null,null,null,null,null,null,null,null,null,null,null,null);
+													    values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.deplacement/1000,V_TVA_ID,
+															   facture_.deplacement/1000,facture_.tvadeplac/1000,facture_.deplacement/1000 + (facture_.tvadeplac/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+															   null,null,null,null,null,null,null,null,null,null,null,null);
 										EXCEPTION WHEN OTHERS THEN NULL;
 										END;
 					END;
@@ -2898,7 +2860,7 @@ BEGIN
 				v := v+1;
 					V_PTA_ID := null;
 					V_PSL_RANK := null;
-					begin
+					BEGIN
 					v_code:='FRAIS_FRM_DEP';
 						for x in C_ITEM(v_code) loop
 						V_ITE_ID:=x.ite_id;
@@ -2906,15 +2868,15 @@ BEGIN
 						V_VOW_UNIT:=x.VOW_UNIT
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-					end;
-					begin
+					END;
+					BEGIN
 					v_tva_taux:= 18;
 						for v in C_TVA(v_tva_taux) loop
 						   V_tva_id:=v.tva_id; 
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN 
 					 V_tva_id := 25;
-					end;
+					END;
 					select count(*) 
 					into V_nbr 
 					from genptaslice 
@@ -2930,7 +2892,6 @@ BEGIN
 										 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
 										)
 						and rownum=1;
-					
 					end if;
 					if V_nbr>1 then
 						select PTA_ID,PSL_RANK  
@@ -2943,20 +2904,20 @@ BEGIN
 						and rownum=1;
 					end if;	
                     BEGIN
-						insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+						INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 											   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 											   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-								  values(New_Genbill.BIL_ID,null,v,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.depose_dem/1000,V_TVA_ID,
-										facture_.depose_dem/1000,facture_.tvadepose_dem/1000,facture_.depose_dem/1000 + (facture_.tvadepose_dem/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-										null,null,null,null,null,null,null,null,null,null,null,null);
+									    values(New_Genbill.BIL_ID,null,v,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.depose_dem/1000,V_TVA_ID,
+											   facture_.depose_dem/1000,facture_.tvadepose_dem/1000,facture_.depose_dem/1000 + (facture_.tvadepose_dem/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+											   null,null,null,null,null,null,null,null,null,null,null,null);
 										EXCEPTION WHEN OTHERS THEN
 											BEGIN
-												insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+												INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 																	   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 																	   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-															  values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.depose_dem/1000,V_TVA_ID,
-																	facture_.depose_dem/1000,facture_.tvadepose_dem/1000,facture_.depose_dem/1000 + (facture_.tvadepose_dem/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-																	null,null,null,null,null,null,null,null,null,null,null,null); 
+																 values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.depose_dem/1000,V_TVA_ID,
+																		facture_.depose_dem/1000,facture_.tvadepose_dem/1000,facture_.depose_dem/1000 + (facture_.tvadepose_dem/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																		null,null,null,null,null,null,null,null,null,null,null,null); 
 											EXCEPTION WHEN OTHERS THEN NULL;
 											END;
 					END;
@@ -2969,7 +2930,7 @@ BEGIN
 				v := v+1;
 					V_PTA_ID := null;
 					V_PSL_RANK := null;
-					begin
+					BEGIN
 					v_code:='FRS_DPOZ_RPOZ';
 						for x in C_ITEM(v_code) loop
 						V_ITE_ID:=x.ite_id;
@@ -2977,15 +2938,15 @@ BEGIN
 						V_VOW_UNIT:=x.VOW_UNIT
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-					end;
-					begin
+					END;
+					BEGIN
 					v_tva_taux:= 18;
 						for v in C_TVA(v_tva_taux) loop
 						   V_tva_id:=v.tva_id; 
 						end loop;
 					EXCEPTION WHEN NO_DATA_FOUND THEN 
 					V_tva_id := 25;
-					end;
+					END;
 					select count(*) 
 					into V_nbr 
 					from genptaslice 
@@ -3013,7 +2974,7 @@ BEGIN
 						and rownum=1;
 					end if;	
                     BEGIN
-						insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+						INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 											   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 											   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
 										values(New_Genbill.BIL_ID,null,v,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.depose_def/1000,V_TVA_ID,
@@ -3021,16 +2982,16 @@ BEGIN
 											   null,null,null,null,null,null,null,null,null,null,null,null); 
 					EXCEPTION WHEN OTHERS THEN
 											BEGIN
-											  insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-																	BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-																	BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-															values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.depose_def/1000,V_TVA_ID,
-																   facture_.depose_def/1000,facture_.tvadepose_def/1000,facture_.depose_def/1000 + (facture_.tvadepose_def/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-																	null,null,null,null,null,null,null,null,null,null,null,null); 
+											  INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+																	 BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+																	 BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+															  values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,v_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.depose_def/1000,V_TVA_ID,
+																     facture_.depose_def/1000,facture_.tvadepose_def/1000,facture_.depose_def/1000 + (facture_.tvadepose_def/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																	 null,null,null,null,null,null,null,null,null,null,null,null); 
 											EXCEPTION WHEN OTHERS THEN NULL;
 											END;
 					END;
-			commit;
+			        commit;
 			end if;
 		end loop;
 	end loop;	
@@ -3097,9 +3058,7 @@ BEGIN
 			 TECSERVICEPOINT spt
 		where sag.spt_id=spt.spt_id 
 		and spt.spt_refe=V_pdl_ref;		
-		
 		select count(*) into v_nbr from genbill b where b.BIL_CODE=V_ID_FACTURE;
-		
 		V_COMPTEAUX:='IMP_MIG'			   
 		V_TOTHTE:=(facture_.net_a_payer/1000);
 		V_TVA:=0
@@ -3133,22 +3092,21 @@ BEGIN
 			New_Det.SAG_ID           :=  V_SAG_ID ;
 			New_Det.DEB_PREL         :=  1 ;
 			If (V_TOTHTE+ V_TVA+V_TOTHTA+V_TOTTVAA) > 0 then --- Facture Normal else Facture Avoire
-			New_Det.DEB_AMOUNTINIT   := V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA ;
-			New_Det.VOW_DEBTYPE      := pk_genvocword.getidbycode('VOW_DEBTYPE','FA',null) ;
+				New_Det.DEB_AMOUNTINIT   := V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA ;
+				New_Det.VOW_DEBTYPE      := pk_genvocword.getidbycode('VOW_DEBTYPE','FA',null) ;
 			else
-			New_Det.deb_amount_cash  := -(V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA) ;
-			New_Det.DEB_AMOUNTINIT   := 0;
-			New_Det.VOW_DEBTYPE      := pk_genvocword.getidbycode('VOW_DEBTYPE','AV',null) ;
+				New_Det.deb_amount_cash  := -(V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA) ;
+				New_Det.DEB_AMOUNTINIT   := 0;
+				New_Det.VOW_DEBTYPE      := pk_genvocword.getidbycode('VOW_DEBTYPE','AV',null) ;
 			end if ;
-
-			New_Det.DEB_AMOUNTREMAIN := V_SOLDE ;
+            New_Det.DEB_AMOUNTREMAIN := V_SOLDE ;
 			New_Det.DEB_COMMENT      := V_REF_ABN ;
 			New_Det.VOW_SETTLEMODE   := pk_genvocword.getidbycode('VOW_SETTLEMODE',4,null) ;
 ----------------------------------------------------------Traitement GENACCOUNT ,GENIMP
 			New_genimp.imp_code      := V_COMPTEAUX ;
 			New_genimp.imp_name      := V_COMPTEAUX ;
 			New_genimp.vow_budgtp    := pk_genvocword.getidbycode('VOW_BUDGTP','EA',null);
-			Genere_genimp (New_genimp ,genimp_id,genimp_ref);
+			Genere_genimp (New_genimp,genimp_id,genimp_ref);
 			New_genaccount.PAR_ID    := V_PAR_ID ;
 			New_genaccount.IMP_ID    := genimp_ref ;
 			New_genaccount.VOW_ACOTP := pk_genvocword.getidbycode('VOW_ACOTP','1',null);
@@ -3158,8 +3116,7 @@ BEGIN
 			Genere_genaccount (New_genaccount ,genaccount_id ,genaccount_ref ,agrsagaco_id,New_agrsagaco) ;
             New_Det.ACO_ID           := genaccount_ref ;
 			New_Det.DEB_NORECOVERY   := 0;
-			 
-				Insert into gendebt(deb_id,deb_refe,org_id,par_id,adr_id,deb_date,deb_duedt,deb_printdt,deb_amountinit,deb_amountremain,bap_id,
+			    Insert into gendebt(deb_id,deb_refe,org_id,par_id,adr_id,deb_date,deb_duedt,deb_printdt,deb_amountinit,deb_amountremain,bap_id,
 									vow_settlemode,aco_id,deb_norecovery,deb_credt,deb_updtby,deb_updtdt,deb_comment,sag_id,vow_debtype,deb_prel)
 							values (New_Det.deb_id,New_Det.deb_refe,New_Det.org_id,New_Det.par_id,New_Det.adr_id,New_Det.deb_date,New_Det.deb_duedt,New_Det.deb_printdt,
 									New_Det.deb_amountinit,New_Det.deb_amountremain,New_Det.bap_id,New_Det.vow_settlemode,New_Det.aco_id,New_Det.deb_norecovery,New_Det.deb_credt,
@@ -3169,9 +3126,9 @@ BEGIN
 			New_Agrbill.BIL_ID            :=  Agrbill_Id ;
 			New_Agrbill.SAG_ID            :=  V_SAG_ID;
 			New_Agrbill.VOW_AGRBILLTYPE   :=  pk_genvocword.getidbycode('VOW_AGRBILLTYPE',decode(facture_.etat,'P','RF','O','FC','C','FHC','FC'),null) ;
-			New_Agrbill.VOW_MODEFACT      :=  pk_genvocword.getidbycode('VOW_MODEFACT',4,null) ;
+			New_Agrbill.VOW_MODEFACT      :=  pk_genvocword.getidbycode('VOW_MODEFACT',4,null);--------NB:(4 ou MIG) a verifier
 			Insert into agrbill(BIL_ID,SAG_ID,VOW_AGRBILLTYPE,VOW_MODEFACT)
-						values(New_Agrbill.BIL_ID,New_Agrbill.SAG_ID,New_Agrbill.VOW_AGRBILLTYPE,New_Agrbill.VOW_MODEFACT);	
+						 values(New_Agrbill.BIL_ID,New_Agrbill.SAG_ID,New_Agrbill.VOW_AGRBILLTYPE,New_Agrbill.VOW_MODEFACT);	
 			commit;
 --------------------------------------------------------Traitement genbill
             New_Genbill.BIL_ID            :=  Agrbill_Id;
@@ -3188,9 +3145,9 @@ BEGIN
 			New_Genbill.RUN_ID            :=  genrun_ref  ;
 				
 					Insert into genbill(BIL_ID,BIL_CODE,BIL_CALCDT,BIL_AMOUNTHT,BIL_AMOUNTTVA,BIL_AMOUNTTTC,DEB_ID,PAR_ID,BIL_STATUS,BIL_AMOUNTTTCDEC,BIL_DEBTDT,RUN_ID)
-							    values(New_Genbill.BIL_ID,New_Genbill.BIL_CODE,New_Genbill.BIL_CALCDT,New_Genbill.BIL_AMOUNTHT,New_Genbill.BIL_AMOUNTTVA,New_Genbill.BIL_AMOUNTTTC,
-									   New_Genbill.DEB_ID,New_Genbill.PAR_ID,New_Genbill.BIL_STATUS,New_Genbill.BIL_AMOUNTTTCDEC,New_Genbill.BIL_DEBTDT,New_Genbill.RUN_ID); 
-							commit;
+							     values(New_Genbill.BIL_ID,New_Genbill.BIL_CODE,New_Genbill.BIL_CALCDT,New_Genbill.BIL_AMOUNTHT,New_Genbill.BIL_AMOUNTTVA,New_Genbill.BIL_AMOUNTTTC,
+									    New_Genbill.DEB_ID,New_Genbill.PAR_ID,New_Genbill.BIL_STATUS,New_Genbill.BIL_AMOUNTTTCDEC,New_Genbill.BIL_DEBTDT,New_Genbill.RUN_ID); 
+				commit;
 			end if;
 			commit;
 	    end loop;
@@ -3199,19 +3156,16 @@ BEGIN
 --------FACTURE_VERSION----------------FACTURE_VERSION--------------------------FACTURE_VERSION------	
 -----------------------------------------------------------------------------------------------------	
     FOR facture_ in fact_vers LOOP
-	
-	    FOR x in branch_(lpad(facture_.DIST, 2, '0'),lpad(trim(facture_.TOU), 3, '0'),lpad(trim(facture_.ORD), 3, '0'))LOOP	
-			
+	    FOR x in branch_(lpad(facture_.DIST,2,'0'),lpad(trim(facture_.TOU),3,'0'),lpad(trim(facture_.ORD),3,'0'))LOOP	
 			select seq_genrun.nextval     into genrun_id     from dual;
 			select seq_agrbill.nextval    into Agrbill_Id    from dual;
 			select seq_gendebt.nextval    into Debt_Id       from dual;
 			select seq_genimp.nextval     into genimp_id     from dual;
 			select seq_agrsagaco.nextval  into agrsagaco_id  from dual;
 			select seq_genaccount.nextval into genaccount_id from dual;
-            --v_MFAE_RDET := facture_.MFAE_RDET; 
-	        V_periode:= facture_.periode;
+            V_periode:= facture_.periode;
 			IF facture_.periodicite <> 'G' then
-				begin
+				BEGIN
 					select m3 
 					into mois_ 
 					from param_tournee 
@@ -3221,8 +3175,7 @@ BEGIN
 					and (TIER,SIX) in (select t.NTIERS,t.NSIXIEME from tourne t
 									   where trim(t.code)=lpad(trim(facture_.tournee),3,'0')
 									   and trim(t.district)=trim(facture_.DISTRICT));
-				exception
-				when others then
+				EXCEPTION WHEN OTHERS THEN
 					V_periode := facture_.periode;
 					IF V_periode = 1 THEN
 					mois_:='01';
@@ -3233,7 +3186,7 @@ BEGIN
 					ELSIF V_periode = 4 THEN
 					mois_:='10';
 					end if;
-				end;
+				END;
 			else
 			  mois_ := trim(facture_.periode);
 			end if;
@@ -3243,17 +3196,16 @@ BEGIN
 			V_REF_ABN        := null;
 			V_FAC_DATECALCUL := BIL_CALCDT + 5;
 			v_ID_FACTURE:=lpad(trim(facture_.DISTRICT),2,'0')||lpad(trim(facture_.tournee),3,'0')||lpad(trim(facture_.ORDRE),3,'0')||to_char(V_anneereel)||lpad(to_char(V_periode),2,'0')||to_char(facture_.version);
-		    V_pdl_ref := lpad(trim(facture_.DISTRICT),2,'0')||lpad(trim(facture_.tournee),3,'0')||lpad(trim(facture_.Ordre),3,'0')||lpad(trim(facture_.POLICE),5,'0');
-			V_REF_ABN := lpad(trim(facture_.DISTRICT),2,'0')||lpad(trim(facture_.POLICE),5,'0')||lpad(trim(facture_.tournee),3,'0')||lpad(trim(facture_.Ordre),3,'0') ;
-		    V_TRAIN_FACT :='ANNEE:'||trim(V_anneereel)||' MOIS:'||trim(V_periode);
+		    V_pdl_ref   := lpad(trim(facture_.DISTRICT),2,'0')||lpad(trim(facture_.tournee),3,'0')||lpad(trim(facture_.Ordre),3,'0')||lpad(trim(facture_.POLICE),5,'0');
+			V_REF_ABN   := lpad(trim(facture_.DISTRICT),2,'0')||lpad(trim(facture_.POLICE),5,'0')||lpad(trim(facture_.tournee),3,'0')||lpad(trim(facture_.Ordre),3,'0') ;
+		    V_TRAIN_FACT:='ANNEE:'||trim(V_anneereel)||' MOIS:'||trim(V_periode);
 			select NTIERS,NSIXIEME
 			into V_tiers,V_six
 			from tourne
 			where trim(code)=lpad(trim(facture_.tournee),3,'0')
 			and  trim(district)=trim(facture_.DISTRICT);
             V_TRAIN_FACT :='ANNEE:'||trim(facture_.annee)||' TRIM:'||trim(facture_.periode)||' TIER:'||trim(V_tiers)||' SIX:'||trim(V_six );
-		    
-			select g.org_id	
+		    select g.org_id	
 			into V_ORG_ID 
 			from GENORGANIZATION g 
 			where upper(g.org_code)=lpad(trim(facture_.DISTRICT),2,'0');
@@ -3283,8 +3235,7 @@ BEGIN
 			V_TOTHTA:=0;
 			V_TOTTVAA:=0;
 			V_SOLDE:=(facture_.net_a_payer/1000); 
-
-			select count(*) into v_nbr from genbill b where b.BIL_CODE=V_ID_FACTURE;
+            select count(*) into v_nbr from genbill b where b.BIL_CODE=V_ID_FACTURE;
 		if v_nbr=1 then
 			if facture_.etat='A' then
 			        New_Det   := null;
@@ -3300,7 +3251,7 @@ BEGIN
 						New_genrun.RUN_NAME       :=  'Role '||V_TRAIN_FACT ;
 						Genere_genrun(New_genrun,genrun_id,genrun_ref);
 					end if ;
-					--------------------------------------------------------Traitement Det
+--------------------------------------------------------Traitement Det
 					New_Det.DEB_ID           :=  Debt_Id ;
 					New_Det.DEB_REFE         :=  v_ID_FACTURE;
 					New_Det.ORG_ID           :=  V_ORG_ID ;
@@ -3332,17 +3283,16 @@ BEGIN
 					New_Det.ACO_ID           := genaccount_ref ;
 					New_Det.DEB_NORECOVERY   := 0;
 							Insert into gendebt(deb_id,deb_refe,org_id,par_id,adr_id,deb_date,deb_duedt,deb_printdt,deb_amountinit,deb_amountremain,bap_id,
-									vow_settlemode,aco_id,deb_norecovery,deb_credt,deb_updtby,deb_updtdt,deb_comment,sag_id,vow_debtype,deb_prel)
-							values (New_Det.deb_id,New_Det.deb_refe,New_Det.org_id,New_Det.par_id,New_Det.adr_id,New_Det.deb_date,New_Det.deb_duedt,New_Det.deb_printdt,
-									New_Det.deb_amountinit,New_Det.deb_amountremain,New_Det.bap_id,New_Det.vow_settlemode,New_Det.aco_id,New_Det.deb_norecovery,New_Det.deb_credt,
-									New_Det.deb_updtby,New_Det.deb_updtdt,New_Det.DEB_COMMENT,nvl(New_Det.deb_amount_cash,0),New_Det.SAG_ID,New_Det.VOW_DEBTYPE,New_Det.DEB_PREL);	
-				        commit;
-					--------------------------------------------------------Traitement agrbill
-					
+											    vow_settlemode,aco_id,deb_norecovery,deb_credt,deb_updtby,deb_updtdt,deb_comment,sag_id,vow_debtype,deb_prel)
+										 values(New_Det.deb_id,New_Det.deb_refe,New_Det.org_id,New_Det.par_id,New_Det.adr_id,New_Det.deb_date,New_Det.deb_duedt,New_Det.deb_printdt,
+												New_Det.deb_amountinit,New_Det.deb_amountremain,New_Det.bap_id,New_Det.vow_settlemode,New_Det.aco_id,New_Det.deb_norecovery,New_Det.deb_credt,
+												New_Det.deb_updtby,New_Det.deb_updtdt,New_Det.DEB_COMMENT,nvl(New_Det.deb_amount_cash,0),New_Det.SAG_ID,New_Det.VOW_DEBTYPE,New_Det.DEB_PREL);	
+				    commit;
+--------------------------------------------------------Traitement agrbill
 					New_Agrbill.BIL_ID            :=  Agrbill_Id ;
 					New_Agrbill.SAG_ID            :=  V_SAG_ID;
 					New_Agrbill.VOW_AGRBILLTYPE   :=  pk_genvocword.getidbycode('VOW_AGRBILLTYPE','FA',null) ;
-					New_Agrbill.VOW_MODEFACT      :=  pk_genvocword.getidbycode('VOW_MODEFACT',4,null) ;
+					New_Agrbill.VOW_MODEFACT      :=  pk_genvocword.getidbycode('VOW_MODEFACT',4,null);--------NB:(4 ou MIG) a verifier
 					   Insert into agrbill (BIL_ID,SAG_ID,VOW_AGRBILLTYPE,VOW_MODEFACT)
 									values (New_Agrbill.BIL_ID,New_Agrbill.SAG_ID,New_Agrbill.VOW_AGRBILLTYPE,New_Agrbill.VOW_MODEFACT);
 --------------------------------------------------------Traitement genbill
@@ -3359,8 +3309,8 @@ BEGIN
 					New_Genbill.BIL_DEBTDT        :=  V_FAC_DATECALCUL;
 					New_Genbill.RUN_ID            :=  genrun_ref  ;
 							Insert into genbill(BIL_ID,BIL_CODE,BIL_CALCDT,BIL_AMOUNTHT,BIL_AMOUNTTVA,BIL_AMOUNTTTC,DEB_ID,PAR_ID,BIL_STATUS,BIL_AMOUNTTTCDEC,BIL_DEBTDT,RUN_ID)
-							 values(New_Genbill.BIL_ID,New_Genbill.BIL_CODE,New_Genbill.BIL_CALCDT,New_Genbill.BIL_AMOUNTHT,New_Genbill.BIL_AMOUNTTVA,New_Genbill.BIL_AMOUNTTTC,
-									New_Genbill.DEB_ID,New_Genbill.PAR_ID,New_Genbill.BIL_STATUS,New_Genbill.BIL_AMOUNTTTCDEC,New_Genbill.BIL_DEBTDT,New_Genbill.RUN_ID); 
+										 values(New_Genbill.BIL_ID,New_Genbill.BIL_CODE,New_Genbill.BIL_CALCDT,New_Genbill.BIL_AMOUNTHT,New_Genbill.BIL_AMOUNTTVA,New_Genbill.BIL_AMOUNTTTC,
+												New_Genbill.DEB_ID,New_Genbill.PAR_ID,New_Genbill.BIL_STATUS,New_Genbill.BIL_AMOUNTTTCDEC,New_Genbill.BIL_DEBTDT,New_Genbill.RUN_ID); 
 							commit; 
                     v := 0;
                     for c in (select * from genbilline e  where e.bil_id=facture_.bil_id)loop
@@ -3405,24 +3355,24 @@ BEGIN
 											)
 								and rownum=1;
 						    end if;	
-			                begin
-								insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-														BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-														BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-												values(New_Genbill.BIL_ID,null,v,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,c.BLI_VOLUMEBASE,c.BLI_VOLUMEBASE,c.BLI_PUHT,V_TVA_ID,
-													  c.BLI_MHT,c.BLI_MTTVA,c.BLI_MTTC,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-													  null,null,null,null,null,null,null,null,null,null,null,null);
-							exception when others then
-									begin
+			                BEGIN
+								INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+													   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+													   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+												VALUES(New_Genbill.BIL_ID,null,v,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,c.BLI_VOLUMEBASE,c.BLI_VOLUMEBASE,c.BLI_PUHT,V_TVA_ID,
+													   c.BLI_MHT,c.BLI_MTTVA,c.BLI_MTTC,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+													   null,null,null,null,null,null,null,null,null,null,null,null);
+							EXCEPTION WHEN OTHERS THEN
+									BEGIN
 											insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 																   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 																   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
 															values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,c.BLI_VOLUMEBASE,c.BLI_VOLUMEBASE,c.BLI_PUHT,V_TVA_ID,
-																  c.BLI_MHT,c.BLI_MTTVA,c.BLI_MTTC,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-																  null,null,null,null,null,null,null,null,null,null,null,null);
-									exception when others then null;
-									end;
-							end;
+																   c.BLI_MHT,c.BLI_MTTVA,c.BLI_MTTC,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																   null,null,null,null,null,null,null,null,null,null,null,null);
+									EXCEPTION WHEN OTHERS THEN NULL;
+									END;
+							END;
 			        end loop;
 			 
 			else 
@@ -3484,9 +3434,9 @@ BEGIN
 					New_Agrbill.BIL_ID            :=  Agrbill_Id ;
 					New_Agrbill.SAG_ID            :=  V_SAG_ID;
 					New_Agrbill.VOW_AGRBILLTYPE   :=  pk_genvocword.getidbycode('VOW_AGRBILLTYPE',decode(facture_.etat,'P','RF','O','FC','C','FHC','FC'),null) ;
-					New_Agrbill.VOW_MODEFACT      :=  pk_genvocword.getidbycode('VOW_MODEFACT',4,null) ;
+					New_Agrbill.VOW_MODEFACT      :=  pk_genvocword.getidbycode('VOW_MODEFACT',4,null);--------NB:(4 ou MIG) a verifier
 						Insert into agrbill(BIL_ID,SAG_ID,VOW_AGRBILLTYPE,VOW_MODEFACT)
-									values(New_Agrbill.BIL_ID,New_Agrbill.SAG_ID,New_Agrbill.VOW_AGRBILLTYPE,New_Agrbill.VOW_MODEFACT);	
+									 values(New_Agrbill.BIL_ID,New_Agrbill.SAG_ID,New_Agrbill.VOW_AGRBILLTYPE,New_Agrbill.VOW_MODEFACT);	
 							commit;
 --------------------------------------------------------Traitement genbill
                     New_Genbill.BIL_ID            :=  Agrbill_Id;
@@ -3504,7 +3454,7 @@ BEGIN
 						Insert into genbill(BIL_ID,BIL_CODE,BIL_CALCDT,BIL_AMOUNTHT,BIL_AMOUNTTVA,BIL_AMOUNTTTC,DEB_ID,PAR_ID,BIL_STATUS,BIL_AMOUNTTTCDEC,BIL_DEBTDT,RUN_ID)
 									 values(New_Genbill.BIL_ID,New_Genbill.BIL_CODE,New_Genbill.BIL_CALCDT,New_Genbill.BIL_AMOUNTHT,New_Genbill.BIL_AMOUNTTVA,New_Genbill.BIL_AMOUNTTTC,
 											New_Genbill.DEB_ID,New_Genbill.PAR_ID,New_Genbill.BIL_STATUS,New_Genbill.BIL_AMOUNTTTCDEC,New_Genbill.BIL_DEBTDT,New_Genbill.RUN_ID); 
-						commit;
+						COMMIT;
 			end if;
 		end if; 
         end loop;  
@@ -3514,9 +3464,7 @@ BEGIN
 -----------------------------------------------------------------------------------------
 -----------IMPAYEE PART
     FOR facture_ in fact_IMPPART LOOP
-	
 	    FOR x in branch_(lpad(trim(facture_.DIST), 2, '0'),lpad(trim(facture_.TOU), 3, '0'),lpad(trim(facture_.ORD), 3, '0'))LOOP	
-		
 		    select seq_genrun.nextval     into genrun_id     from dual;
 			select seq_agrbill.nextval    into Agrbill_Id    from dual;
 			select seq_gendebt.nextval    into Debt_Id       from dual;
@@ -3532,11 +3480,11 @@ BEGIN
 			select last_day(to_date('01'||lpad(facture_.trimestre,2,0)||facture_.annee,'ddmmyy')) 
 			into v_date
 			from dual;
-			begin
+			BEGIN
 			V_FAC_DATECALCUL := v_date;
-			Exception  when others then
+			EXCEPTION WHEN OTHERS THEN
 			V_FAC_DATECALCUL := '01/01/2016';
-			end;
+			END;
 			V_FAC_DATELIM:= V_FAC_DATECALCUL+25;
 		    v_ID_FACTURE:=lpad(trim(facture_.DISTRICT),2,'0')||lpad(trim(facture_.tournee),3,'0')||lpad(trim(facture_.ORDRE),3,'0')||to_char(annee_)||lpad(to_char(periode_),2,'0')||'0';
             V_TRAIN_FACT :='ANNEE:'||trim(annee_)||' MOIS:'||trim(periode_);
@@ -3635,7 +3583,7 @@ BEGIN
 				New_Agrbill.BIL_ID            :=  Agrbill_Id ;
 				New_Agrbill.SAG_ID            :=  V_SAG_ID;
 				New_Agrbill.VOW_AGRBILLTYPE   :=  pk_genvocword.getidbycode('VOW_AGRBILLTYPE','FC',null) ;
-				New_Agrbill.VOW_MODEFACT      :=  pk_genvocword.getidbycode('VOW_MODEFACT',4,null) ;
+				New_Agrbill.VOW_MODEFACT      :=  pk_genvocword.getidbycode('VOW_MODEFACT',4,null);--------NB:(4 ou MIG) a verifier
 					Insert into agrbill(BIL_ID,SAG_ID,VOW_AGRBILLTYPE,VOW_MODEFACT)
 								 values(New_Agrbill.BIL_ID,New_Agrbill.SAG_ID,New_Agrbill.VOW_AGRBILLTYPE,New_Agrbill.VOW_MODEFACT);	
 					commit;
@@ -3654,9 +3602,9 @@ BEGIN
 				New_Genbill.BIL_DEBTDT        :=  V_FAC_DATECALCUL;
 				New_Genbill.RUN_ID            :=  genrun_ref;
 					Insert into genbill(BIL_ID,BIL_CODE,BIL_CALCDT,BIL_AMOUNTHT,BIL_AMOUNTTVA,BIL_AMOUNTTTC,DEB_ID,PAR_ID,BIL_STATUS,BIL_AMOUNTTTCDEC,BIL_DEBTDT,RUN_ID)
-								values(New_Genbill.BIL_ID,New_Genbill.BIL_CODE,New_Genbill.BIL_CALCDT,New_Genbill.BIL_AMOUNTHT,New_Genbill.BIL_AMOUNTTVA,New_Genbill.BIL_AMOUNTTTC,
-									   New_Genbill.DEB_ID,New_Genbill.PAR_ID,New_Genbill.BIL_STATUS,New_Genbill.BIL_AMOUNTTTCDEC,New_Genbill.BIL_DEBTDT,New_Genbill.RUN_ID); 
-						commit; 
+								 values(New_Genbill.BIL_ID,New_Genbill.BIL_CODE,New_Genbill.BIL_CALCDT,New_Genbill.BIL_AMOUNTHT,New_Genbill.BIL_AMOUNTTVA,New_Genbill.BIL_AMOUNTTTC,
+									    New_Genbill.DEB_ID,New_Genbill.PAR_ID,New_Genbill.BIL_STATUS,New_Genbill.BIL_AMOUNTTTCDEC,New_Genbill.BIL_DEBTDT,New_Genbill.RUN_ID); 
+					commit; 
 -------------------------------------------------------------------------------------------
 --------------------------ARTICLE DE REPRISE SONEDE----------------------------------------
 -------------------------------------------------------------------------------------------							
@@ -3665,12 +3613,81 @@ BEGIN
 				V_PTA_ID := null;
 				V_PSL_RANK := null;
 				V_BLI_MHT  := null;
-				begin
+				BEGIN
 				v_code:='REPRISE-SONEDE';
 					for x in C_ITEM(v_code) loop
 					V_ITE_ID:=x.ite_id;
 					V_ite_name:=x.ite_name
 					V_VOW_UNIT:=x.VOW_UNIT
+					end loop;
+				EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
+				END;
+				BEGIN
+				v_tva_taux:= 0;
+					FOR v in C_TVA(v_tva_taux) LOOP
+					   V_tva_id:=v.tva_id; 
+					END LOOP;
+				EXCEPTION WHEN NO_DATA_FOUND THEN 
+				V_tva_id := 25;
+				END;
+				select count(*) 
+				into V_nbr 
+				from genptaslice 
+				where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
+								 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+								);
+				if V_nbr =1 then
+					select PTA_ID,PSL_RANK  
+					into V_PTA_ID,V_PSL_RANK 
+					from genptaslice 
+					where PTA_ID in (select PTA_ID 
+									 from genitemperiodtarif 
+									 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
+									)
+					and rownum=1;
+				end if;
+				if V_nbr>1 then
+					select PTA_ID,PSL_RANK  
+					into V_PTA_ID,V_PSL_RANK 
+					from genptaslice 
+					where PTA_ID in (select PTA_ID 
+									 from genitemperiodtarif
+									 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
+									)
+					and rownum=1;
+				end if;	
+                 V_BLI_MHT:=(to_number(trim(facture_.net))-to_number(trim(facture_.mtonas)))/1000;
+				BEGIN
+					INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+										   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+										   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+								   VALUES(New_Genbill.BIL_ID,null,v,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,0,0,0,V_TVA_ID,
+										  V_BLI_MHT,0,V_BLI_MHT,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+										  null,null,null,null,null,null,null,null,null,null,null,null);
+				EXCEPTION WHEN OTHERS THEN
+									BEGIN
+										INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+															   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+															   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+													   VALUES(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,0,0,0,V_TVA_ID,
+															  V_BLI_MHT,0,V_BLI_MHT,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+															  null,null,null,null,null,null,null,null,null,null,null,null);
+									EXCEPTION WHEN OTHERS THEN NULL;
+									END;
+				END;
+-------------------------------------------------------------------------------------------
+----------------------------ARTICLE DE REPRISE ONAS----------------------------------------
+-------------------------------------------------------------------------------------------		
+	            v := v+1;
+				V_PTA_ID := null;
+				V_PSL_RANK := null;
+				V_BLI_MHT  := null;
+				begin
+				v_code:='REPRISE-ONAS';
+					for x in C_ITEM(v_code) loop
+						V_ITE_ID:=x.ite_id;
+						V_ite_name:=x.ite_name
+						V_VOW_UNIT:=x.VOW_UNIT
 					end loop;
 				EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
 				end;
@@ -3708,96 +3725,26 @@ BEGIN
 									)
 					and rownum=1;
 				end if;	
-                 V_BLI_MHT:=(to_number(trim(facture_.net))-to_number(trim(facture_.mtonas)))/1000;
-				BEGIN
-					insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-										   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-										   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-								   values(New_Genbill.BIL_ID,null,v,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,0,0,0,V_TVA_ID,
-										  V_BLI_MHT,0,V_BLI_MHT,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-										  null,null,null,null,null,null,null,null,null,null,null,null);
-				EXCEPTION WHEN OTHERS THEN
-									BEGIN
-										insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-															   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-															   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-													   values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,0,0,0,V_TVA_ID,
-															  V_BLI_MHT,0,V_BLI_MHT,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-															 null,null,null,null,null,null,null,null,null,null,null,null);
-									EXCEPTION WHEN OTHERS THEN NULL;
-									END;
-				END;
--------------------------------------------------------------------------------------------
-----------------------------ARTICLE DE REPRISE ONAS----------------------------------------
--------------------------------------------------------------------------------------------		
-	            v := v+1;
-				V_PTA_ID := null;
-				V_PSL_RANK := null;
-				V_BLI_MHT  := null;
-				begin
-				v_code:='REPRISE-ONAS';
-					for x in C_ITEM(v_code) loop
-					V_ITE_ID:=x.ite_id;
-					V_ite_name:=x.ite_name
-					V_VOW_UNIT:=x.VOW_UNIT
-					end loop;
-				EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-				end;
-				begin
-				v_tva_taux:= 0;
-					for v in C_TVA(v_tva_taux) loop
-					   V_tva_id:=v.tva_id; 
-					end loop;
-				EXCEPTION WHEN NO_DATA_FOUND THEN 
-				V_tva_id := 25;
-				end;
-				select count(*) 
-				into V_nbr 
-				from genptaslice 
-				where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-								 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
-								);
-				if V_nbr =1 then
-					select PTA_ID,PSL_RANK  
-					into V_PTA_ID,V_PSL_RANK 
-					from genptaslice 
-					where PTA_ID in (select PTA_ID 
-									 from genitemperiodtarif 
-									 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
-									)
-					and rownum=1;
-				end if;
-				if V_nbr>1 then
-						select PTA_ID,PSL_RANK  
-						into V_PTA_ID,V_PSL_RANK 
-						from genptaslice 
-						where PTA_ID in (select PTA_ID 
-										 from genitemperiodtarif
-										 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
-										)
-						and rownum=1;
-				end if;	
                 V_BLI_MHT:= (to_number(trim(facture_.mtonas))/1000);		
                 BEGIN
-					insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+					INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 										   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 										   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-								   values(New_Genbill.BIL_ID,null,v,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,0,0,0,V_TVA_ID,
-										  V_BLI_MHT,0,V_BLI_MHT,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-										 null,null,null,null,null,null,null,null,null,null,null,null);
+								    values(New_Genbill.BIL_ID,null,v,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,0,0,0,V_TVA_ID,
+										   V_BLI_MHT,0,V_BLI_MHT,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+										   null,null,null,null,null,null,null,null,null,null,null,null);
 				EXCEPTION WHEN OTHERS THEN
 									BEGIN
-										insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+										INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 															   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 															   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-													   values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,0,0,0,V_TVA_ID,
-															  V_BLI_MHT,0,V_BLI_MHT,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-															  null,null,null,null,null,null,null,null,null,null,null,null);
+													    VALUES(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,0,0,0,V_TVA_ID,
+															   V_BLI_MHT,0,V_BLI_MHT,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+															   null,null,null,null,null,null,null,null,null,null,null,null);
 									EXCEPTION WHEN OTHERS THEN NULL;
 									END;
 				END;
-						
-		    end if;
+			end if;
 		end loop;	
     end loop;
 -----------------------------	
@@ -3806,7 +3753,6 @@ BEGIN
     FOR facture_ in fact_IMPGC LOOP
 	
 	    FOR x in branch_(lpad(facture_.DIST, 2, '0'),lpad(trim(facture_.TOU), 3, '0'),lpad(trim(facture_.ORD), 3, '0'))LOOP	
-		
 		    select seq_genrun.nextval     into genrun_id     from dual;
 			select seq_agrbill.nextval    into Agrbill_Id    from dual;
 			select seq_gendebt.nextval    into Debt_Id       from dual;
@@ -3817,16 +3763,16 @@ BEGIN
 			V_FAC_DATECALCUL := null;
 			V_FAC_ABN_NUM    := null;
 			V_REF_ABN        := null;
-			V_periode   := facture_.mois;
-            V_anneereel :=facture_.ANNEE;
+			V_periode        := facture_.mois;
+            V_anneereel      := facture_.ANNEE;
 			select last_day(to_date('01'||lpad(facture_.mois,2,0)||facture_.annee,'ddmmyy')) 
 			into v_date
 			from dual;
-			begin
-			V_FAC_DATECALCUL := v_date;
-			Exception  when others then
-			V_FAC_DATECALCUL := '01/01/2016';
-			end;
+			BEGIN
+			 V_FAC_DATECALCUL := v_date;
+			EXCEPTION WHEN OTHERS THEN
+			 V_FAC_DATECALCUL := '01/01/2016';
+			END;
 			V_FAC_DATELIM:= V_FAC_DATECALCUL+25;
 		    v_ID_FACTURE :=lpad(trim(facture_.DISTRICT),2,'0')||lpad(trim(facture_.tournee),3,'0')||lpad(trim(facture_.ORDRE),3,'0')||to_char(annee_)||lpad(to_char(periode_),2,'0')||'0';
             V_TRAIN_FACT :='ANNEE:'||trim(annee_)||' MOIS:'||trim(periode_);
@@ -3891,12 +3837,12 @@ BEGIN
 				New_Det.SAG_ID           :=  V_SAG_ID ;
 				New_Det.DEB_PREL         := 1 ;
 				If (V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA) > 0 then --- Facture Normal else Facture Avoire
-				   New_Det.DEB_AMOUNTINIT   :=  V_TOTHTE+ V_TVA+V_TOTHTA+V_TOTTVAA ;
-				   New_Det.VOW_DEBTYPE      := pk_genvocword.getidbycode('VOW_DEBTYPE','FA',null) ;
+				    New_Det.DEB_AMOUNTINIT   :=  V_TOTHTE+ V_TVA+V_TOTHTA+V_TOTTVAA ;
+				    New_Det.VOW_DEBTYPE      := pk_genvocword.getidbycode('VOW_DEBTYPE','FA',null) ;
 				else
-				New_Det.deb_amount_cash  := -(V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA) ;
-				New_Det.DEB_AMOUNTINIT   := 0;
-				New_Det.VOW_DEBTYPE      := pk_genvocword.getidbycode('VOW_DEBTYPE','AV',null) ;
+					New_Det.deb_amount_cash  := -(V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA) ;
+					New_Det.DEB_AMOUNTINIT   := 0;
+					New_Det.VOW_DEBTYPE      := pk_genvocword.getidbycode('VOW_DEBTYPE','AV',null) ;
 				end if ;
 				New_Det.DEB_AMOUNTREMAIN :=  V_SOLDE ;
 				New_Det.DEB_COMMENT      := V_REF_ABN ;
@@ -3925,13 +3871,12 @@ BEGIN
 				New_Agrbill.BIL_ID            :=  Agrbill_Id ;
 				New_Agrbill.SAG_ID            :=  V_SAG_ID;
 				New_Agrbill.VOW_AGRBILLTYPE   :=  pk_genvocword.getidbycode('VOW_AGRBILLTYPE','FC',null) ;
-				New_Agrbill.VOW_MODEFACT      :=  pk_genvocword.getidbycode('VOW_MODEFACT',4,null) ;
+				New_Agrbill.VOW_MODEFACT      :=  pk_genvocword.getidbycode('VOW_MODEFACT',4,null);--------NB:(4 ou MIG) a verifier
 					Insert into agrbill(BIL_ID,SAG_ID,VOW_AGRBILLTYPE,VOW_MODEFACT)
 								 values(New_Agrbill.BIL_ID,New_Agrbill.SAG_ID,New_Agrbill.VOW_AGRBILLTYPE,New_Agrbill.VOW_MODEFACT);	
 					commit;
 --------------------------------------------------------Traitement genbill
-
-				New_Genbill.BIL_ID            :=  Agrbill_Id;
+                New_Genbill.BIL_ID            :=  Agrbill_Id;
 				New_Genbill.BIL_CODE          :=  V_ID_FACTURE;
 				New_Genbill.BIL_CALCDT        :=  V_FAC_DATECALCUL ;
 				New_Genbill.BIL_AMOUNTHT      :=  V_TOTHTE +V_TOTHTA ;
@@ -3947,7 +3892,7 @@ BEGIN
 								values(New_Genbill.BIL_ID,New_Genbill.BIL_CODE,New_Genbill.BIL_CALCDT,New_Genbill.BIL_AMOUNTHT,New_Genbill.BIL_AMOUNTTVA,New_Genbill.BIL_AMOUNTTTC,
 									   New_Genbill.DEB_ID,New_Genbill.PAR_ID,New_Genbill.BIL_STATUS,New_Genbill.BIL_AMOUNTTTCDEC,New_Genbill.BIL_DEBTDT,New_Genbill.RUN_ID); 
 					commit; 
-			    v := 0;		
+v := 0;		
 -------------------------------------------------------------------------------------------
 ----------------------------ARTICLE DE REPRISE SONEDE----------------------------------------
 -------------------------------------------------------------------------------------------					
@@ -3955,29 +3900,29 @@ BEGIN
 				V_PTA_ID := null;
 				V_PSL_RANK := null;
 				V_BLI_MHT  := null;
-				begin
+				BEGIN
 				v_code:='REPRISE-SONEDE';
-					for x in C_ITEM(v_code) loop
-					V_ITE_ID:=x.ite_id;
-					V_ite_name:=x.ite_name
-					V_VOW_UNIT:=x.VOW_UNIT
+					FOR x in C_ITEM(v_code) LOOP
+						V_ITE_ID:=x.ite_id;
+						V_ite_name:=x.ite_name
+						V_VOW_UNIT:=x.VOW_UNIT
 					end loop;
 				EXCEPTION WHEN NO_DATA_FOUND THEN NULL;
-				end;
-				begin
+				END;
+				BEGIN
 				v_tva_taux:= 0;
 					for v in C_TVA(v_tva_taux) loop
-					   V_tva_id:=v.tva_id; 
+					    V_tva_id:=v.tva_id; 
 					end loop;
 				EXCEPTION WHEN NO_DATA_FOUND THEN 
 				V_tva_id := 25;
-				end;
+				END;
 				select count(*) 
 				into V_nbr 
 				from genptaslice 
 				where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
 								 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
-								);
+								 );
 				if V_nbr =1 then
 					select PTA_ID,PSL_RANK  
 					into V_PTA_ID,V_PSL_RANK 
@@ -4000,20 +3945,20 @@ BEGIN
 				end if;	
                  V_BLI_MHT:=(to_number(trim(facture_.net))-to_number(trim(facture_.mtonas)))/1000;
 				BEGIN
-					insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+					INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 										   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 										   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-								   values(New_Genbill.BIL_ID,null,v,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,0,0,0,V_TVA_ID,
-										  V_BLI_MHT,0,V_BLI_MHT,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-										 null,null,null,null,null,null,null,null,null,null,null,null);
+								    values(New_Genbill.BIL_ID,null,v,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,0,0,0,V_TVA_ID,
+										   V_BLI_MHT,0,V_BLI_MHT,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+										   null,null,null,null,null,null,null,null,null,null,null,null);
 				EXCEPTION WHEN OTHERS THEN
 									BEGIN
-										insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+										INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 															   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 															   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
 													   values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,0,0,0,V_TVA_ID,
 															  V_BLI_MHT,0,V_BLI_MHT,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-															 null,null,null,null,null,null,null,null,null,null,null,null);
+															  null,null,null,null,null,null,null,null,null,null,null,null);
 									EXCEPTION WHEN OTHERS THEN NULL;
 									END;
 				END;
@@ -4058,35 +4003,34 @@ BEGIN
 					and rownum=1;
 				end if;
 				if V_nbr>1 then
-						select PTA_ID,PSL_RANK  
-						into V_PTA_ID,V_PSL_RANK 
-						from genptaslice 
-						where PTA_ID in (select PTA_ID 
-										 from genitemperiodtarif
-										 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
-										)
-						and rownum=1;
+					select PTA_ID,PSL_RANK  
+					into V_PTA_ID,V_PSL_RANK 
+					from genptaslice 
+					where PTA_ID in (select PTA_ID 
+									 from genitemperiodtarif
+									 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
+									)
+					and rownum=1;
 				end if;	
                 V_BLI_MHT:= (to_number(trim(facture_.mtonas))/1000);		
                 BEGIN
-					insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+					INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 										   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 										   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-								   values(New_Genbill.BIL_ID,null,v,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,0,0,0,V_TVA_ID,
+								   VALUES(New_Genbill.BIL_ID,null,v,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,0,0,0,V_TVA_ID,
 										  V_BLI_MHT,0,V_BLI_MHT,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
 										 null,null,null,null,null,null,null,null,null,null,null,null);
 				EXCEPTION WHEN OTHERS THEN
 									BEGIN
-										insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
+										INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 															   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 															   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-													   values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,0,0,0,V_TVA_ID,
+													   VALUES(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,0,0,0,V_TVA_ID,
 															  V_BLI_MHT,0,V_BLI_MHT,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
 															 null,null,null,null,null,null,null,null,null,null,null,null);
 									EXCEPTION WHEN OTHERS THEN NULL;
 									END;
 				END;
-						
 			end if;
 		end loop;
     end loop;		
