@@ -65,7 +65,7 @@ cursor fact_IMPGC is select * from impayees_gc
     V_TOTHTA          NUMBER(25,10);
     V_TOTTVAA         NUMBER(25,10);
 	V_SOLDE           NUMBER(25,10);
-	v_anneereel       varchar2(4);
+	V_anneereel       varchar2(4);
 	V_periode         Number ;
 	V_tiers           varchar2(1);
     V_six             varchar2(1);
@@ -80,10 +80,8 @@ cursor fact_IMPGC is select * from impayees_gc
 	V_tva_id          Number ;
 	V_VOW_UNIT        Number ;
 	V_PTA_ID          Number ;
-	V_PSL_RANK        Number ;
-	nbr        		  Number ;
-	v_bil_bil_id   	  Number ;
-	v_bil_cancel_id   Number ;
+	V_PSL_RANK        Number ; 
+	V_bil_cancel_id   Number ;
 	
     New_Det           gendebt%rowtype;
     Debt_Id           Number ;
@@ -112,7 +110,6 @@ cursor fact_IMPGC is select * from impayees_gc
     New_genrun        genrun%rowtype ;
     genrun_id         Number ;
     genrun_ref        Number ;
-	 
 ------------------------------PROC GENRUN------------------------------------------	 
 Procedure Genere_genrun (Newgenrun genrun%rowtype ,genrunId  in out   number ,ref_genrun out number) is
     V_RUN_NUMBER Number ;
@@ -153,7 +150,6 @@ EXCEPTION WHEN NO_DATA_FOUND THEN
         ref_genimp := genimpId;
     insert into genimp (imp_id,imp_code,imp_name,vow_budgtp,org_id)
                 values(genimpId,Newgenimp.imp_code,Newgenimp.imp_name,Newgenimp.vow_budgtp,Newgenimp.org_id);
-
 end Genere_genimp;
     
 BEGIN
@@ -190,7 +186,7 @@ BEGIN
 										and trim(t.district)=facture_.dist
 									   );
 			EXCEPTION WHEN OTHERS THEN
-			V_periode := 1;
+			    V_periode := 1;
 			END;
 			V_ID_FACTURE:=lpad(trim(facture_.DIST),2,'0')||lpad(trim(facture_.tou),3,'0')||lpad(trim(facture_.ORD),3,'0')||to_char(V_anneereel)||lpad(to_char(V_periode),2,'0')||to_char(v_version);
 			V_pdl_ref   := lpad(trim(facture_.DIST),2,'0')||lpad(trim(facture_.tou),3,'0')||lpad(trim(facture_.ORD),3,'0')||lpad(trim(facture_.pol),5,'0');			  
@@ -228,7 +224,7 @@ BEGIN
 				and spt.spt_refe=V_pdl_ref;				
 				V_TRAIN_FACT :='ANNEE:'||trim(V_anneereel)||' TRIM:'||trim(V_periode)||' TIER:'||trim(V_tiers)||' SIX:'||trim(V_six );
 				V_REF_ABN :=lpad(trim(facture_.DIST),2,'0')||lpad(to_char(trim(facture_.pol)),5,'0')||lpad(trim(facture_.tou),3,'0')||lpad(trim(facture_.ORD),3,'0');			   
-				V_COMPTEAUX:='IMP_MIG'			   
+				V_COMPTEAUX:='IMP_MIG';			   
 				V_TOTHTE:=(facture_.net-(V_TVA+facture_.arriere))/1000;
 				V_TVA:=(facture_.tva_ff+facture_.tva_capit+facture_.tva_pfin+facture_.tvacons+facture_.tva_preav+ facture_.tvaferm+facture_.tvadeplac+facture_.tvadepose_dem+facture_.tvadepose_def)/1000;
 				V_TOTHTA:=0;
@@ -286,15 +282,16 @@ BEGIN
 				New_Det.DEB_PREL         :=  1;
 				
 				If (V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA) > 0 then
-					New_Det.DEB_AMOUNTINIT   :=  V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA;
-					New_Det.VOW_DEBTYPE      :=  pk_genvocword.getidbycode('VOW_DEBTYPE','FA',null) ;
+					New_Det.DEB_AMOUNTINIT   := V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA;
+					New_Det.deb_amount_cash  := V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA;
+					New_Det.VOW_DEBTYPE      := pk_genvocword.getidbycode('VOW_DEBTYPE','FA',null) ;
 				else
-					New_Det.deb_amount_cash  :=  -(V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA);
+					New_Det.deb_amount_cash  := -(V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA);
 					New_Det.DEB_AMOUNTINIT   := 0;
 					New_Det.VOW_DEBTYPE      := pk_genvocword.getidbycode('VOW_DEBTYPE','AV',null) ;
 				end if ;
-				New_Det.DEB_AMOUNTREMAIN :=  V_SOLDE ;
-				New_Det.DEB_COMMENT      :=  V_REF_ABN;
+				New_Det.DEB_AMOUNTREMAIN := V_SOLDE ;
+				New_Det.DEB_COMMENT      := V_REF_ABN;
 				New_Det.VOW_SETTLEMODE   := pk_genvocword.getidbycode('VOW_SETTLEMODE',4,null) ;
  --------------------------------------------------------Traitement GENACCOUNT ,GENIMP
 				New_genimp.imp_code      :=  V_COMPTEAUX ;
@@ -312,7 +309,7 @@ BEGIN
 				New_Det.DEB_NORECOVERY   := 0;
 				  
 				Insert into gendebt(deb_id,deb_refe,org_id,par_id,adr_id,deb_date,deb_duedt,deb_printdt,deb_amountinit,deb_amountremain,bap_id,
-									vow_settlemode,aco_id,deb_norecovery,deb_credt,deb_updtby,deb_updtdt,deb_comment,sag_id,vow_debtype,deb_prel)
+									vow_settlemode,aco_id,deb_norecovery,deb_credt,deb_updtby,deb_updtdt,deb_comment,deb_amount_cash,sag_id,vow_debtype,deb_prel)
 							values (New_Det.deb_id,New_Det.deb_refe,New_Det.org_id,New_Det.par_id,New_Det.adr_id,New_Det.deb_date,New_Det.deb_duedt,New_Det.deb_printdt,
 									New_Det.deb_amountinit,New_Det.deb_amountremain,New_Det.bap_id,New_Det.vow_settlemode,New_Det.aco_id,New_Det.deb_norecovery,New_Det.deb_credt,
 									New_Det.deb_updtby,New_Det.deb_updtdt,New_Det.DEB_COMMENT,nvl(New_Det.deb_amount_cash,0),New_Det.SAG_ID,New_Det.VOW_DEBTYPE,New_Det.DEB_PREL);	
@@ -729,8 +726,7 @@ BEGIN
 										 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
 										);
 						if V_nbr =1 then
-						
-							select PTA_ID,PSL_RANK  
+						    select PTA_ID,PSL_RANK  
 							into V_PTA_ID,V_PSL_RANK 
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
@@ -1631,7 +1627,7 @@ BEGIN
 		V_ID_FACTURE :=null;
 		V_date_      :=null;
 		V_periode    :=null;
-		v_anneereel  :=null ;
+		v_anneereel  :=null;
 		v_nbr		 :=null;
 		v_ORG_ID     :=null;
 		v_PAR_ID 	 :=null;
@@ -1737,6 +1733,7 @@ BEGIN
 				New_Det.DEB_PREL         :=  1 ;
 				If (v_TOTHTE+v_TVA+V_TOTHTA+V_TOTTVAA) > 0 then 
 					New_Det.DEB_AMOUNTINIT   := V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA;
+					New_Det.deb_amount_cash  := V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA;
 					New_Det.VOW_DEBTYPE      := pk_genvocword.getidbycode('VOW_DEBTYPE','FA',null);
 				else
 					New_Det.deb_amount_cash  := -(V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA) ;
@@ -1762,7 +1759,7 @@ BEGIN
 				New_Det.DEB_NORECOVERY   := 0;
 					
 				Insert into gendebt(deb_id,deb_refe,org_id,par_id,adr_id,deb_date,deb_duedt,deb_printdt,deb_amountinit,deb_amountremain,bap_id,
-									vow_settlemode,aco_id,deb_norecovery,deb_credt,deb_updtby,deb_updtdt,deb_comment,sag_id,vow_debtype,deb_prel)
+									vow_settlemode,aco_id,deb_norecovery,deb_credt,deb_updtby,deb_updtdt,deb_comment,deb_amount_cash,sag_id,vow_debtype,deb_prel)
 						    values(New_Det.deb_id,New_Det.deb_refe,New_Det.org_id,New_Det.par_id,New_Det.adr_id,New_Det.deb_date,New_Det.deb_duedt,New_Det.deb_printdt,
 								   New_Det.deb_amountinit,New_Det.deb_amountremain,New_Det.bap_id,New_Det.vow_settlemode,New_Det.aco_id,New_Det.deb_norecovery,New_Det.deb_credt, 
 								   New_Det.deb_updtby,New_Det.deb_updtdt,New_Det.DEB_COMMENT,nvl(New_Det.deb_amount_cash,0),New_Det.SAG_ID,New_Det.VOW_DEBTYPE,New_Det.DEB_PREL); 
@@ -3093,6 +3090,7 @@ BEGIN
 			New_Det.DEB_PREL         :=  1 ;
 			If (V_TOTHTE+ V_TVA+V_TOTHTA+V_TOTTVAA) > 0 then --- Facture Normal else Facture Avoire
 				New_Det.DEB_AMOUNTINIT   := V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA ;
+				New_Det.deb_amount_cash  := V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA;
 				New_Det.VOW_DEBTYPE      := pk_genvocword.getidbycode('VOW_DEBTYPE','FA',null) ;
 			else
 				New_Det.deb_amount_cash  := -(V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA) ;
@@ -3117,7 +3115,7 @@ BEGIN
             New_Det.ACO_ID           := genaccount_ref ;
 			New_Det.DEB_NORECOVERY   := 0;
 			    Insert into gendebt(deb_id,deb_refe,org_id,par_id,adr_id,deb_date,deb_duedt,deb_printdt,deb_amountinit,deb_amountremain,bap_id,
-									vow_settlemode,aco_id,deb_norecovery,deb_credt,deb_updtby,deb_updtdt,deb_comment,sag_id,vow_debtype,deb_prel)
+									vow_settlemode,aco_id,deb_norecovery,deb_credt,deb_updtby,deb_updtdt,deb_comment,deb_amount_cash,sag_id,vow_debtype,deb_prel)
 							values (New_Det.deb_id,New_Det.deb_refe,New_Det.org_id,New_Det.par_id,New_Det.adr_id,New_Det.deb_date,New_Det.deb_duedt,New_Det.deb_printdt,
 									New_Det.deb_amountinit,New_Det.deb_amountremain,New_Det.bap_id,New_Det.vow_settlemode,New_Det.aco_id,New_Det.deb_norecovery,New_Det.deb_credt,
 									New_Det.deb_updtby,New_Det.deb_updtdt,New_Det.DEB_COMMENT,nvl(New_Det.deb_amount_cash,0),New_Det.SAG_ID,New_Det.VOW_DEBTYPE,New_Det.DEB_PREL);	
@@ -3283,7 +3281,7 @@ BEGIN
 					New_Det.ACO_ID           := genaccount_ref ;
 					New_Det.DEB_NORECOVERY   := 0;
 							Insert into gendebt(deb_id,deb_refe,org_id,par_id,adr_id,deb_date,deb_duedt,deb_printdt,deb_amountinit,deb_amountremain,bap_id,
-											    vow_settlemode,aco_id,deb_norecovery,deb_credt,deb_updtby,deb_updtdt,deb_comment,sag_id,vow_debtype,deb_prel)
+											    vow_settlemode,aco_id,deb_norecovery,deb_credt,deb_updtby,deb_updtdt,deb_comment,deb_amount_cash,sag_id,vow_debtype,deb_prel)
 										 values(New_Det.deb_id,New_Det.deb_refe,New_Det.org_id,New_Det.par_id,New_Det.adr_id,New_Det.deb_date,New_Det.deb_duedt,New_Det.deb_printdt,
 												New_Det.deb_amountinit,New_Det.deb_amountremain,New_Det.bap_id,New_Det.vow_settlemode,New_Det.aco_id,New_Det.deb_norecovery,New_Det.deb_credt,
 												New_Det.deb_updtby,New_Det.deb_updtdt,New_Det.DEB_COMMENT,nvl(New_Det.deb_amount_cash,0),New_Det.SAG_ID,New_Det.VOW_DEBTYPE,New_Det.DEB_PREL);	
@@ -3401,16 +3399,17 @@ BEGIN
 					New_Det.SAG_ID           :=  V_SAG_ID ;
 					New_Det.DEB_PREL         :=  1 ;
 					If (V_TOTHTE+V_TVA+V_TOTHTA+ V_TOTTVAA) > 0 then --- Facture Normal else Facture Avoire
-						New_Det.DEB_AMOUNTINIT   :=  V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA ;
-						New_Det.VOW_DEBTYPE      := pk_genvocword.getidbycode('VOW_DEBTYPE','FA',null) ;
+						New_Det.DEB_AMOUNTINIT   :=  V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA;
+						New_Det.deb_amount_cash  := V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA;
+						New_Det.VOW_DEBTYPE      := pk_genvocword.getidbycode('VOW_DEBTYPE','FA',null);
 					else
 						New_Det.deb_amount_cash  := -(V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA) ;
 						New_Det.DEB_AMOUNTINIT   := 0;
-						New_Det.VOW_DEBTYPE      := pk_genvocword.getidbycode('VOW_DEBTYPE','AV',null) ;
+						New_Det.VOW_DEBTYPE      := pk_genvocword.getidbycode('VOW_DEBTYPE','AV',null);
 					end if ;
 					New_Det.DEB_AMOUNTREMAIN :=  V_SOLDE ;
 					New_Det.DEB_COMMENT      :=  V_REF_ABN ;
-					New_Det.VOW_SETTLEMODE   := pk_genvocword.getidbycode('VOW_SETTLEMODE',4,null) ;
+					New_Det.VOW_SETTLEMODE   := pk_genvocword.getidbycode('VOW_SETTLEMODE',4,null);
 --------------------------------------------------------Traitement GENACCOUNT ,GENIMP
 					New_genimp.imp_code      :=  V_COMPTEAUX ;
 					New_genimp.imp_name      :=  V_COMPTEAUX ;
@@ -3426,7 +3425,7 @@ BEGIN
 					New_Det.ACO_ID           := genaccount_ref ;
 					New_Det.DEB_NORECOVERY   := 0;
 						Insert into gendebt(deb_id,deb_refe,org_id,par_id,adr_id,deb_date,deb_duedt,deb_printdt,deb_amountinit,deb_amountremain,bap_id,
-											vow_settlemode,aco_id,deb_norecovery,deb_credt,deb_updtby,deb_updtdt,deb_comment,sag_id,vow_debtype,deb_prel)
+											vow_settlemode,aco_id,deb_norecovery,deb_credt,deb_updtby,deb_updtdt,deb_comment,deb_amount_cash,sag_id,vow_debtype,deb_prel)
 									values (New_Det.deb_id,New_Det.deb_refe,New_Det.org_id,New_Det.par_id,New_Det.adr_id,New_Det.deb_date,New_Det.deb_duedt,New_Det.deb_printdt,
 											New_Det.deb_amountinit,New_Det.deb_amountremain,New_Det.bap_id,New_Det.vow_settlemode,New_Det.aco_id,New_Det.deb_norecovery,New_Det.deb_credt,
 											New_Det.deb_updtby,New_Det.deb_updtdt,New_Det.DEB_COMMENT,nvl(New_Det.deb_amount_cash,0),New_Det.SAG_ID,New_Det.VOW_DEBTYPE,New_Det.DEB_PREL);	
@@ -3505,7 +3504,8 @@ BEGIN
 									 from TECSERVICEPOINT spt,
 										  AGRSERVICEAGR sag
 									 where spt.spt_id=sag.spt_id
-									 and spt.spt_refe=V_pdl_ref);
+									 and spt.spt_refe=V_pdl_ref
+									 );
 				select par.adr_id
 				into   V_ADR_ID
 				from   GENPARTY  par
@@ -3519,9 +3519,9 @@ BEGIN
 				and spt.spt_refe=V_pdl_ref;	
 				
 				V_COMPTEAUX:='IMP_MIG'			   
-				V_TOTHTE:=(to_number(trim(facture_.net)))/1000;
-				V_TVA:=0
-				V_TOTHTA:=0;
+				V_TOTHTE :=(to_number(trim(facture_.net)))/1000;
+				V_TVA    :=0
+				V_TOTHTA :=0;
 				V_TOTTVAA:=0;
 				V_SOLDE:=(to_number(trim(facture_.net)))/1000;
 				New_Det   := null;
@@ -3548,7 +3548,7 @@ BEGIN
 				New_Det.DEB_PRINTDT      :=  V_FAC_DATECALCUL ;
 				New_Det.SAG_ID           :=  V_SAG_ID ;
 				New_Det.DEB_PREL         := 1 ;
-				If (V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA) > 0 then --- Facture Normal else Facture Avoire
+				If (V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA)>0 then --- Facture Normal else Facture Avoire
 				  New_Det.DEB_AMOUNTINIT   :=  V_TOTHTE+ V_TVA+V_TOTHTA+V_TOTTVAA ;
 				  New_Det.VOW_DEBTYPE      := pk_genvocword.getidbycode('VOW_DEBTYPE','FA',null) ;
 				else
@@ -3563,18 +3563,18 @@ BEGIN
 				New_genimp.imp_code      :=  V_COMPTEAUX ;
 				New_genimp.imp_name      :=  V_COMPTEAUX ;
 				New_genimp.vow_budgtp    :=  pk_genvocword.getidbycode('VOW_BUDGTP','EA',null);
-				Genere_genimp (New_genimp ,genimp_id,genimp_ref);
+				Genere_genimp (New_genimp,genimp_id,genimp_ref);
 				New_genaccount.PAR_ID    :=  V_PAR_ID ;
 				New_genaccount.IMP_ID    :=  genimp_ref ;
 				New_genaccount.VOW_ACOTP :=  pk_genvocword.getidbycode('VOW_ACOTP','1',null);
 				New_genaccount.REC_ID    :=  null ;
 				New_agrsagaco.SAG_ID     :=  V_SAG_ID ;
 				New_agrsagaco.SCO_STARTDT:=  V_ABN_DT_DEB ;
-				Genere_genaccount (New_genaccount ,genaccount_id ,genaccount_ref ,agrsagaco_id,New_agrsagaco) ;
+				Genere_genaccount (New_genaccount,genaccount_id,genaccount_ref,agrsagaco_id,New_agrsagaco) ;
 				New_Det.ACO_ID           := genaccount_ref ;
 				New_Det.DEB_NORECOVERY   := 0;
 				    Insert into gendebt(deb_id,deb_refe,org_id,par_id,adr_id,deb_date,deb_duedt,deb_printdt,deb_amountinit,deb_amountremain,bap_id,
-										vow_settlemode,aco_id,deb_norecovery,deb_credt,deb_updtby,deb_updtdt,deb_comment,sag_id,vow_debtype,deb_prel)
+										vow_settlemode,aco_id,deb_norecovery,deb_credt,deb_updtby,deb_updtdt,deb_comment,deb_amount_cash,sag_id,vow_debtype,deb_prel)
 								values (New_Det.deb_id,New_Det.deb_refe,New_Det.org_id,New_Det.par_id,New_Det.adr_id,New_Det.deb_date,New_Det.deb_duedt,New_Det.deb_printdt,
 										New_Det.deb_amountinit,New_Det.deb_amountremain,New_Det.bap_id,New_Det.vow_settlemode,New_Det.aco_id,New_Det.deb_norecovery,New_Det.deb_credt,
 										New_Det.deb_updtby,New_Det.deb_updtdt,New_Det.DEB_COMMENT,nvl(New_Det.deb_amount_cash,0),New_Det.SAG_ID,New_Det.VOW_DEBTYPE,New_Det.DEB_PREL);	
@@ -3808,11 +3808,11 @@ BEGIN
 				
 				V_COMPTEAUX:='IMP_MIG'			   
 				V_TOTHTE:=(to_number(trim(facture_.net)))/1000;
-				V_TVA:=0
+				V_TVA:=0;
 				V_TOTHTA:=0;
 				V_TOTTVAA:=0;
 				V_SOLDE:=(to_number(trim(facture_.net)))/1000;
-				New_Det   := null;
+				New_Det     := null;
 				New_Genbill := null;
 				New_genrun  := null;
 --------------------------------------------------------Traitement Role
@@ -3844,25 +3844,25 @@ BEGIN
 					New_Det.DEB_AMOUNTINIT   := 0;
 					New_Det.VOW_DEBTYPE      := pk_genvocword.getidbycode('VOW_DEBTYPE','AV',null) ;
 				end if ;
-				New_Det.DEB_AMOUNTREMAIN :=  V_SOLDE ;
+				New_Det.DEB_AMOUNTREMAIN := V_SOLDE ;
 				New_Det.DEB_COMMENT      := V_REF_ABN ;
 				New_Det.VOW_SETTLEMODE   := pk_genvocword.getidbycode('VOW_SETTLEMODE',4,null) ;
 ----------------------------------------------------------Traitement GENACCOUNT ,GENIMP
 				New_genimp.imp_code      :=  V_COMPTEAUX ;
 				New_genimp.imp_name      :=  V_COMPTEAUX ;
 				New_genimp.vow_budgtp    :=  pk_genvocword.getidbycode('VOW_BUDGTP','EA',null);
-				Genere_genimp (New_genimp ,genimp_id,genimp_ref);
+				Genere_genimp (New_genimp,genimp_id,genimp_ref);
 				New_genaccount.PAR_ID    :=  V_PAR_ID ;
 				New_genaccount.IMP_ID    :=  genimp_ref ;
 				New_genaccount.VOW_ACOTP :=  pk_genvocword.getidbycode('VOW_ACOTP','1',null);
 				New_genaccount.REC_ID    :=  null ;
 				New_agrsagaco.SAG_ID     :=  V_SAG_ID ;
 				New_agrsagaco.SCO_STARTDT:=  V_ABN_DT_DEB ;
-				Genere_genaccount (New_genaccount ,genaccount_id ,genaccount_ref ,agrsagaco_id,New_agrsagaco) ;
+				Genere_genaccount (New_genaccount ,genaccount_id,genaccount_ref,agrsagaco_id,New_agrsagaco) ;
 				New_Det.ACO_ID           := genaccount_ref ;
 				New_Det.DEB_NORECOVERY   := 0;
 				    Insert into gendebt(deb_id,deb_refe,org_id,par_id,adr_id,deb_date,deb_duedt,deb_printdt,deb_amountinit,deb_amountremain,bap_id,
-										vow_settlemode,aco_id,deb_norecovery,deb_credt,deb_updtby,deb_updtdt,deb_comment,sag_id,vow_debtype,deb_prel)
+										vow_settlemode,aco_id,deb_norecovery,deb_credt,deb_updtby,deb_updtdt,deb_comment,deb_amount_cash,sag_id,vow_debtype,deb_prel)
 								values (New_Det.deb_id,New_Det.deb_refe,New_Det.org_id,New_Det.par_id,New_Det.adr_id,New_Det.deb_date,New_Det.deb_duedt,New_Det.deb_printdt,
 										New_Det.deb_amountinit,New_Det.deb_amountremain,New_Det.bap_id,New_Det.vow_settlemode,New_Det.aco_id,New_Det.deb_norecovery,New_Det.deb_credt,
 										New_Det.deb_updtby,New_Det.deb_updtdt,New_Det.DEB_COMMENT,nvl(New_Det.deb_amount_cash,0),New_Det.SAG_ID,New_Det.VOW_DEBTYPE,New_Det.DEB_PREL);	
@@ -3989,7 +3989,7 @@ v := 0;
 				select count(*) 
 				into V_nbr 
 				from genptaslice 
-				where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
+				where PTA_ID in (select PTA_ID from genitemperiodtarif 
 								 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
 								);
 				if V_nbr =1 then
@@ -4017,17 +4017,17 @@ v := 0;
 					INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 										   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 										   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-								   VALUES(New_Genbill.BIL_ID,null,v,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,0,0,0,V_TVA_ID,
-										  V_BLI_MHT,0,V_BLI_MHT,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-										 null,null,null,null,null,null,null,null,null,null,null,null);
+								    VALUES(New_Genbill.BIL_ID,null,v,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,0,0,0,V_TVA_ID,
+										   V_BLI_MHT,0,V_BLI_MHT,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+										   null,null,null,null,null,null,null,null,null,null,null,null);
 				EXCEPTION WHEN OTHERS THEN
 									BEGIN
 										INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 															   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 															   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-													   VALUES(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,0,0,0,V_TVA_ID,
-															  V_BLI_MHT,0,V_BLI_MHT,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-															 null,null,null,null,null,null,null,null,null,null,null,null);
+													    VALUES(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,0,0,0,V_TVA_ID,
+															   V_BLI_MHT,0,V_BLI_MHT,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+															   null,null,null,null,null,null,null,null,null,null,null,null);
 									EXCEPTION WHEN OTHERS THEN NULL;
 									END;
 				END;
