@@ -1,44 +1,53 @@
 declare 
-cursor branch_(district_ varchar2, tourne_ varchar2, ordre_ varchar2) is 
-select  b.*
-from branchement b
-where  lpad(trim(b.district),2,'0')=district_
-and lpad(trim(b.tourne),3,'0') = tourne_
-and lpad(trim(b.ordre),3,'0') = ordre_;
+CURSOR branch_(district_ varchar2,tourne_ varchar2,ordre_ varchar2) is 
+				select  b.*
+				from branchement b
+				where  lpad(trim(b.district),2,'0') = district_
+				and    lpad(trim(b.tourne),3,'0')   = tourne_
+				and    lpad(trim(b.ordre),3,'0')    = ordre_;
 	 
-cursor C_ITEM(V_Icode varchar2) is select ITE_ID,ite_name,VOW_UNIT  
+CURSOR C_ITEM(V_Icode varchar2) is select ITE_ID,ite_name,VOW_UNIT  
 								   from genitem s 
 								   where s.ITE_CODE=V_Icode;
 					
-cursor C_TVA(v_taux number) is select tva_id 
+CURSOR C_TVA(v_taux number) is select tva_id 
 							   from gentva 
 							   where tva_taux=v_taux;
 	 
-cursor fact_as400   is select * from facture_as400;
+CURSOR fact_as400   is select * from facture_as400;
 
-cursor fact_as400gc is select * from facture_as400gc;
+CURSOR fact_as400gc is select * from facture_as400gc;
 
-cursor fact_Dist    is select * from facture f where  f.annee='2015';
+CURSOR fact_Dist    is select * from facture f where  f.annee='2015';
 
-cursor fact_vers    is select distinct b.BIL_CODE,b.BIL_CALCDT,f.*,d.*
-						from facture f, genbill b,gendebt d
-						where f.etat in ('A','P')
-						and b.BIL_CODE = (trim(f.DISTRICT)||lpad(trim(f.tournee),3,'0')||
-						lpad(trim(f.ORDRE),3,'0')||to_char(f.annee)||lpad(trim(f.periode),2,'0')||'0')
-						and b.bil_id=d.bil_id;
+CURSOR fact_vers    is select distinct b.BIL_CODE,b.BIL_CALCDT,f.*,d.*
+					   from facture f, genbill b,gendebt d
+					   where f.etat in ('A','P')
+					   and b.BIL_CODE = (lpad(trim(f.DISTRICT),2,'0')||
+										 lpad(trim(f.tournee),3,'0')||
+										 lpad(trim(f.ORDRE),3,'0')||
+										 to_char(f.annee)||
+										 lpad(trim(f.periode),2,'0')||'0')
+					   and b.bil_id=d.bil_id;
 
-cursor fact_IMPPART    is select * from  impayees_part p 
-						  where not exists (select 'X' from genbill b 
-											 where b.BIL_CODE = (lpad(trim(DISTRICT),2,'0')||lpad(trim(tournee),3,'0')||
-											 lpad(trim(ORDRE),3,'0')||to_char(annee)||lpad(trim(p.trimestre),2,'0')||0)
-											)
+CURSOR fact_IMPPART is select * from  impayees_part p 
+					   where not exists (select 'X' from genbill b 
+										 where b.BIL_CODE = (lpad(trim(DISTRICT),2,'0')||
+															 lpad(trim(tournee),3,'0')||
+															 lpad(trim(ORDRE),3,'0')||
+															 to_char(annee)||
+															 lpad(trim(p.trimestre),2,'0')||0)
+										)
 						  and  p.net<>p.mtpaye; 
 
-cursor fact_IMPGC is select * from impayees_gc  
-                     where  not exists (select 'X' from genbill b 
-                                        where b.BIL_CODE =(lpad(trim(DISTRICT),2,'0')||lpad(tournee,3,'0')||
-														   lpad(ORDRE,3,'0')||to_char(annee)||lpad(mois,2,'0')||0))
-                      and trim(net)<>trim(mtpaye); 				   
+CURSOR fact_IMPGC is select * from impayees_gc  i
+                     where not exists (select 'X' from genbill b 
+                                        where b.BIL_CODE =(lpad(trim(i.DISTRICT),2,'0')||
+														   lpad(i.tournee,3,'0')||
+														   lpad(i.ORDRE,3,'0')||
+														   to_char(i.annee)||
+														   lpad(i.mois,2,'0')||0))
+                      and trim(i.net)<>trim(i.mtpaye); 				   
 
 	MEU_ID     		  Number ;
 	V_BLI_MHT         Number ;
@@ -55,33 +64,33 @@ cursor fact_IMPGC is select * from impayees_gc
 	V_SAG_ID          Number ;
 	v                 Number ;
 	v_nbr             Number ;
-	V_ID_FACTURE      varchar2(50);
-	V_pdl_ref         varchar2(50);
-	V_REF_ABN         varchar2(50);
-	v_code			  varchar2(50);
-	V_COMPTEAUX		  varchar2(10);
-	V_TOTHTE          NUMBER(25,10);
-    V_TVA             NUMBER(25,10);
-    V_TOTHTA          NUMBER(25,10);
-    V_TOTTVAA         NUMBER(25,10);
-	V_SOLDE           NUMBER(25,10);
-	V_anneereel       varchar2(4);
-	V_periode         Number ;
-	V_tiers           varchar2(1);
-    V_six             varchar2(1);
-	V_TRAIN_FACT      varchar2(200);
-	v_version         NUMBER(1):=0;
-	V_FAC_DATECALCUL  date;
-	V_FAC_DATELIM     date;
-	V_date_           date;
-	V_ABN_DT_DEB      date;
-	V_ITE_ID    	  Number ;
-	V_ite_name  	  varchar2(100);
 	V_tva_id          Number ;
 	V_VOW_UNIT        Number ;
 	V_PTA_ID          Number ;
 	V_PSL_RANK        Number ; 
 	V_bil_cancel_id   Number ;
+	V_ITE_ID    	  Number ;
+	V_periode         Number ;
+	v_version         Number(1):=0 ;
+	V_TOTHTE          Number(25,10);
+    V_TVA             Number(25,10);
+    V_TOTHTA          Number(25,10);
+    V_TOTTVAA         Number(25,10);
+	V_SOLDE           Number(25,10);
+	V_TRAIN_FACT      varchar2(200);
+	V_ite_name  	  varchar2(100);
+	V_ID_FACTURE      varchar2(50) ;
+	V_pdl_ref         varchar2(50) ;
+	V_REF_ABN         varchar2(50) ;
+	v_code			  varchar2(50) ;
+	V_COMPTEAUX		  varchar2(10) ;
+	V_anneereel       varchar2(4)  ;
+	V_tiers           varchar2(1)  ;
+    V_six             varchar2(1)  ;
+	V_FAC_DATECALCUL  date;
+	V_FAC_DATELIM     date;
+	V_date_           date;
+	V_ABN_DT_DEB      date;
 	
     New_Det           gendebt%rowtype;
     Debt_Id           Number ;
@@ -114,9 +123,12 @@ cursor fact_IMPGC is select * from impayees_gc
 Procedure Genere_genrun (Newgenrun genrun%rowtype ,genrunId  in out   number ,ref_genrun out number) is
     V_RUN_NUMBER Number ;
 BEGIN
-      SELECT run_id INTO ref_genrun from genrun where RUN_NAME = Newgenrun.RUN_NAME;
+    SELECT run_id INTO ref_genrun from genrun where RUN_NAME = Newgenrun.RUN_NAME;
 Exception  WHEN NO_DATA_FOUND THEN
-    select nvl(max(RUN_NUMBER),0)+1 into V_RUN_NUMBER from genrun where run_exercice = Newgenrun.run_exercice;
+    select nvl(max(RUN_NUMBER),0)+1 
+	into V_RUN_NUMBER 
+	from genrun 
+	where run_exercice = Newgenrun.run_exercice;
 	insert into genrun (run_id,run_exercice,run_number,org_id,run_startdt,run_comment,RUN_NAME,RUN_DTCALC,RUN_ENDDT)
                 values (genrunId,Newgenrun.run_exercice,V_RUN_NUMBER,Newgenrun.org_id,Newgenrun.run_startdt,Newgenrun.run_comment,Newgenrun.RUN_NAME,Newgenrun.run_startdt,Newgenrun.run_startdt);
       ref_genrun := genrunId;
@@ -145,7 +157,7 @@ BEGIN
 	  INTO  ref_genimp
       from  genimp
       where nvl(imp_code,'*') = nvl(Newgenimp.imp_code ,'*')
-      and   nvl(ORG_ID,0)  = nvl(Newgenimp.ORG_ID ,0) ;
+      and   nvl(ORG_ID,0)     = nvl(Newgenimp.ORG_ID ,0) ;
 EXCEPTION WHEN NO_DATA_FOUND THEN
         ref_genimp := genimpId;
     insert into genimp (imp_id,imp_code,imp_name,vow_budgtp,org_id)
@@ -157,9 +169,7 @@ BEGIN
 ------Facture_as400------------------Facture_as400--------------------Facture_as400--------
 -------------------------------------------------------------------------------------------
 	FOR facture_ in fact_as400 LOOP
-	
-	    FOR x in branch_(lpad(facture_.DIST, 2, '0'),lpad(trim(facture_.TOU), 3, '0'),lpad(trim(facture_.ORD), 3, '0'))LOOP	
-			
+	    FOR x in branch_(lpad(trim(facture_.DIST),2,'0'),lpad(trim(facture_.TOU),3,'0'),lpad(trim(facture_.ORD),3,'0'))LOOP	
 			select seq_genrun.nextval     into genrun_id     from dual;
 			select seq_agrbill.nextval    into Agrbill_Id    from dual;
 			select seq_gendebt.nextval    into Debt_Id       from dual;
@@ -177,10 +187,10 @@ BEGIN
 				into V_periode,V_tiers,V_six
 				from param_tournee p
 				where p.DISTRICT=facture_.dist
-				And p.m1 =facture_.refc01
-				And p.m2 = facture_.refc02
-				And p.m3 = facture_.refc03
-				And (p.TIER,p.SIX) in (select t.NTIERS,t.NSIXIEME from tourne t
+				And   p.m1 =facture_.refc01
+				And   p.m2 = facture_.refc02
+				And   p.m3 = facture_.refc03
+				And  (p.TIER,p.SIX) in (select t.NTIERS,t.NSIXIEME from tourne t
 										where trim(t.code)=lpad(facture_.tou,3,'0')
 										and trim(t.district)=trim(p.DISTRICT)
 										and trim(t.district)=facture_.dist
@@ -188,9 +198,12 @@ BEGIN
 			EXCEPTION WHEN OTHERS THEN
 			    V_periode := 1;
 			END;
-			V_ID_FACTURE:=lpad(trim(facture_.DIST),2,'0')||lpad(trim(facture_.tou),3,'0')||lpad(trim(facture_.ORD),3,'0')||to_char(V_anneereel)||lpad(to_char(V_periode),2,'0')||to_char(v_version);
+			V_ID_FACTURE:= lpad(trim(facture_.DIST),2,'0')||lpad(trim(facture_.tou),3,'0')||lpad(trim(facture_.ORD),3,'0')||to_char(V_anneereel)||lpad(to_char(V_periode),2,'0')||to_char(v_version);
 			V_pdl_ref   := lpad(trim(facture_.DIST),2,'0')||lpad(trim(facture_.tou),3,'0')||lpad(trim(facture_.ORD),3,'0')||lpad(trim(facture_.pol),5,'0');			  
-			select count(*) into v_nbr from genbill b where b.BIL_CODE=V_ID_FACTURE;
+			select count(*) 
+			into v_nbr 
+			from genbill b 
+			where b.BIL_CODE=V_ID_FACTURE;
 			
 			if v_nbr=0 then 
 			    V_FAC_DATECALCUL :=null;
@@ -203,7 +216,7 @@ BEGIN
 				where upper(g.org_code)=lpad(trim(facture_.dist),2,'0');
 				
 				select cag.par_id  
-				into v_PAR_ID
+				into V_PAR_ID
 				from AGRCUSTOMERAGR cag
 				where cag.cag_id in (select sag.cag_id
 									 from TECSERVICEPOINT spt,
@@ -214,19 +227,19 @@ BEGIN
 				select par.adr_id
 				into   V_ADR_ID
 				from   GENPARTY  par
-				where par.par_id=v_PAR_ID;		
+				where par.par_id=V_PAR_ID;		
 
-				select sag.sag_id ,sag.sag_startdt
+				select sag.sag_id,sag.sag_startdt
 				into V_SAG_ID,V_ABN_DT_DEB
 				from AGRSERVICEAGR sag,
 					 TECSERVICEPOINT spt
 				where sag.spt_id=spt.spt_id 
 				and spt.spt_refe=V_pdl_ref;				
 				V_TRAIN_FACT :='ANNEE:'||trim(V_anneereel)||' TRIM:'||trim(V_periode)||' TIER:'||trim(V_tiers)||' SIX:'||trim(V_six );
-				V_REF_ABN :=lpad(trim(facture_.DIST),2,'0')||lpad(to_char(trim(facture_.pol)),5,'0')||lpad(trim(facture_.tou),3,'0')||lpad(trim(facture_.ORD),3,'0');			   
+				V_REF_ABN  :=lpad(trim(facture_.DIST),2,'0')||lpad(to_char(trim(facture_.pol)),5,'0')||lpad(trim(facture_.tou),3,'0')||lpad(trim(facture_.ORD),3,'0');			   
 				V_COMPTEAUX:='IMP_MIG';			   
 				V_TOTHTE:=(facture_.net-(V_TVA+facture_.arriere))/1000;
-				V_TVA:=(facture_.tva_ff+facture_.tva_capit+facture_.tva_pfin+facture_.tvacons+facture_.tva_preav+ facture_.tvaferm+facture_.tvadeplac+facture_.tvadepose_dem+facture_.tvadepose_def)/1000;
+				V_TVA   :=(facture_.tva_ff+facture_.tva_capit+facture_.tva_pfin+facture_.tvacons+facture_.tva_preav+ facture_.tvaferm+facture_.tvadeplac+facture_.tvadepose_dem+facture_.tvadepose_def)/1000;
 				V_TOTHTA:=0;
 				V_TOTTVAA:=0;
 				V_SOLDE:=(facture_.net-facture_.arriere)/1000;
@@ -249,11 +262,11 @@ BEGIN
 					and rownum = 1;
 				EXCEPTION WHEN OTHERS THEN
 						V_FAC_DATECALCUL := V_date_;
-						V_FAC_DATELIM    := '01/01/2016';
+						V_FAC_DATELIM    := '01/01/2016';------date a verifier 
 				    BEGIN 
 					EXCEPTION WHEN OTHERS THEN
-						V_FAC_DATECALCUL := '01/01/2016';
-						V_FAC_DATELIM    := '01/01/2016';
+						V_FAC_DATECALCUL := '01/01/2016';------date a verifier
+						V_FAC_DATELIM    := '01/01/2016';------date a verifier
 					END;
 				END;
 			      New_Det     := null;
@@ -261,25 +274,25 @@ BEGIN
 				  New_genrun  := null;
 --------------------------------------------------------Traitement Role
 				If (V_anneereel is not null and V_periode is not null and V_TRAIN_FACT is not null) then			
-					New_genrun.RUN_EXERCICE   :=  V_anneereel;
-					New_genrun.RUN_NUMBER     :=  V_periode ;
-					New_genrun.ORG_ID         :=  V_ORG_ID;			
-					New_genrun.RUN_STARTDT    :=  V_FAC_DATECALCUL;
-					New_genrun.RUN_COMMENT    := 'Role migré' ;
-					New_genrun.RUN_NAME       :=  'Role '||V_TRAIN_FACT;
+					New_genrun.RUN_EXERCICE  := V_anneereel;
+					New_genrun.RUN_NUMBER    := V_periode ;
+					New_genrun.ORG_ID        := V_ORG_ID;			
+					New_genrun.RUN_STARTDT   := V_FAC_DATECALCUL;
+					New_genrun.RUN_COMMENT   := 'Role migré' ;
+					New_genrun.RUN_NAME      := 'Role '||V_TRAIN_FACT;
 				Genere_genrun(New_genrun,genrun_id,genrun_ref);
 				end if ; 			
 --------------------------------------------------------Traitement Det
-				New_Det.DEB_ID           :=  Debt_Id ;
-				New_Det.DEB_REFE         :=  V_ID_FACTURE;
-				New_Det.ORG_ID           :=  V_ORG_ID;
-				New_Det.PAR_ID           :=  V_PAR_ID;
-				New_Det.ADR_ID           :=  V_ADR_ID;
-				New_Det.DEB_DATE         :=  V_FAC_DATECALCUL;
-				New_Det.DEB_DUEDT        :=  V_FAC_DATELIM;
-				New_Det.DEB_PRINTDT      :=  V_FAC_DATECALCUL;
-				New_Det.SAG_ID           :=  V_SAG_ID;
-				New_Det.DEB_PREL         :=  1;
+				New_Det.DEB_ID               :=  Debt_Id ;
+				New_Det.DEB_REFE             :=  V_ID_FACTURE;
+				New_Det.ORG_ID               :=  V_ORG_ID;
+				New_Det.PAR_ID               :=  V_PAR_ID;
+				New_Det.ADR_ID               :=  V_ADR_ID;
+				New_Det.DEB_DATE             :=  V_FAC_DATECALCUL;
+				New_Det.DEB_DUEDT            :=  V_FAC_DATELIM;
+				New_Det.DEB_PRINTDT          :=  V_FAC_DATECALCUL;
+				New_Det.SAG_ID               :=  V_SAG_ID;
+				New_Det.DEB_PREL             :=  1;
 				
 				If (V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA) > 0 then
 					New_Det.DEB_AMOUNTINIT   := V_TOTHTE+V_TVA+V_TOTHTA+V_TOTTVAA;
@@ -290,24 +303,23 @@ BEGIN
 					New_Det.DEB_AMOUNTINIT   := 0;
 					New_Det.VOW_DEBTYPE      := pk_genvocword.getidbycode('VOW_DEBTYPE','AV',null) ;
 				end if ;
-				New_Det.DEB_AMOUNTREMAIN := V_SOLDE ;
-				New_Det.DEB_COMMENT      := V_REF_ABN;
-				New_Det.VOW_SETTLEMODE   := pk_genvocword.getidbycode('VOW_SETTLEMODE',4,null) ;
+				New_Det.DEB_AMOUNTREMAIN     := V_SOLDE ;
+				New_Det.DEB_COMMENT          := V_REF_ABN;
+				New_Det.VOW_SETTLEMODE       := pk_genvocword.getidbycode('VOW_SETTLEMODE',4,null) ;
  --------------------------------------------------------Traitement GENACCOUNT ,GENIMP
-				New_genimp.imp_code      :=  V_COMPTEAUX ;
-				New_genimp.imp_name      :=  V_COMPTEAUX ;
-				New_genimp.vow_budgtp    :=  pk_genvocword.getidbycode('VOW_BUDGTP','EA',null);
+				New_genimp.imp_code          :=  V_COMPTEAUX ;
+				New_genimp.imp_name          :=  V_COMPTEAUX ;
+				New_genimp.vow_budgtp        :=  pk_genvocword.getidbycode('VOW_BUDGTP','EA',null);
 				Genere_genimp (New_genimp ,genimp_id,genimp_ref);
-				New_genaccount.PAR_ID    :=  V_PAR_ID ;
-				New_genaccount.IMP_ID    :=  genimp_ref ;
-				New_genaccount.VOW_ACOTP :=  pk_genvocword.getidbycode('VOW_ACOTP','1',null);
-				New_genaccount.REC_ID    :=  null;
-				New_agrsagaco.SAG_ID     :=  V_SAG_ID ;
-				New_agrsagaco.SCO_STARTDT:=  V_ABN_DT_DEB ;
+				New_genaccount.PAR_ID        :=  V_PAR_ID ;
+				New_genaccount.IMP_ID        :=  genimp_ref ;
+				New_genaccount.VOW_ACOTP     :=  pk_genvocword.getidbycode('VOW_ACOTP','1',null);
+				New_genaccount.REC_ID        :=  null;
+				New_agrsagaco.SAG_ID         :=  V_SAG_ID ;
+				New_agrsagaco.SCO_STARTDT    :=  V_ABN_DT_DEB ;
 				Genere_genaccount (New_genaccount ,genaccount_id ,genaccount_ref ,agrsagaco_id,New_agrsagaco);
-				New_Det.ACO_ID           := genaccount_ref ;
-				New_Det.DEB_NORECOVERY   := 0;
-				  
+				New_Det.ACO_ID               := genaccount_ref ;
+				New_Det.DEB_NORECOVERY       := 0;
 				Insert into gendebt(deb_id,deb_refe,org_id,par_id,adr_id,deb_date,deb_duedt,deb_printdt,deb_amountinit,deb_amountremain,bap_id,
 									vow_settlemode,aco_id,deb_norecovery,deb_credt,deb_updtby,deb_updtdt,deb_comment,deb_amount_cash,sag_id,vow_debtype,deb_prel)
 							values (New_Det.deb_id,New_Det.deb_refe,New_Det.org_id,New_Det.par_id,New_Det.adr_id,New_Det.deb_date,New_Det.deb_duedt,New_Det.deb_printdt,
@@ -371,15 +383,19 @@ BEGIN
 						from genptaslice 
 						where PTA_ID in (select PTA_ID 
 										 from genitemperiodtarif 
-										 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
+										 where TAR_id in (select tar_id 
+														  from genitemtarif 
+														  where ITE_ID=V_ITE_ID)
 										);
                         if V_nbr =1 then
 							select PTA_ID,PSL_RANK  
 							into V_PTA_ID,V_PSL_RANK 
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
-											from genitemperiodtarif 
-											where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+											 from genitemperiodtarif 
+											 where TAR_id in (select tar_id 
+															  from genitemtarif 
+															  where ITE_ID=V_ITE_ID)
 							                )
 							and rownum=1;
 						end if;
@@ -387,14 +403,15 @@ BEGIN
 							select PTA_ID,PSL_RANK  
 							into V_PTA_ID,V_PSL_RANK 
 							from genptaslice 
-							where   PTA_ID in (select PTA_ID 
-										       from genitemperiodtarif 
-											   where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
-								              )
+							where PTA_ID in (select PTA_ID 
+										     from genitemperiodtarif 
+											 where TAR_id in(select tar_id
+											                 from genitemtarif 
+															 where ITE_ID=V_ITE_ID) 
+								            )
 							and rownum=1; 
 						end if;
-			   
-					BEGIN
+			        BEGIN
 						INSERT INTO genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 											   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 											   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
@@ -439,28 +456,35 @@ BEGIN
 						V_tva_id := 25;
 						END;
 						select count(*) 
-						into V_nbr 
+						into V_NBR 
 						from genptaslice 
-						where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-										 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+						where PTA_ID in (select PTA_ID 	
+						                 from genitemperiodtarif 
+										 where TAR_id in(select tar_id 
+										                 from genitemtarif 
+														 where ITE_ID=V_ITE_ID )
 										);
-						if V_nbr =1 then
+						if V_NBR =1 then
 							select PTA_ID,PSL_RANK  
 							into V_PTA_ID,V_PSL_RANK 
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
 											 from genitemperiodtarif 
-											 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
+											 where TAR_id in (select tar_id 
+															  from genitemtarif 
+															  where ITE_ID=V_ITE_ID)
 											)
 							and rownum=1;
 						end if;
-						if V_nbr >1 then
+						if V_NBR >1 then
 							select PTA_ID,PSL_RANK  
 							into V_PTA_ID,V_PSL_RANK 
 							from genptaslice 
 							where PTA_IDin (select PTA_ID 
 											from genitemperiodtarif
-											where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
+											where TAR_id in (select tar_id 
+															 from genitemtarif 
+															 where ITE_ID=V_ITE_ID) 
 							               )
 							and rownum=1;
 						end if;
@@ -470,15 +494,15 @@ BEGIN
 												   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
 											values(New_Genbill.BIL_ID,null,v,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.const2,facture_.const2,facture_.tauxt2/1000,V_tva_id,
 												   facture_.montt2/1000,facture_.TVACONS/1000,(facture_.montt2/1000)+(facture_.TVACONS/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-													null,null,null,null,null,null,null,	null,null,null,null,null,);
+												   null,null,null,null,null,null,null,	null,null,null,null,null,);
 						EXCEPTION WHEN OTHERS THEN
 												BEGIN
 													insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 																		   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 																		   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-																   values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.const2,facture_.const2,facture_.tauxt2/1000,V_tva_id,
-																		  facture_.montt2/1000,facture_.TVACONS/1000,(facture_.montt2/1000)+(facture_.TVACONS/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-																		  null,null,null,null,null,null,null,null,null,null,null,null);
+																    values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.const2,facture_.const2,facture_.tauxt2/1000,V_tva_id,
+																		   facture_.montt2/1000,facture_.TVACONS/1000,(facture_.montt2/1000)+(facture_.TVACONS/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																		   null,null,null,null,null,null,null,null,null,null,null,null);
 												EXCEPTION WHEN OTHERS THEN NULL;
 												END;
 						END;
@@ -511,8 +535,11 @@ BEGIN
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
-						where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-										 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+						where PTA_ID in (select PTA_ID 	
+						                 from genitemperiodtarif 
+										 where TAR_id in (select tar_id 
+														  from genitemtarif 
+														  where ITE_ID=V_ITE_ID )
 										);
 						if V_nbr =1 then
 							select PTA_ID,PSL_RANK  
@@ -520,7 +547,9 @@ BEGIN
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
 											 from genitemperiodtarif 
-											 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
+											 where TAR_id in (select tar_id 
+															  from genitemtarif 
+															  where ITE_ID=V_ITE_ID)
 											)
 							and rownum=1;
 						end if;
@@ -529,9 +558,11 @@ BEGIN
 							into V_PTA_ID,V_PSL_RANK 
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
-											from genitemperiodtarif
-											where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
-										     )
+											 from genitemperiodtarif
+											 where TAR_id in (select tar_id 
+															  from genitemtarif 
+															  where ITE_ID=V_ITE_ID) 
+										    )
 							   and rownum=1;
 						end if;
 						BEGIN
@@ -539,16 +570,16 @@ BEGIN
 												   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 												   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
 											values(New_Genbill.BIL_ID,null,v,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.const3,facture_.const3,facture_.tauxt3/1000,V_tva_id,
-													facture_.montt3/1000,facture_.TVACONS/1000,facture_.montt3/1000+(facture_.TVACONS/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-													null,null,null,null,null,null,null,null,null,null,null,null);
+												   facture_.montt3/1000,facture_.TVACONS/1000,facture_.montt3/1000+(facture_.TVACONS/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+												   null,null,null,null,null,null,null,null,null,null,null,null);
 						EXCEPTION WHEN OTHERS THEN
 												BEGIN
 													insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 																		   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 																		   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
 																	values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.const3,facture_.const3,facture_.tauxt3/1000,V_tva_id,
-																		  facture_.montt3/1000,facture_.TVACONS/1000,facture_.montt3/1000+(facture_.TVACONS/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-																		  null,null,null,null,null,null,null,null,null,null,null,null);
+																		   facture_.montt3/1000,facture_.TVACONS/1000,facture_.montt3/1000+(facture_.TVACONS/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																		   null,null,null,null,null,null,null,null,null,null,null,null);
 												EXCEPTION WHEN OTHERS THEN NULL;
 												END;
 						END;
@@ -581,8 +612,11 @@ BEGIN
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
-						where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-										 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+						where PTA_ID in (select PTA_ID 	
+						                 from genitemperiodtarif 
+										 where TAR_id in(select tar_id 
+														 from genitemtarif 
+														 where ITE_ID=V_ITE_ID)
 										);
 						if V_nbr =1 then
 							select PTA_ID,PSL_RANK  
@@ -590,7 +624,9 @@ BEGIN
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
 											 from genitemperiodtarif 
-											 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
+											 where TAR_id in (select tar_id 
+															  from genitemtarif 
+															  where ITE_ID=V_ITE_ID)
 											)
 							and rownum=1;
 						end if;
@@ -600,7 +636,9 @@ BEGIN
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
 											 from genitemperiodtarif
-											 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
+											 where TAR_id in (select tar_id 
+															  from genitemtarif 
+															  where ITE_ID=V_ITE_ID) 
 											 )
 							and rownum=1;
 						 
@@ -618,8 +656,8 @@ BEGIN
 																	   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 																	   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
 																values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.volon1,facture_.volon1,facture_.tauon1/1000,V_tva_id,
-																	  facture_.mon1/1000,0,facture_.mon1/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-																	  null,null,null,null,null,null,null,null,null,null,null,null);
+																	   facture_.mon1/1000,0,facture_.mon1/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																	   null,null,null,null,null,null,null,null,null,null,null,null);
 											EXCEPTION WHEN OTHERS THEN NULL;
 											END;
 						END;
@@ -652,8 +690,11 @@ BEGIN
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
-						where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-										 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+						where PTA_ID in (select PTA_ID 	
+						                 from genitemperiodtarif 
+										 where TAR_id in(select tar_id 
+										                 from genitemtarif 
+														 where ITE_ID=V_ITE_ID )
 										);
 						if V_nbr =1 then
 							select PTA_ID,PSL_RANK  
@@ -661,7 +702,9 @@ BEGIN
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
 											 from genitemperiodtarif 
-											 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
+											 where TAR_id in(select tar_id 
+														     from genitemtarif 
+															 where ITE_ID=V_ITE_ID)
 											)
 							and rownum=1;
 						end if;
@@ -671,7 +714,9 @@ BEGIN
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
 											from genitemperiodtarif
-											where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
+											where TAR_id in(select tar_id 
+														    from genitemtarif 
+															where ITE_ID=V_ITE_ID) 
 										   )
 							and rownum=1;
 						end if;
@@ -722,8 +767,11 @@ BEGIN
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
-						where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-										 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+						where PTA_ID in (select PTA_ID 	
+										 from genitemperiodtarif 
+										 where TAR_id in(select tar_id 
+														 from genitemtarif 
+														 where ITE_ID=V_ITE_ID )
 										);
 						if V_nbr =1 then
 						    select PTA_ID,PSL_RANK  
@@ -731,7 +779,9 @@ BEGIN
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
 											 from genitemperiodtarif 
-											 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
+											 where TAR_id in (select tar_id 
+															  from genitemtarif 
+															  where ITE_ID=V_ITE_ID)
 											)
 							and rownum=1;
 						end if;
@@ -741,27 +791,28 @@ BEGIN
 							into V_PTA_ID,V_PSL_RANK 
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
-											from genitemperiodtarif
-											where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
+											 from genitemperiodtarif
+											 where TAR_id in (select tar_id 
+											                  from genitemtarif 
+															  where ITE_ID=V_ITE_ID) 
 										   )
 							and rownum=1;
 						end if;
-
 						BEGIN
 							insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 												   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 												   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
 											values(New_Genbill.BIL_ID,null,v,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.volon3,facture_.volon3,facture_.tauon3/1000,V_tva_id,
-												  facture_.mon3/1000,0,facture_.mon3/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-												  null,null,null,null,null,null,null,null,null,null,null,null);
+												   facture_.mon3/1000,0,facture_.mon3/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+												   null,null,null,null,null,null,null,null,null,null,null,null);
 						EXCEPTION WHEN OTHERS THEN
 											BEGIN
 											insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 																   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 																   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
 															values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,ITE_ID,V_PTA_ID,V_PSL_RANK,null,facture_.volon3,facture_.volon3,facture_.tauon3/1000,V_tva_id,
-																  facture_.mon3/1000,0,facture_.mon3/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-															      null,null,null,null,null,null,null,null,null,null,null,null);
+																   facture_.mon3/1000,0,facture_.mon3/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+															       null,null,null,null,null,null,null,null,null,null,null,null);
 											EXCEPTION WHEN OTHERS THEN NULL;
 											END;
 						END;
@@ -794,8 +845,11 @@ BEGIN
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
-						where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-										 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+						where PTA_ID in (select PTA_ID 	
+										 from genitemperiodtarif 
+										 where TAR_id in(select tar_id 
+														 from genitemtarif 
+														 where ITE_ID=V_ITE_ID)
 										);
 						if V_nbr =1 then
 						    select PTA_ID,PSL_RANK  
@@ -803,7 +857,9 @@ BEGIN
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
 											 from genitemperiodtarif 
-											 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
+											 where TAR_id in(select tar_id 
+															 from genitemtarif 
+															 where ITE_ID=V_ITE_ID)
 											)
 							and rownum=1;
 						end if;
@@ -811,11 +867,12 @@ BEGIN
 							select PTA_ID,PSL_RANK  
 							into V_PTA_ID,V_PSL_RANK 
 							from genptaslice 
-							where   PTA_ID
-							in (select PTA_ID 
-								from genitemperiodtarif
-								where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
-							   )
+							where PTA_ID in (select PTA_ID 
+											 from genitemperiodtarif
+								             where TAR_id in(select tar_id 
+															 from genitemtarif 
+															 where ITE_ID=V_ITE_ID) 
+							                )
 							and rownum=1;
 						end if;
                         BEGIN
@@ -823,16 +880,16 @@ BEGIN
 												   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 												   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
 											values(New_Genbill.BIL_ID,null,v,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.fixonas/1000,V_tva_id,
-												  facture_.fixonas/1000,0,facture_.fixonas/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-													null,null,null,null,null,null,null,null,null,null,null,null);
+												   facture_.fixonas/1000,0,facture_.fixonas/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+												   null,null,null,null,null,null,null,null,null,null,null,null);
 						EXCEPTION WHEN OTHERS THEN
 											BEGIN
 											insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 																   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 																   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-													values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.fixonas/1000,V_tva_id,
-														  facture_.fixonas/1000,0,facture_.fixonas/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-														  null,null,null,null,null,null,null,null,null,null,null,null);
+															values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.fixonas/1000,V_tva_id,
+																   facture_.fixonas/1000,0,facture_.fixonas/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																   null,null,null,null,null,null,null,null,null,null,null,null);
 											EXCEPTION WHEN OTHERS THEN NULL;
 											END;
 						END;
@@ -865,8 +922,11 @@ BEGIN
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
-						where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-										 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+						where PTA_ID in (select PTA_ID 	
+										 from genitemperiodtarif 
+										 where TAR_id in(select tar_id 
+														 from genitemtarif 
+														 where ITE_ID=V_ITE_ID)
 										);
 						if V_nbr =1 then
 						
@@ -875,7 +935,9 @@ BEGIN
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
 											 from genitemperiodtarif 
-											 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
+											 where TAR_id in(select tar_id 
+															 from genitemtarif 
+															 where ITE_ID=V_ITE_ID)
 											)
 							and rownum=1;
 						end if;
@@ -885,7 +947,9 @@ BEGIN
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
 											 from genitemperiodtarif
-											 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
+											 where TAR_id in(select tar_id 
+															 from genitemtarif 
+															 where ITE_ID=V_ITE_ID) 
 										    )
 							and rownum=1;
 						end if;
@@ -902,8 +966,8 @@ BEGIN
 																	   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 																	   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
 																values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.fraisctr/1000,V_tva_id,
-																	  facture_.fraisctr/1000,facture_.TVA_ff/1000,(facture_.fraisctr/1000)+(facture_.tva_ff/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-																	  null,null,null,null,null,null,null,null,null,null,null,null);
+																	   facture_.fraisctr/1000,facture_.TVA_ff/1000,(facture_.fraisctr/1000)+(facture_.tva_ff/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																	   null,null,null,null,null,null,null,null,null,null,null,null);
 												EXCEPTION WHEN OTHERS THEN NULL;
 												END;
 						END;
@@ -937,16 +1001,19 @@ BEGIN
 						into V_nbr 
 						from genptaslice 
 						where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-										 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+										 where TAR_id in(select tar_id 
+														 from genitemtarif 
+														 where ITE_ID=V_ITE_ID )
 										);
 						if V_nbr =1 then
-						
-							select PTA_ID,PSL_RANK  
+						    select PTA_ID,PSL_RANK  
 							into V_PTA_ID,V_PSL_RANK 
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
 											 from genitemperiodtarif 
-											 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
+											 where TAR_id in(select tar_id 
+															 from genitemtarif 
+															 where ITE_ID=V_ITE_ID)
 											)
 							and rownum=1;
 						end if;
@@ -955,10 +1022,12 @@ BEGIN
 							into V_PTA_ID,V_PSL_RANK 
 							from genptaslice 
 							where PTA_ID in(select PTA_ID 
-											 from genitemperiodtarif
-										     where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
+											from genitemperiodtarif
+										    where TAR_id in(select tar_id 
+															from genitemtarif 
+															where ITE_ID=V_ITE_ID) 
 							                )
-							 and rownum=1;
+							and rownum=1;
 						end if;
 
 						BEGIN
@@ -974,8 +1043,8 @@ BEGIN
 																	   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 																	   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
 																values(New_Genbill.BIL_ID,null,	v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.fermeture/1000,V_tva_id,
-																	  facture_.fermeture/1000,facture_.tvaferm/1000,(facture_.fermeture/1000)+(facture_.tvaferm/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-																	  null,null,null,null,null,null,null,null,null,null,null,null);
+																	   facture_.fermeture/1000,facture_.tvaferm/1000,(facture_.fermeture/1000)+(facture_.tvaferm/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																	   null,null,null,null,null,null,null,null,null,null,null,null);
 											EXCEPTION WHEN OTHERS THEN NULL;
 											END;
 						END;
@@ -1008,8 +1077,11 @@ BEGIN
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
-						where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-										 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+						where PTA_ID in (select PTA_ID 	
+										 from genitemperiodtarif 
+										 where TAR_id in(select tar_id 
+														 from genitemtarif 
+														 where ITE_ID=V_ITE_ID )
 										);
 						if V_nbr =1 then
 							select PTA_ID,PSL_RANK  
@@ -1017,7 +1089,9 @@ BEGIN
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
 											 from genitemperiodtarif 
-											 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
+											 where TAR_id in(select tar_id 
+															 from genitemtarif 
+															 where ITE_ID=V_ITE_ID)
 											)
 							and rownum=1;
 						end if;
@@ -1027,7 +1101,9 @@ BEGIN
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
 											 from genitemperiodtarif
-											 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
+											 where TAR_id in(select tar_id 
+															 from genitemtarif 
+															 where ITE_ID=V_ITE_ID) 
 										    )
 							and rownum=1;
 						end if;
@@ -1078,8 +1154,11 @@ BEGIN
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
-						where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-										 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+						where PTA_ID in (select PTA_ID 	
+										 from genitemperiodtarif 
+										 where TAR_id in(select tar_id 
+														 from genitemtarif 
+														 where ITE_ID=V_ITE_ID)
 										);
 						if V_nbr =1 then
 						    select PTA_ID,PSL_RANK  
@@ -1087,7 +1166,9 @@ BEGIN
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
 											 from genitemperiodtarif 
-											 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
+											 where TAR_id in(select tar_id 
+															 from genitemtarif 
+															 where ITE_ID=V_ITE_ID)
 											)
 							and rownum=1;
 						end if;
@@ -1097,7 +1178,9 @@ BEGIN
 							from genptaslice 
 							where PTA_ID in(select PTA_ID 
 											 from genitemperiodtarif
-								             where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
+								             where TAR_id in(select tar_id 
+															 from genitemtarif 
+															 where ITE_ID=V_ITE_ID) 
 							                )
 							and rownum=1;
 						end if;
@@ -1146,12 +1229,14 @@ BEGIN
 						EXCEPTION WHEN NO_DATA_FOUND THEN 
 						V_tva_id := 25;
 						END;
-
-						select count(*) 
+                        select count(*) 
 						into V_nbr 
 						from genptaslice 
-						where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-										 where TAR_id in(select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+						where PTA_ID in (select PTA_ID 
+										 from genitemperiodtarif 
+										 where TAR_id in(select tar_id 
+														 from genitemtarif 
+														 where ITE_ID=V_ITE_ID )
 										);
 						if V_nbr =1 then
 						    select PTA_ID,PSL_RANK  
@@ -1159,7 +1244,9 @@ BEGIN
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
 											 from genitemperiodtarif 
-											 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
+											 where TAR_id in(select tar_id 
+															 from genitemtarif 
+															 where ITE_ID=V_ITE_ID)
 											)
 							and rownum=1;
 						end if;
@@ -1169,7 +1256,9 @@ BEGIN
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
 											 from genitemperiodtarif
-											 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
+											 where TAR_id in (select tar_id
+															  from genitemtarif 
+															  where ITE_ID=V_ITE_ID) 
 							                )
 							 and rownum=1;
 						end if;
@@ -1220,8 +1309,11 @@ BEGIN
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
-						where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-										 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+						where PTA_ID in (select PTA_ID 	
+										 from genitemperiodtarif 
+										 where TAR_id in(select tar_id
+														 from genitemtarif 
+														 where ITE_ID=V_ITE_ID)
 										);
 						if V_nbr =1 then
 						    select PTA_ID,PSL_RANK  
@@ -1229,7 +1321,9 @@ BEGIN
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
 											 from genitemperiodtarif 
-											 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
+											 where TAR_id in(select tar_id 
+															  from genitemtarif 
+															  where ITE_ID=V_ITE_ID)
 											)
 							and rownum=1;
 						end if;
@@ -1239,7 +1333,9 @@ BEGIN
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
 											 from genitemperiodtarif
-									         where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
+									         where TAR_id in(select tar_id 
+													         from genitemtarif 
+															 where ITE_ID=V_ITE_ID) 
 							                )
 							and rownum=1;
 						end if;
@@ -1247,17 +1343,17 @@ BEGIN
 							insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 												   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 												   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-										   values(New_Genbill.BIL_ID,null,v,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.CAPIT/1000	,V_tva_id,
-												 facture_.CAPIT/1000,facture_.tva_capit/1000,facture_.CAPIT/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-												 null,null,null,null,null,null,null,null,null,null,null,null	);
+										    values(New_Genbill.BIL_ID,null,v,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.CAPIT/1000	,V_tva_id,
+												   facture_.CAPIT/1000,facture_.tva_capit/1000,facture_.CAPIT/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+												   null,null,null,null,null,null,null,null,null,null,null,null	);
 						EXCEPTION WHEN OTHERS THEN
 											BEGIN
 											 insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
 																    BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 																	BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
 															 values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.CAPIT/1000,V_tva_id,
-																   facture_.CAPIT/1000,facture_.tva_capit/1000,facture_.CAPIT/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-																   null,null,null,null,null,null,null,null,null,null,null,null	);
+																    facture_.CAPIT/1000,facture_.tva_capit/1000,facture_.CAPIT/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																    null,null,null,null,null,null,null,null,null,null,null,null	);
 											EXCEPTION WHEN OTHERS THEN NULL;
 											END;
 					   END;
@@ -1290,8 +1386,11 @@ BEGIN
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
-						where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-										 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+						where PTA_ID in (select PTA_ID 	
+										 from genitemperiodtarif 
+										 where TAR_id in(select tar_id 
+														 from genitemtarif 
+														 where ITE_ID=V_ITE_ID)
 										);
 						if V_nbr =1 then
 						    select PTA_ID,PSL_RANK  
@@ -1299,7 +1398,9 @@ BEGIN
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
 											 from genitemperiodtarif 
-											 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
+											 where TAR_id in (select tar_id 
+															  from genitemtarif 
+															  where ITE_ID=V_ITE_ID)
 											)
 							and rownum=1;
 						end if;
@@ -1309,7 +1410,9 @@ BEGIN
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
 											 from genitemperiodtarif
-											 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
+											 where TAR_id in (select tar_id 
+															  from genitemtarif 
+															  where ITE_ID=V_ITE_ID) 
 							                )
 							and rownum=1;
 						end if;
@@ -1326,8 +1429,8 @@ BEGIN
 																   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
 																   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
 															values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,facture_.INTER/1000,V_tva_id,
-																  facture_.INTER/1000,0,facture_.INTER/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-																 null,null,null,null,null,null,null,null,null,null,null,null);
+																   facture_.INTER/1000,0,facture_.INTER/1000,New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																   null,null,null,null,null,null,null,null,null,null,null,null);
 											EXCEPTION WHEN OTHERS THEN NULL;
 											END;
 						END;
@@ -1355,13 +1458,16 @@ BEGIN
 							   V_tva_id:=v.tva_id; 
 							end loop;
 						EXCEPTION WHEN NO_DATA_FOUND THEN 
-						V_tva_id := 25;
+						  V_tva_id := 25;
 						END;
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
-						where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-										 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+						where PTA_ID in (select PTA_ID 	
+										 from genitemperiodtarif 
+										 where TAR_id in(select tar_id 
+														 from genitemtarif 
+														 where ITE_ID=V_ITE_ID)
 										);
 						if V_nbr =1 then
 						    select PTA_ID,PSL_RANK  
@@ -1369,7 +1475,9 @@ BEGIN
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
 											 from genitemperiodtarif 
-											 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
+											 where TAR_id in (select tar_id 
+															  from genitemtarif 
+															  where ITE_ID=V_ITE_ID)
 											)
 							and rownum=1;
 						end if;
@@ -1379,7 +1487,9 @@ BEGIN
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
 											 from genitemperiodtarif
-											 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
+											 where TAR_id in (select tar_id 
+															  from genitemtarif 
+															  where ITE_ID=V_ITE_ID) 
 							                )
 							and rownum=1;
 						end if;
@@ -1430,8 +1540,11 @@ BEGIN
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
-						where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-										 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+						where PTA_ID in (select PTA_ID
+										 from genitemperiodtarif 
+										 where TAR_id in(select tar_id 
+														 from genitemtarif 
+														 where ITE_ID=V_ITE_ID )
 										);
 						if V_nbr =1 then
 						   select PTA_ID,PSL_RANK  
@@ -1439,7 +1552,9 @@ BEGIN
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
 											 from genitemperiodtarif 
-											 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
+											 where TAR_id in (select tar_id 
+															  from genitemtarif 
+															  where ITE_ID=V_ITE_ID)
 											)
 							and rownum=1;
 						end if;
@@ -1449,7 +1564,9 @@ BEGIN
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
 											 from genitemperiodtarif
-								             where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
+								             where TAR_id in (select tar_id 
+															  from genitemtarif 
+															  where ITE_ID=V_ITE_ID) 
 							                )
 							and rownum=1;
 						end if;
@@ -1463,11 +1580,11 @@ BEGIN
 						EXCEPTION WHEN OTHERS THEN
 											BEGIN
 											insert into genbilline(BIL_ID,BLI_REVERSEBLI_ID,BLI_NUMBER,BLI_REVERSEBLINUMBER,BLI_NAME,BLI_EXERCICE,ITE_ID,PTA_ID,PSL_RANK,IMP_ID,BLI_VOLUMEBASE,BLI_VOLUMEFACT,
-														   BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
-														   BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
-													values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,(facture_.PFINANCIER/1000),V_tva_id,
-														   (facture_.PFINANCIER/1000),(facture_.tva_pfin/1000),(facture_.PFINANCIER/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
-														   null,null,null,null,null,null,null,null,null,null,null,null);
+														           BLI_PUHT,TVA_ID,BLI_MHT,BLI_MTTVA,BLI_MTTC,BLI_STARTDT,BLI_ENDDT,VOW_UNIT,BLI_NBUNITES,BLI_DETAIL,BLI_CANCEL,IMC_ID,IMP_ANALYTIQUE_ID,
+														           BLI_PERIODEINIT,BLI_PERIODE,BLI_REVERSEDT,BLI_CREDT,BLI_UPDTDT,BLI_UPDTBY,MEU_ID,BLI_NAME_A,BLI_REVERSEBLIDEC_ID,BLI_REVERSEBLINUMBERDEC,BLI_REVERSEDECDT)
+															values(New_Genbill.BIL_ID,null,v+1,null,V_ite_name,V_anneereel,V_ITE_ID,V_PTA_ID,V_PSL_RANK,null,1,1,(facture_.PFINANCIER/1000),V_tva_id,
+																   (facture_.PFINANCIER/1000),(facture_.tva_pfin/1000),(facture_.PFINANCIER/1000),New_genrun.RUN_STARTDT,V_FAC_DATECALCUL,V_VOW_UNIT,null,0,0,null,
+																   null,null,null,null,null,null,null,null,null,null,null,null);
 											EXCEPTION WHEN OTHERS THEN NULL;
 											END;
 						END;
@@ -1502,7 +1619,9 @@ BEGIN
 						into V_nbr 
 						from genptaslice 
 						where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-										 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+										 where TAR_id in(select tar_id 
+														 from genitemtarif 
+														 where ITE_ID=V_ITE_ID)
 										);
 						if V_nbr =1 then
 						    select PTA_ID,PSL_RANK  
@@ -1510,7 +1629,9 @@ BEGIN
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
 											 from genitemperiodtarif 
-											 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
+											 where TAR_id in(select tar_id
+															 from genitemtarif 
+															 where ITE_ID=V_ITE_ID)
 											)
 							and rownum=1;
 						end if;
@@ -1519,9 +1640,11 @@ BEGIN
 							into V_PTA_ID,V_PSL_RANK 
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
-											 from genitemperiodtarif
-											 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
-										    )
+											 from genitemperiodtarif 
+											 where TAR_id in(select tar_id
+															 from genitemtarif 
+															 where ITE_ID=V_ITE_ID)
+											)
 							and rownum=1;
 						end if;
 						V_BLI_MHT:=decode(facture_.caron,'1',1,-1)* (facture_.AREPOR/1000);
@@ -1573,16 +1696,21 @@ BEGIN
 						select count(*) 
 						into V_nbr 
 						from genptaslice 
-						where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-										 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
-										);
+						where PTA_ID in (select PTA_ID 
+											 from genitemperiodtarif 
+											 where TAR_id in(select tar_id
+															 from genitemtarif 
+															 where ITE_ID=V_ITE_ID)
+											)
 						if V_nbr =1 then
 						    select PTA_ID,PSL_RANK  
 							into V_PTA_ID,V_PSL_RANK 
 							from genptaslice 
 							where PTA_ID in (select PTA_ID 
 											 from genitemperiodtarif 
-											 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
+											 where TAR_id in(select tar_id
+															 from genitemtarif 
+															 where ITE_ID=V_ITE_ID)
 											)
 							and rownum=1;
 						end if;
@@ -1590,11 +1718,12 @@ BEGIN
 							select PTA_ID,PSL_RANK  
 							into V_PTA_ID,V_PSL_RANK 
 							from genptaslice 
-							where   PTA_ID
-							in (select PTA_ID 
-								from genitemperiodtarif
-								where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
-							   )
+							where   PTA_ID in(select PTA_ID 
+											  from genitemperiodtarif 
+											  where TAR_id in(select tar_id
+															 from genitemtarif 
+															 where ITE_ID=V_ITE_ID)
+											)
 							and rownum=1;
 						end if;
 						V_BLI_MHT:=(decode(facture_.caron,'1',-1,1)*(facture_.NAROND/1000));
@@ -1673,7 +1802,7 @@ BEGIN
 				into v_PAR_ID
 				from AGRCUSTOMERAGR cag
 				where cag.cag_id in (select sag.cag_id
-									 from TECSERVICEPOINT spt, AGRSERVICEAGR sag
+									 from TECSERVICEPOINT spt,AGRSERVICEAGR sag
 									 where spt.spt_id=sag.spt_id
 									 and spt.spt_refe=V_pdl_ref);
 				select  par.adr_id
@@ -1754,7 +1883,7 @@ BEGIN
 				New_genaccount.REC_ID    :=  V_REC_ID ;
 				New_agrsagaco.SAG_ID     :=  V_SAG_ID ;
 				New_agrsagaco.SCO_STARTDT:=  V_ABN_DT_DEB;
-				Genere_genaccount(New_genaccount ,genaccount_id ,genaccount_ref ,agrsagaco_id,New_agrsagaco) ;
+				Genere_genaccount(New_genaccount,genaccount_id,genaccount_ref,agrsagaco_id,New_agrsagaco) ;
 				New_Det.ACO_ID           := genaccount_ref ;
 				New_Det.DEB_NORECOVERY   := 0;
 					
@@ -1785,7 +1914,6 @@ BEGIN
 				New_Genbill.PAR_ID            :=  V_PAR_ID ;
 				New_Genbill.BIL_DEBTDT        :=  V_FAC_DATECALCUL;
 				New_Genbill.RUN_ID            :=  genrun_ref  ;
-						
 				Insert into genbill(BIL_ID,BIL_CODE,BIL_CALCDT,BIL_AMOUNTHT,BIL_AMOUNTTVA,BIL_AMOUNTTTC,DEB_ID,PAR_ID,BIL_STATUS,BIL_AMOUNTTTCDEC,BIL_DEBTDT,RUN_ID)
 							 values(New_Genbill.BIL_ID,New_Genbill.BIL_CODE,New_Genbill.BIL_CALCDT,New_Genbill.BIL_AMOUNTHT,New_Genbill.BIL_AMOUNTTVA,New_Genbill.BIL_AMOUNTTTC,
 									New_Genbill.DEB_ID,New_Genbill.PAR_ID,New_Genbill.BIL_STATUS,New_Genbill.BIL_AMOUNTTTCDEC,New_Genbill.BIL_DEBTDT,New_Genbill.RUN_ID); 
@@ -1833,8 +1961,7 @@ BEGIN
 										 from genitemperiodtarif 
 										 where TAR_id in (select tar_id 
 														  from genitemtarif 
-														  where ITE_ID=V_ITE_ID
-														  )
+														  where ITE_ID=V_ITE_ID)
 										)
 						and rownum=1;
 					end if;
@@ -1844,7 +1971,9 @@ BEGIN
 						from genptaslice 
 						where PTA_ID in (select PTA_ID 
 										 from genitemperiodtarif
-							             where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
+							             where TAR_id in (select tar_id 
+														  from genitemtarif 
+														  where ITE_ID=V_ITE_ID) 
 						                )
 						and rownum=1;
 					end if;
@@ -1896,7 +2025,9 @@ BEGIN
 					into V_nbr 
 					from genptaslice 
 					where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-									 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+									 where TAR_id in (select tar_id 
+													  from genitemtarif 
+													  where ITE_ID=V_ITE_ID )
 									);
 					if V_nbr=1 then
 					    select PTA_ID,PSL_RANK  
@@ -1904,7 +2035,9 @@ BEGIN
 						from genptaslice 
 						where PTA_ID in (select PTA_ID 
 										 from genitemperiodtarif 
-										 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
+										 where TAR_id in (select tar_id 
+														  from genitemtarif 
+														  where ITE_ID=V_ITE_ID)
 										)
 						and rownum=1;
 					end if;
@@ -1914,7 +2047,9 @@ BEGIN
 						from genptaslice 
 						where PTA_ID in (select PTA_ID 
 										   from genitemperiodtarif
-							               where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
+							               where TAR_id in (select tar_id 
+															from genitemtarif 
+															where ITE_ID=V_ITE_ID) 
 						                )
 						and rownum=1;
 					end if;
@@ -1966,7 +2101,9 @@ BEGIN
 					into V_nbr 
 					from genptaslice 
 					where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-									 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+									 where TAR_id in (select tar_id 
+													  from genitemtarif 
+													  where ITE_ID=V_ITE_ID)
 									);
 					if V_nbr=1 then
 					   select PTA_ID,PSL_RANK  
@@ -1974,7 +2111,9 @@ BEGIN
 						from genptaslice 
 						where PTA_ID in (select PTA_ID 
 										 from genitemperiodtarif 
-										 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
+										 where TAR_id in (select tar_id 
+														  from genitemtarif 
+														  where ITE_ID=V_ITE_ID)
 										)
 						and rownum=1;
 					end if;
@@ -1983,9 +2122,11 @@ BEGIN
 						into V_PTA_ID,V_PSL_RANK 
 						from genptaslice 
 						where PTA_ID in (select PTA_ID 
-										 from genitemperiodtarif
-										 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
-										)
+											 from genitemperiodtarif 
+											 where TAR_id in(select tar_id
+															 from genitemtarif 
+															 where ITE_ID=V_ITE_ID)
+											)
 						and rownum=1;
 					end if;						
                     BEGIN
@@ -2035,8 +2176,11 @@ BEGIN
 					select count(*) 
 					into V_nbr 
 					from genptaslice 
-					where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-									 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+					where PTA_ID in (select PTA_ID 
+											 from genitemperiodtarif 
+											 where TAR_id in(select tar_id
+															 from genitemtarif 
+															 where ITE_ID=V_ITE_ID)
 									);
 					if V_nbr=1 then
 						select PTA_ID,PSL_RANK  
@@ -2106,8 +2250,11 @@ BEGIN
 					select count(*) 
 					into V_nbr 
 					from genptaslice 
-					where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-									 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+					where PTA_ID in (select PTA_ID 
+									 from genitemperiodtarif 
+									 where TAR_id in(select tar_id
+													 from genitemtarif 
+													 where ITE_ID=V_ITE_ID)
 									);
 					if V_nbr=1 then
 					   select PTA_ID,PSL_RANK  
@@ -2115,8 +2262,10 @@ BEGIN
 						from genptaslice 
 						where PTA_ID in (select PTA_ID 
 										 from genitemperiodtarif 
-										 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
-										)
+										 where TAR_id in(select tar_id
+														 from genitemtarif 
+														 where ITE_ID=V_ITE_ID)
+											)
 						and rownum=1;
 					end if;
 					if V_nbr>1 then
@@ -2124,9 +2273,11 @@ BEGIN
 						into V_PTA_ID,V_PSL_RANK 
 						from genptaslice 
 						where PTA_ID in (select PTA_ID 
-										 from genitemperiodtarif
-										 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
-										)
+											 from genitemperiodtarif 
+											 where TAR_id in(select tar_id
+															 from genitemtarif 
+															 where ITE_ID=V_ITE_ID)
+								        )
 						and rownum=1;
 					end if;	
 
@@ -2247,17 +2398,22 @@ BEGIN
 					select count(*) 
 					into V_nbr 
 					from genptaslice 
-					where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-									 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
-									);
+					where PTA_ID in (select PTA_ID 
+											 from genitemperiodtarif 
+											 where TAR_id in(select tar_id
+															 from genitemtarif 
+															 where ITE_ID=V_ITE_ID)
+											);
 					if V_nbr=1 then
 						select PTA_ID,PSL_RANK  
 						into V_PTA_ID,V_PSL_RANK 
 						from genptaslice 
-						where PTA_ID in (select PTA_ID 
-										 from genitemperiodtarif 
-										 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
-										)
+						where PTA_ID in(select PTA_ID 
+											 from genitemperiodtarif 
+											 where TAR_id in(select tar_id
+															 from genitemtarif 
+															 where ITE_ID=V_ITE_ID)
+											)
 						and rownum=1;
 					end if;
 					if V_nbr>1 then
@@ -2317,17 +2473,22 @@ BEGIN
 					select count(*) 
 					into V_nbr 
 					from genptaslice 
-					where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-									 where TAR_id in ( select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+					where PTA_ID in (select PTA_ID 
+									 from genitemperiodtarif 
+									 where TAR_id in(select tar_id
+													 from genitemtarif 
+													 where ITE_ID=V_ITE_ID)
 									);
 					if V_nbr=1 then
 						select PTA_ID,PSL_RANK  
 						into V_PTA_ID,V_PSL_RANK 
 						from genptaslice 
-						where PTA_ID in (select PTA_ID 
-										 from genitemperiodtarif 
-										 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
-										)
+						where PTA_ID in(select PTA_ID 
+									    from genitemperiodtarif 
+									    where TAR_id in(select tar_id
+													    from genitemtarif 
+													    where ITE_ID=V_ITE_ID)
+									   )
 						and rownum=1;
 					end if;
 					if V_nbr>1 then
@@ -2335,9 +2496,11 @@ BEGIN
 						into V_PTA_ID,V_PSL_RANK 
 						from genptaslice 
 						where PTA_ID in (select PTA_ID 
-										 from genitemperiodtarif
-										 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
-										)
+									     from genitemperiodtarif 
+									     where TAR_id in(select tar_id
+													     from genitemtarif 
+													     where ITE_ID=V_ITE_ID)
+									    )
 						and rownum=1;
 					end if;	
                     BEGIN
@@ -2387,17 +2550,22 @@ BEGIN
 					select count(*) 
 					into V_nbr 
 					from genptaslice 
-					where PTA_ID in (select PTA_ID 	from genitemperiodtarif 
-									 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID )
+					where PTA_ID in (select PTA_ID 
+									 from genitemperiodtarif 
+									 where TAR_id in(select tar_id
+													 from genitemtarif 
+													 where ITE_ID=V_ITE_ID)
 									);
 					if V_nbr=1 then
 					select PTA_ID,PSL_RANK  
 						into V_PTA_ID,V_PSL_RANK 
 						from genptaslice 
 						where PTA_ID in (select PTA_ID 
-										 from genitemperiodtarif 
-										 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID)
-										)
+									 from genitemperiodtarif 
+									 where TAR_id in(select tar_id
+													 from genitemtarif 
+													 where ITE_ID=V_ITE_ID)
+									);
 						and rownum=1;
 					end if;
 					if V_nbr>1 then
@@ -2405,9 +2573,11 @@ BEGIN
 						into V_PTA_ID,V_PSL_RANK 
 						from genptaslice 
 						where PTA_ID in (select PTA_ID 
-										 from genitemperiodtarif
-										 where TAR_id in (select tar_id from genitemtarif where ITE_ID=V_ITE_ID) 
-										)
+									 from genitemperiodtarif 
+									 where TAR_id in(select tar_id
+													 from genitemtarif 
+													 where ITE_ID=V_ITE_ID)
+									)
 						and rownum=1;
 					end if;	
                     BEGIN
