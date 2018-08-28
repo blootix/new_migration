@@ -210,10 +210,39 @@ BEGIN
 				V_FAC_DATELIM    :=null;
 				V_TRAIN_FACT     :=null;
 				V_AMOUNTTTCDEC   :=null;
-			    select g.org_id	
-				into V_ORG_ID 
-				from GENORGANIZATION g 
-				where upper(g.org_code)=lpad(trim(facture_.dist),2,'0');
+			    BEGIN
+					if lpad(trim(facture_.dist),2,'0')='57' then
+						select g.org_id	
+						into V_ORG_ID 
+						from GENORGANIZATION g 
+						where upper(g.org_code)='22';
+					elsif lpad(trim(facture_.dist),2,'0')='58' then
+						select g.org_id	
+						into V_ORG_ID 
+						from GENORGANIZATION g 
+						where upper(g.org_code)='32';	
+					elsif lpad(trim(facture_.dist),2,'0')='60' then
+						select g.org_id	
+						into V_ORG_ID 
+						from GENORGANIZATION g 
+						where upper(g.org_code)='36';			
+					elsif lpad(trim(facture_.dist),2,'0')='61' then
+						select g.org_id	
+						into V_ORG_ID 
+						from GENORGANIZATION g 
+						where upper(g.org_code)='03';
+					elsif lpad(trim(facture_.dist),2,'0')='63' then
+						select g.org_id	
+						into V_ORG_ID 
+						from GENORGANIZATION g 
+						where upper(g.org_code)='15';
+					end if ;
+				EXCEPTION WHEN OTHERS THEN 
+					select g.org_id	
+					into V_ORG_ID 
+					from GENORGANIZATION g 
+					where upper(g.org_code)=lpad(trim(facture_.dist),2,'0');
+				END;
 				
 				select cag.par_id  
 				into V_PAR_ID
@@ -1793,10 +1822,39 @@ BEGIN
 				V_REF_ABN        :=null;
 				V_pdl_ref:= lpad(trim(facture_.dist),2,'0')||lpad(trim(facture_.tou),3,'0')||lpad(trim(facture_.ord),3,'0')||lpad(trim(facture_.pol),5,'0');		
 				
-				select g.org_id
-				into v_ORG_ID 
-				from GENORGANIZATION g 
-				where upper (g.org_code)=lpad(trim(facture_.dist),2,'0');
+				BEGIN
+					if lpad(trim(facture_.dist),2,'0')='57' then
+						select g.org_id	
+						into V_ORG_ID 
+						from GENORGANIZATION g 
+						where upper(g.org_code)='22';
+					elsif lpad(trim(facture_.dist),2,'0')='58' then
+						select g.org_id	
+						into V_ORG_ID 
+						from GENORGANIZATION g 
+						where upper(g.org_code)='32';	
+					elsif lpad(trim(facture_.dist),2,'0')='60' then
+						select g.org_id	
+						into V_ORG_ID 
+						from GENORGANIZATION g 
+						where upper(g.org_code)='36';			
+					elsif lpad(trim(facture_.dist),2,'0')='61' then
+						select g.org_id	
+						into V_ORG_ID 
+						from GENORGANIZATION g 
+						where upper(g.org_code)='03';
+					elsif lpad(trim(facture_.dist),2,'0')='63' then
+						select g.org_id	
+						into V_ORG_ID 
+						from GENORGANIZATION g 
+						where upper(g.org_code)='15';
+					end if ;
+				EXCEPTION WHEN OTHERS THEN 
+					select g.org_id	
+					into V_ORG_ID 
+					from GENORGANIZATION g 
+					where upper(g.org_code)=lpad(trim(facture_.dist),2,'0');
+				END;
 				
 				select cag.par_id  
 				into v_PAR_ID
@@ -3200,12 +3258,39 @@ BEGIN
 		and  trim(district)=trim(facture_.DISTRICT);
         
 		V_TRAIN_FACT :='ANNEE:'||trim(facture_.annee)||' TRIM:'||trim(facture_.periode)||' TIER:'||trim(V_tiers)||' SIX:'||trim(V_six );
-		
-		select g.org_id	
-		into V_ORG_ID 
-		from GENORGANIZATION g 
-		where upper(g.org_code)=lpad(trim(facture_.DISTRICT),2,'0');
-		
+		BEGIN
+			if lpad(trim(facture_.DISTRICT),2,'0')='57' then
+				select g.org_id	
+				into V_ORG_ID 
+				from GENORGANIZATION g 
+				where upper(g.org_code)='22';
+			elsif lpad(trim(facture_.DISTRICT),2,'0')='58' then
+				select g.org_id	
+				into V_ORG_ID 
+				from GENORGANIZATION g 
+				where upper(g.org_code)='32';	
+			elsif lpad(trim(facture_.DISTRICT),2,'0')='60' then
+				select g.org_id	
+				into V_ORG_ID 
+				from GENORGANIZATION g 
+				where upper(g.org_code)='36';			
+			elsif lpad(trim(facture_.DISTRICT),2,'0')='61' then
+				select g.org_id	
+				into V_ORG_ID 
+				from GENORGANIZATION g 
+				where upper(g.org_code)='03';
+			elsif lpad(trim(facture_.DISTRICT),2,'0')='63' then
+				select g.org_id	
+				into V_ORG_ID 
+				from GENORGANIZATION g 
+				where upper(g.org_code)='15';
+			end if ;
+		EXCEPTION WHEN OTHERS THEN 
+			select g.org_id	
+			into V_ORG_ID 
+			from GENORGANIZATION g 
+			where upper(g.org_code)=lpad(trim(facture_.DISTRICT),2,'0');
+		END;
 		select cag.par_id  
 		into v_PAR_ID
 		from AGRCUSTOMERAGR cag
@@ -3373,11 +3458,39 @@ BEGIN
 			where trim(code)=lpad(trim(facture_.tournee),3,'0')
 			and  trim(district)=trim(facture_.DISTRICT);
             V_TRAIN_FACT :='ANNEE:'||trim(facture_.annee)||' TRIM:'||trim(facture_.periode)||' TIER:'||trim(V_tiers)||' SIX:'||trim(V_six );
-		    select g.org_id	
-			into V_ORG_ID 
-			from GENORGANIZATION g 
-			where upper(g.org_code)=lpad(trim(facture_.DISTRICT),2,'0');
-			
+		    BEGIN
+				if lpad(trim(facture_.DISTRICT),2,'0')='57' then
+					select g.org_id	
+					into V_ORG_ID 
+					from GENORGANIZATION g 
+					where upper(g.org_code)='22';
+				elsif lpad(trim(facture_.DISTRICT),2,'0')='58' then
+					select g.org_id	
+					into V_ORG_ID 
+					from GENORGANIZATION g 
+					where upper(g.org_code)='32';	
+				elsif lpad(trim(facture_.DISTRICT),2,'0')='60' then
+					select g.org_id	
+					into V_ORG_ID 
+					from GENORGANIZATION g 
+					where upper(g.org_code)='36';			
+				elsif lpad(trim(facture_.DISTRICT),2,'0')='61' then
+					select g.org_id	
+					into V_ORG_ID 
+					from GENORGANIZATION g 
+					where upper(g.org_code)='03';
+				elsif lpad(trim(facture_.DISTRICT),2,'0')='63' then
+					select g.org_id	
+					into V_ORG_ID 
+					from GENORGANIZATION g 
+					where upper(g.org_code)='15';
+				end if ;
+			EXCEPTION WHEN OTHERS THEN 
+				select g.org_id	
+				into V_ORG_ID 
+				from GENORGANIZATION g 
+				where upper(g.org_code)=lpad(trim(facture_.DISTRICT),2,'0');
+			END;	
 			select cag.par_id  
 			into v_PAR_ID
 			from AGRCUSTOMERAGR cag
@@ -3662,11 +3775,39 @@ BEGIN
 		    
 			select count(*) into v_nbr from genbill b where b.BIL_CODE=V_ID_FACTURE;
 			if v_nbr=0 then 
-				select g.org_id	
-				into V_ORG_ID 
-				from GENORGANIZATION g 
-				where upper(g.org_code)=lpad(trim(facture_.DISTRICT),2,'0');
-			
+				BEGIN
+					if lpad(trim(facture_.DISTRICT),2,'0')='57' then
+						select g.org_id	
+						into V_ORG_ID 
+						from GENORGANIZATION g 
+						where upper(g.org_code)='22';
+					elsif lpad(trim(facture_.DISTRICT),2,'0')='58' then
+						select g.org_id	
+						into V_ORG_ID 
+						from GENORGANIZATION g 
+						where upper(g.org_code)='32';	
+					elsif lpad(trim(facture_.DISTRICT),2,'0')='60' then
+						select g.org_id	
+						into V_ORG_ID 
+						from GENORGANIZATION g 
+						where upper(g.org_code)='36';			
+					elsif lpad(trim(facture_.DISTRICT),2,'0')='61' then
+						select g.org_id	
+						into V_ORG_ID 
+						from GENORGANIZATION g 
+						where upper(g.org_code)='03';
+					elsif lpad(trim(facture_.DISTRICT),2,'0')='63' then
+						select g.org_id	
+						into V_ORG_ID 
+						from GENORGANIZATION g 
+						where upper(g.org_code)='15';
+					end if ;
+				EXCEPTION WHEN OTHERS THEN 
+					select g.org_id	
+					into V_ORG_ID 
+					from GENORGANIZATION g 
+					where upper(g.org_code)=lpad(trim(facture_.DISTRICT),2,'0');
+				END;	
 				select cag.par_id  
 				into v_PAR_ID
 				from AGRCUSTOMERAGR cag
@@ -3951,12 +4092,40 @@ BEGIN
 		    
 			select count(*) into v_nbr from genbill b where b.BIL_CODE=V_ID_FACTURE;
 			if v_nbr=0 then 
-				select g.org_id	
-				into V_ORG_ID 
-				from GENORGANIZATION g 
-				where upper(g.org_code)=lpad(trim(facture_.DISTRICT),2,'0');
-			
-				select cag.par_id  
+				BEGIN
+					if lpad(trim(facture_.DISTRICT),2,'0')='57' then
+						select g.org_id	
+						into V_ORG_ID 
+						from GENORGANIZATION g 
+						where upper(g.org_code)='22';
+					elsif lpad(trim(facture_.DISTRICT),2,'0')='58' then
+						select g.org_id	
+						into V_ORG_ID 
+						from GENORGANIZATION g 
+						where upper(g.org_code)='32';	
+					elsif lpad(trim(facture_.DISTRICT),2,'0')='60' then
+						select g.org_id	
+						into V_ORG_ID 
+						from GENORGANIZATION g 
+						where upper(g.org_code)='36';			
+					elsif lpad(trim(facture_.DISTRICT),2,'0')='61' then
+						select g.org_id	
+						into V_ORG_ID 
+						from GENORGANIZATION g 
+						where upper(g.org_code)='03';
+					elsif lpad(trim(facture_.DISTRICT),2,'0')='63' then
+						select g.org_id	
+						into V_ORG_ID 
+						from GENORGANIZATION g 
+						where upper(g.org_code)='15';
+					end if ;
+				EXCEPTION WHEN OTHERS THEN 
+					select g.org_id	
+					into V_ORG_ID 
+					from GENORGANIZATION g 
+					where upper(g.org_code)=lpad(trim(facture_.DISTRICT),2,'0');
+				END;	
+			    select cag.par_id  
 				into v_PAR_ID
 				from AGRCUSTOMERAGR cag
 				where cag.cag_id in (select sag.cag_id
