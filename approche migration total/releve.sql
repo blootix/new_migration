@@ -320,7 +320,7 @@ BEGIN
 				AND    voc.voc_code = 'VOW_COMM3';
 			    BEGIN
 					if to_NUMBER(trim(releve_.avisforte))>0 then
-						V_avisforte:='N°Avis FORte='||releve_.avisforte;
+						V_avisforte:='N°Avis forte='||releve_.avisforte;
 					end if;
 				EXCEPTION WHEN OTHERS THEN
 					V_avisforte:=null;
