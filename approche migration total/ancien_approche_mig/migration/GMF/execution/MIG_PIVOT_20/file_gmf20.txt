@@ -1,0 +1,73 @@
+
+Erreur commençant à la ligne: 1 Fichier @ C:\18\execution\MIG_PIVOT_20\01 Gmf_2Adresses.sql
+Dans la commande -
+ï»¿spo Gmf_2Adresses.lst
+Rapport d'erreur -
+Commande inconnue
+
+
+HEURE        
+--------------
+08/03/18 20:17
+
+Elapsed: 00:00:00.003
+
+Table NDES_COMPARE_COMMUNE supprimé(e).
+
+Elapsed: 00:00:00.159
+
+Table NDES_COMPARE_COMMUNE créé(e).
+
+Elapsed: 00:00:00.027
+
+Table UTIL_ADRESSE_TRACE supprimé(e).
+
+Elapsed: 00:00:00.020
+
+Table UTIL_ADRESSE_TRACE créé(e).
+
+Elapsed: 00:00:00.008
+
+Table UTIL_ADRESSE1 supprimé(e).
+
+Elapsed: 00:00:00.030
+
+Table UTIL_ADRESSE1 créé(e).
+
+Elapsed: 00:00:00.012
+
+Table UTIL_ADRESSE supprimé(e).
+
+Elapsed: 00:00:00.059
+
+Table UTIL_ADRESSE créé(e).
+
+Elapsed: 00:00:00.016
+
+Index NDES_ADRESSEIDX1 créé(e).
+
+Elapsed: 00:00:00.020
+
+Elément Package PK_UTIL_ADRESSE compilé
+
+Elapsed: 00:00:00.014
+
+Elément Package body PK_UTIL_ADRESSE compilé
+
+Elapsed: 00:00:00.554
+*******************************************************
+*** MIGRATION  / CrÃ©ation des villes    ***************
+*******************************************************
+
+Procédure PL/SQL terminée.
+
+
+Procédure PL/SQL terminée.
+
+Elapsed: 00:01:21.759
+
+HEURE        
+--------------
+08/03/18 20:18
+
+Elapsed: 00:00:00.004

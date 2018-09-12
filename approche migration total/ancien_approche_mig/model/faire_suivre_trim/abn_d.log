@@ -1,0 +1,99 @@
+
+SQL*Loader: Release 12.1.0.2.0 - Production on Ven. Févr. 9 12:22:10 2018
+
+Copyright (c) 1982, 2014, Oracle and/or its affiliates.  All rights reserved.
+
+Fichier de contrôle :   abn_d.ctl
+Fichier de données :      abn_d.csv
+  Fichier des enregistrements refusés :     abn_d.bad
+  Fichier de rebut :  aucune spécification
+
+ (Allouer tous les rebuts)
+
+Nombre à charger : ALL
+Nombre à ignorer : 0
+Erreurs autorisés : 2000
+Continuation :    aucune spécification
+Chemin utilisé:      Direct
+
+Table FAIRE_SUIVRE_PART, chargé à partir de chaque enregistrement physique.
+Option d'insertion en vigueur pour cette table : REPLACE
+
+   Nom de colonne                  Position   Long  Type de données encadr.
+------------------------------ ---------- ----- ---- ---- ---------------------
+POSIT                               FIRST     *   ;  O(") CHARACTER            
+CATEG                                NEXT     *   ;  O(") CHARACTER            
+DIST                                 NEXT     *   ;  O(") CHARACTER            
+POL                                  NEXT     *   ;  O(") CHARACTER            
+TOU                                  NEXT     *   ;  O(") CHARACTER            
+ORD                                  NEXT     *   ;  O(") CHARACTER            
+TIER                                 NEXT     *   ;  O(") CHARACTER            
+ADM                                  NEXT     *   ;  O(") CHARACTER            
+ADR1                                 NEXT     *   ;  O(") CHARACTER            
+ADR2                                 NEXT     *   ;  O(") CHARACTER            
+ADR3                                 NEXT     *   ;  O(") CHARACTER            
+CODONAS                              NEXT     *   ;  O(") CHARACTER            
+USAG                                 NEXT     *   ;  O(") CHARACTER            
+CODCTR                               NEXT     *   ;  O(") CHARACTER            
+CODMARQ                              NEXT     *   ;  O(") CHARACTER            
+NUMCTR                               NEXT     *   ;  O(") CHARACTER            
+CODONAN                              NEXT     *   ;  O(") CHARACTER            
+ZBL1                                 NEXT     *   ;  O(") CHARACTER            
+CODPOLL                              NEXT     *   ;  O(") CHARACTER            
+ZBL3                                 NEXT     *   ;  O(") CHARACTER            
+TARIF                                NEXT     *   ;  O(") CHARACTER            
+NAPT                                 NEXT     *   ;  O(") CHARACTER            
+DATINTEG                             NEXT     *   ;  O(") CHARACTER            
+CODBRT                               NEXT     *   ;  O(") CHARACTER            
+ECHT                                 NEXT     *   ;  O(") CHARACTER            
+ECHR                                 NEXT     *   ;  O(") CHARACTER            
+BRT                                  NEXT     *   ;  O(") CHARACTER            
+FAC                                  NEXT     *   ;  O(") CHARACTER            
+EXT                                  NEXT     *   ;  O(") CHARACTER            
+PRF                                  NEXT     *   ;  O(") CHARACTER            
+AINDEX                               NEXT     *   ;  O(") CHARACTER            
+CODRLV                               NEXT     *   ;  O(") CHARACTER            
+RELEVE                               NEXT     *   ;  O(") CHARACTER            
+PRORATA                              NEXT     *   ;  O(") CHARACTER            
+RELIQUA                              NEXT     *   ;  O(") CHARACTER            
+CODCTRT                              NEXT     *   ;  O(") CHARACTER            
+CODRESIL                             NEXT     *   ;  O(") CHARACTER            
+FRAIPREAV                            NEXT     *   ;  O(") CHARACTER            
+FRAIFERM                             NEXT     *   ;  O(") CHARACTER            
+FRAIDEPO                             NEXT     *   ;  O(") CHARACTER            
+CODDIV                               NEXT     *   ;  O(") CHARACTER            
+DIVERS                               NEXT     *   ;  O(") CHARACTER            
+CONSMOY                              NEXT     *   ;  O(") CHARACTER            
+CODLOCALI                            NEXT     *   ;  O(") CHARACTER            
+ECHTONAS                             NEXT     *   ;  O(") CHARACTER            
+ECHRONAS                             NEXT     *   ;  O(") CHARACTER            
+CAPITONAS                            NEXT     *   ;  O(") CHARACTER            
+INTERONAS                            NEXT     *   ;  O(") CHARACTER            
+CODPOSTAL                            NEXT     *   ;  O(") CHARACTER            
+CODAR                                NEXT     *   ;  O(") CHARACTER            
+ARROND                               NEXT     *   ;  O(") CHARACTER            
+
+
+Table FAIRE_SUIVRE_PART :
+  763 Lignes - Chargement terminé.
+  0 Lignes chargement impossible dû à des erreurs de données.
+  0 Lignes chargement impossible car échec de toutes les clauses WHEN.
+  0 Lignes chargement impossible car tous les champs étaient non renseignés.
+
+Taille du tableau de variables non utilisée dans le chemin direct.
+Lignes de tableau de colonnes :    5000
+Octets de tampon de flux de données :  256000
+Octets de tampon de lecture : 1048576
+
+Nombre total d'enregistrements logiques ignorés :          0
+Nombre total d'enregistrements logiques lus :           763
+Nombre total d'enregistrements logiques rejetés :         0
+Nombre total d'enregistrements logiques mis au rebut :        0
+Nombre total de tampons de flux de données chargés par le thread principal de SQL*Loader :        1
+Nombre total de tampons de flux de données chargés par le thread de chargement de SQL*Loader :        0
+
+Le début de l'exécution a été effectué sur Ven. Févr. 09 12:22:10 2018
+La fin de l'exécution a été effectuée sur Ven. Févr. 09 12:22:10 2018
+
+Temps écoulé (ELAPSED) :     00:00:00.18
+Temps processeur (CPU) :    00:00:00.05

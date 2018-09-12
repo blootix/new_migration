@@ -1,0 +1,83 @@
+
+SQL*Loader: Release 12.1.0.2.0 - Production on Ven. Févr. 9 12:25:02 2018
+
+Copyright (c) 1982, 2014, Oracle and/or its affiliates.  All rights reserved.
+
+Fichier de contrôle :   rolg_d.ctl
+Fichier de données :      rolg_d.csv
+  Fichier des enregistrements refusés :     rolg_d.bad
+  Fichier de rebut :  aucune spécification
+
+ (Allouer tous les rebuts)
+
+Nombre à charger : ALL
+Nombre à ignorer : 0
+Erreurs autorisés : 2000
+Continuation :    aucune spécification
+Chemin utilisé:      Direct
+
+Table ROLE_MENS, chargé à partir de chaque enregistrement physique.
+Option d'insertion en vigueur pour cette table : REPLACE
+
+   Nom de colonne                  Position   Long  Type de données encadr.
+------------------------------ ---------- ----- ---- ---- ---------------------
+DATEEXP                             FIRST     *   ;  O(") CHARACTER            
+DISTR                                NEXT     *   ;  O(") CHARACTER            
+POLICE                               NEXT     *   ;  O(") CHARACTER            
+ANNEE                                NEXT     *   ;  O(") CHARACTER            
+MOIS                                 NEXT     *   ;  O(") CHARACTER            
+SIX                                  NEXT     *   ;  O(") CHARACTER            
+NET                                  NEXT     *   ;  O(") CHARACTER            
+DATL                                 NEXT     *   ;  O(") CHARACTER            
+CODR                                 NEXT     *   ;  O(") CHARACTER            
+ANCREP                               NEXT     *   ;  O(") CHARACTER            
+NOUREP                               NEXT     *   ;  O(") CHARACTER            
+TCONS                                NEXT     *   ;  O(") CHARACTER            
+CPREAV                               NEXT     *   ;  O(") CHARACTER            
+CFER                                 NEXT     *   ;  O(") CHARACTER            
+COB                                  NEXT     *   ;  O(") CHARACTER            
+CAY                                  NEXT     *   ;  O(") CHARACTER            
+CONAS                                NEXT     *   ;  O(") CHARACTER            
+TARIFS                               NEXT     *   ;  O(") CHARACTER            
+NAPPR                                NEXT     *   ;  O(") CHARACTER            
+CBRCH                                NEXT     *   ;  O(") CHARACTER            
+CCTR                                 NEXT     *   ;  O(") CHARACTER            
+BRANCH                               NEXT     *   ;  O(") CHARACTER            
+PARTCO                               NEXT     *   ;  O(") CHARACTER            
+EXTENS                               NEXT     *   ;  O(") CHARACTER            
+FACADE                               NEXT     *   ;  O(") CHARACTER            
+PFINA                                NEXT     *   ;  O(") CHARACTER            
+ECHRES                               NEXT     *   ;  O(") CHARACTER            
+ECGRO                                NEXT     *   ;  O(") CHARACTER            
+CATEG                                NEXT     *   ;  O(") CHARACTER            
+TOUR                                 NEXT     *   ;  O(") CHARACTER            
+ORDR                                 NEXT     *   ;  O(") CHARACTER            
+COEF_Q                               NEXT     *   ;  O(") CHARACTER            
+
+Enregistrement 1 : Rejeté - Erreur sur table ROLE_MENS, colonne DISTR.
+ORA-12899: valeur trop grande pour la colonne DISTR (réelle : 5, maximum : 2)
+
+
+Table ROLE_MENS :
+  9256 Lignes - Chargement terminé.
+  1 Ligne chargement impossible dû à des erreurs de données.
+  0 Lignes chargement impossible car échec de toutes les clauses WHEN.
+  0 Lignes chargement impossible car tous les champs étaient non renseignés.
+
+Taille du tableau de variables non utilisée dans le chemin direct.
+Lignes de tableau de colonnes :    5000
+Octets de tampon de flux de données :  256000
+Octets de tampon de lecture : 1048576
+
+Nombre total d'enregistrements logiques ignorés :          0
+Nombre total d'enregistrements logiques lus :          9257
+Nombre total d'enregistrements logiques rejetés :         1
+Nombre total d'enregistrements logiques mis au rebut :        0
+Nombre total de tampons de flux de données chargés par le thread principal de SQL*Loader :        2
+Nombre total de tampons de flux de données chargés par le thread de chargement de SQL*Loader :        3
+
+Le début de l'exécution a été effectué sur Ven. Févr. 09 12:25:02 2018
+La fin de l'exécution a été effectuée sur Ven. Févr. 09 12:25:03 2018
+
+Temps écoulé (ELAPSED) :     00:00:00.19
+Temps processeur (CPU) :    00:00:00.05

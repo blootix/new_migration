@@ -1,0 +1,72 @@
+
+SQL*Loader: Release 12.1.0.2.0 - Production on Ven. Févr. 9 12:24:12 2018
+
+Copyright (c) 1982, 2014, Oracle and/or its affiliates.  All rights reserved.
+
+Fichier de contrôle :   d.ctl
+Fichier de données :      d.csv
+  Fichier des enregistrements refusés :     d.bad
+  Fichier de rebut :  aucune spécification
+
+ (Allouer tous les rebuts)
+
+Nombre à charger : ALL
+Nombre à ignorer : 0
+Erreurs autorisés : 2000
+Continuation :    aucune spécification
+Chemin utilisé:      Direct
+
+Table IMPAYEES_PART, chargé à partir de chaque enregistrement physique.
+Option d'insertion en vigueur pour cette table : REPLACE
+
+   Nom de colonne                  Position   Long  Type de données encadr.
+------------------------------ ---------- ----- ---- ---- ---------------------
+DISTRICT                            FIRST     *   ;  O(") CHARACTER            
+POLICE                               NEXT     *   ;  O(") CHARACTER            
+TOURNEE                              NEXT     *   ;  O(") CHARACTER            
+ORDRE                                NEXT     *   ;  O(") CHARACTER            
+CATEGORIE                            NEXT     *   ;  O(") CHARACTER            
+ADM                                  NEXT     *   ;  O(") CHARACTER            
+Z1                                   NEXT     *   ;  O(") CHARACTER            
+CONSFAC                              NEXT     *   ;  O(") CHARACTER            
+CONSRED                              NEXT     *   ;  O(") CHARACTER            
+TARIFONAS                            NEXT     *   ;  O(") CHARACTER            
+MTONAS                               NEXT     *   ;  O(") CHARACTER            
+NET                                  NEXT     *   ;  O(") CHARACTER            
+MTPAYE                               NEXT     *   ;  O(") CHARACTER            
+Z2                                   NEXT     *   ;  O(") CHARACTER            
+DATEPAYE                             NEXT     *   ;  O(") CHARACTER            
+CODPAYE                              NEXT     *   ;  O(") CHARACTER            
+AR1                                  NEXT     *   ;  O(") CHARACTER            
+CODARR                               NEXT     *   ;  O(") CHARACTER            
+AR2                                  NEXT     *   ;  O(") CHARACTER            
+ANNEE                                NEXT     *   ;  O(") CHARACTER            
+MOIS                                 NEXT     *   ;  O(") CHARACTER            
+
+Enregistrement 1 : Rejeté - Erreur sur table IMPAYEES_PART, colonne DISTRICT.
+ORA-12899: valeur trop grande pour la colonne DISTRICT (réelle : 8, maximum : 2)
+
+
+Table IMPAYEES_PART :
+  824756 Lignes - Chargement terminé.
+  1 Ligne chargement impossible dû à des erreurs de données.
+  0 Lignes chargement impossible car échec de toutes les clauses WHEN.
+  0 Lignes chargement impossible car tous les champs étaient non renseignés.
+
+Taille du tableau de variables non utilisée dans le chemin direct.
+Lignes de tableau de colonnes :    5000
+Octets de tampon de flux de données :  256000
+Octets de tampon de lecture : 1048576
+
+Nombre total d'enregistrements logiques ignorés :          0
+Nombre total d'enregistrements logiques lus :        824757
+Nombre total d'enregistrements logiques rejetés :         1
+Nombre total d'enregistrements logiques mis au rebut :        0
+Nombre total de tampons de flux de données chargés par le thread principal de SQL*Loader :      199
+Nombre total de tampons de flux de données chargés par le thread de chargement de SQL*Loader :      132
+
+Le début de l'exécution a été effectué sur Ven. Févr. 09 12:24:12 2018
+La fin de l'exécution a été effectuée sur Ven. Févr. 09 12:24:14 2018
+
+Temps écoulé (ELAPSED) :     00:00:01.51
+Temps processeur (CPU) :    00:00:01.16

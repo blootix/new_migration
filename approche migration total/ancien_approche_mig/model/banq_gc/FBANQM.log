@@ -1,0 +1,63 @@
+
+SQL*Loader: Release 12.1.0.2.0 - Production on Ven. Févr. 9 11:57:59 2018
+
+Copyright (c) 1982, 2014, Oracle and/or its affiliates.  All rights reserved.
+
+Fichier de contrôle :   FBANQM.ctl
+Fichier de données :      FBANQM.csv
+  Fichier des enregistrements refusés :     FBANQM.bad
+  Fichier de rebut :  aucune spécification
+
+ (Allouer tous les rebuts)
+
+Nombre à charger : ALL
+Nombre à ignorer : 0
+Erreurs autorisés : 2000
+Continuation :    aucune spécification
+Chemin utilisé:      Direct
+
+Table RIB_GR, chargé à partir de chaque enregistrement physique.
+Option d'insertion en vigueur pour cette table : REPLACE
+
+   Nom de colonne                  Position   Long  Type de données encadr.
+------------------------------ ---------- ----- ---- ---- ---------------------
+DIST                                FIRST     *   ;  O(") CHARACTER            
+TOU                                  NEXT     *   ;  O(") CHARACTER            
+ORD                                  NEXT     *   ;  O(") CHARACTER            
+RIB                                  NEXT     *   ;  O(") CHARACTER            
+NOM                                  NEXT     *   ;  O(") CHARACTER            
+CPOS                                 NEXT     *   ;  O(") CHARACTER            
+
+Enregistrement 424 : Rejeté - Erreur sur table RIB_GR, colonne NOM.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 529 : Rejeté - Erreur sur table RIB_GR, colonne NOM.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 620 : Rejeté - Erreur sur table RIB_GR, colonne NOM.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 1 : Rejeté - Erreur sur table RIB_GR, colonne DIST.
+ORA-12899: valeur trop grande pour la colonne DIST (réelle : 4, maximum : 2)
+
+
+Table RIB_GR :
+  768 Lignes - Chargement terminé.
+  4 Lignes chargement impossible dû à des erreurs de données.
+  0 Lignes chargement impossible car échec de toutes les clauses WHEN.
+  0 Lignes chargement impossible car tous les champs étaient non renseignés.
+
+Taille du tableau de variables non utilisée dans le chemin direct.
+Lignes de tableau de colonnes :    5000
+Octets de tampon de flux de données :  256000
+Octets de tampon de lecture : 1048576
+
+Nombre total d'enregistrements logiques ignorés :          0
+Nombre total d'enregistrements logiques lus :           772
+Nombre total d'enregistrements logiques rejetés :         4
+Nombre total d'enregistrements logiques mis au rebut :        0
+Nombre total de tampons de flux de données chargés par le thread principal de SQL*Loader :        1
+Nombre total de tampons de flux de données chargés par le thread de chargement de SQL*Loader :        0
+
+Le début de l'exécution a été effectué sur Ven. Févr. 09 11:57:59 2018
+La fin de l'exécution a été effectuée sur Ven. Févr. 09 11:57:59 2018
+
+Temps écoulé (ELAPSED) :     00:00:00.14
+Temps processeur (CPU) :    00:00:00.00

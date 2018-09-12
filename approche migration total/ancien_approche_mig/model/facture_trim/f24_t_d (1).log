@@ -1,0 +1,130 @@
+
+SQL*Loader: Release 12.1.0.2.0 - Production on Ven. Févr. 9 12:20:08 2018
+
+Copyright (c) 1982, 2014, Oracle and/or its affiliates.  All rights reserved.
+
+Fichier de contrôle :   f24_t_d.ctl
+Fichier de données :      f24_t_d.csv
+  Fichier des enregistrements refusés :     f24_t_d.bad
+  Fichier de rebut :  aucune spécification
+
+ (Allouer tous les rebuts)
+
+Nombre à charger : ALL
+Nombre à ignorer : 0
+Erreurs autorisés : 2000
+Continuation :    aucune spécification
+Chemin utilisé:      Direct
+
+Table FACTURE_AS400, chargé à partir de chaque enregistrement physique.
+Option d'insertion en vigueur pour cette table : REPLACE
+
+   Nom de colonne                  Position   Long  Type de données encadr.
+------------------------------ ---------- ----- ---- ---- ---------------------
+CAT                                 FIRST     *   ;  O(") CHARACTER            
+DIST                                 NEXT     *   ;  O(") CHARACTER            
+POL                                  NEXT     *   ;  O(") CHARACTER            
+TOU                                  NEXT     *   ;  O(") CHARACTER            
+ORD                                  NEXT     *   ;  O(") CHARACTER            
+CFAC                                 NEXT     *   ;  O(") CHARACTER            
+Z1                                   NEXT     *   ;  O(") CHARACTER            
+NOMADR                               NEXT     *   ;  O(") CHARACTER            
+USAG                                 NEXT     *   ;  O(") CHARACTER            
+CODONAS                              NEXT     *   ;  O(") CHARACTER            
+MTONAS                               NEXT     *   ;  O(") CHARACTER            
+FRAISCTR                             NEXT     *   ;  O(") CHARACTER            
+RAISBRT                              NEXT     *   ;  O(") CHARACTER            
+CTARIF                               NEXT     *   ;  O(") CHARACTER            
+TAUXT1                               NEXT     *   ;  O(") CHARACTER            
+TAUXT2                               NEXT     *   ;  O(") CHARACTER            
+TAUXT3                               NEXT     *   ;  O(") CHARACTER            
+NBREAPP                              NEXT     *   ;  O(") CHARACTER            
+PARTCON                              NEXT     *   ;  O(") CHARACTER            
+CODBRT                               NEXT     *   ;  O(") CHARACTER            
+ECHTOT                               NEXT     *   ;  O(") CHARACTER            
+ECHREST                              NEXT     *   ;  O(") CHARACTER            
+RBRANCHE                             NEXT     *   ;  O(") CHARACTER            
+RFACADE                              NEXT     *   ;  O(") CHARACTER            
+REXTENSION                           NEXT     *   ;  O(") CHARACTER            
+PFINANCIER                           NEXT     *   ;  O(") CHARACTER            
+AINDEX                               NEXT     *   ;  O(") CHARACTER            
+NINDEX                               NEXT     *   ;  O(") CHARACTER            
+CONS                                 NEXT     *   ;  O(") CHARACTER            
+PRORATA                              NEXT     *   ;  O(") CHARACTER            
+CONST1                               NEXT     *   ;  O(") CHARACTER            
+MONTT1                               NEXT     *   ;  O(") CHARACTER            
+CONST2                               NEXT     *   ;  O(") CHARACTER            
+MONTT2                               NEXT     *   ;  O(") CHARACTER            
+CONST3                               NEXT     *   ;  O(") CHARACTER            
+MONTT3                               NEXT     *   ;  O(") CHARACTER            
+Z3                                   NEXT     *   ;  O(") CHARACTER            
+MTCTOT                               NEXT     *   ;  O(") CHARACTER            
+TVA                                  NEXT     *   ;  O(") CHARACTER            
+FRLETTRE                             NEXT     *   ;  O(") CHARACTER            
+FRFERM                               NEXT     *   ;  O(") CHARACTER            
+CODCTR                               NEXT     *   ;  O(") CHARACTER            
+CODS                                 NEXT     *   ;  O(") CHARACTER            
+DIVERS                               NEXT     *   ;  O(") CHARACTER            
+CLEREF                               NEXT     *   ;  O(") CHARACTER            
+MONTTRIM                             NEXT     *   ;  O(") CHARACTER            
+CLEMT                                NEXT     *   ;  O(") CHARACTER            
+RESTPC                               NEXT     *   ;  O(") CHARACTER            
+CBO                                  NEXT     *   ;  O(") CHARACTER            
+ETO                                  NEXT     *   ;  O(") CHARACTER            
+ERO                                  NEXT     *   ;  O(") CHARACTER            
+CAPIT                                NEXT     *   ;  O(") CHARACTER            
+INTER                                NEXT     *   ;  O(") CHARACTER            
+CODESO                               NEXT     *   ;  O(") CHARACTER            
+ECHTOS                               NEXT     *   ;  O(") CHARACTER            
+CODPTT                               NEXT     *   ;  O(") CHARACTER            
+RESTON                               NEXT     *   ;  O(") CHARACTER            
+FIXONAS                              NEXT     *   ;  O(") CHARACTER            
+Z5                                   NEXT     *   ;  O(") CHARACTER            
+TAXE                                 NEXT     *   ;  O(") CHARACTER            
+QONAS                                NEXT     *   ;  O(") CHARACTER            
+VOLON1                               NEXT     *   ;  O(") CHARACTER            
+TAUON1                               NEXT     *   ;  O(") CHARACTER            
+MON1                                 NEXT     *   ;  O(") CHARACTER            
+VOLON2                               NEXT     *   ;  O(") CHARACTER            
+TAUON2                               NEXT     *   ;  O(") CHARACTER            
+MON2                                 NEXT     *   ;  O(") CHARACTER            
+REFC01                               NEXT     *   ;  O(") CHARACTER            
+REFC02                               NEXT     *   ;  O(") CHARACTER            
+REFC03                               NEXT     *   ;  O(") CHARACTER            
+REFC04                               NEXT     *   ;  O(") CHARACTER            
+VOLON3                               NEXT     *   ;  O(") CHARACTER            
+TAUON3                               NEXT     *   ;  O(") CHARACTER            
+MON3                                 NEXT     *   ;  O(") CHARACTER            
+CARON                                NEXT     *   ;  O(") CHARACTER            
+AREPOR                               NEXT     *   ;  O(") CHARACTER            
+NAROND                               NEXT     *   ;  O(") CHARACTER            
+NET                                  NEXT     *   ;  O(") CHARACTER            
+ARRIERE                              NEXT     *   ;  O(") CHARACTER            
+VOLON4                               NEXT     *   ;  O(") CHARACTER            
+TAUON4                               NEXT     *   ;  O(") CHARACTER            
+MTTONAS                              NEXT     *   ;  O(") CHARACTER            
+
+
+Table FACTURE_AS400 :
+  751517 Lignes - Chargement terminé.
+  0 Lignes chargement impossible dû à des erreurs de données.
+  0 Lignes chargement impossible car échec de toutes les clauses WHEN.
+  0 Lignes chargement impossible car tous les champs étaient non renseignés.
+
+Taille du tableau de variables non utilisée dans le chemin direct.
+Lignes de tableau de colonnes :    5000
+Octets de tampon de flux de données :  256000
+Octets de tampon de lecture : 1048576
+
+Nombre total d'enregistrements logiques ignorés :          0
+Nombre total d'enregistrements logiques lus :        751517
+Nombre total d'enregistrements logiques rejetés :         0
+Nombre total d'enregistrements logiques mis au rebut :        0
+Nombre total de tampons de flux de données chargés par le thread principal de SQL*Loader :      238
+Nombre total de tampons de flux de données chargés par le thread de chargement de SQL*Loader :      714
+
+Le début de l'exécution a été effectué sur Ven. Févr. 09 12:20:08 2018
+La fin de l'exécution a été effectuée sur Ven. Févr. 09 12:20:12 2018
+
+Temps écoulé (ELAPSED) :     00:00:04.83
+Temps processeur (CPU) :    00:00:03.69

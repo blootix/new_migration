@@ -1,0 +1,334 @@
+
+SQL*Loader: Release 12.1.0.2.0 - Production on Mer. Févr. 7 13:27:03 2018
+
+Copyright (c) 1982, 2014, Oracle and/or its affiliates.  All rights reserved.
+
+Fichier de contrôle :   fabtrim22.ctl
+Fichier de données :      fabtrim22.csv
+  Fichier des enregistrements refusés :     fabtrim22.bad
+  Fichier de rebut :  aucune spécification
+
+ (Allouer tous les rebuts)
+
+Nombre à charger : ALL
+Nombre à ignorer : 0
+Erreurs autorisés : 2000
+Continuation :    aucune spécification
+Chemin utilisé:      Direct
+
+Table ABONNEES, chargé à partir de chaque enregistrement physique.
+Option d'insertion en vigueur pour cette table : REPLACE
+
+   Nom de colonne                  Position   Long  Type de données encadr.
+------------------------------ ---------- ----- ---- ---- ---------------------
+POSIT                               FIRST     *   ;  O(") CHARACTER            
+CATEG                                NEXT     *   ;  O(") CHARACTER            
+DIST                                 NEXT     *   ;  O(") CHARACTER            
+POL                                  NEXT     *   ;  O(") CHARACTER            
+TOU                                  NEXT     *   ;  O(") CHARACTER            
+ORD                                  NEXT     *   ;  O(") CHARACTER            
+TIER                                 NEXT     *   ;  O(") CHARACTER            
+ADM                                  NEXT     *   ;  O(") CHARACTER            
+NOMADR                               NEXT     *   ;  O(") CHARACTER            
+CODONAS                              NEXT     *   ;  O(") CHARACTER            
+USAG                                 NEXT     *   ;  O(") CHARACTER            
+CODCTR                               NEXT     *   ;  O(") CHARACTER            
+CODMARQ                              NEXT     *   ;  O(") CHARACTER            
+NUMCTR                               NEXT     *   ;  O(") CHARACTER            
+CODONAN                              NEXT     *   ;  O(") CHARACTER            
+ZBL1                                 NEXT     *   ;  O(") CHARACTER            
+CODPOLL                              NEXT     *   ;  O(") CHARACTER            
+ZBL3                                 NEXT     *   ;  O(") CHARACTER            
+TARIF                                NEXT     *   ;  O(") CHARACTER            
+NAPT                                 NEXT     *   ;  O(") CHARACTER            
+DATINTEG                             NEXT     *   ;  O(") CHARACTER            
+CODBRT                               NEXT     *   ;  O(") CHARACTER            
+ECHT                                 NEXT     *   ;  O(") CHARACTER            
+ECHR                                 NEXT     *   ;  O(") CHARACTER            
+BRT                                  NEXT     *   ;  O(") CHARACTER            
+FAC                                  NEXT     *   ;  O(") CHARACTER            
+EXT                                  NEXT     *   ;  O(") CHARACTER            
+PRF                                  NEXT     *   ;  O(") CHARACTER            
+AINDEX                               NEXT     *   ;  O(") CHARACTER            
+CODRLV                               NEXT     *   ;  O(") CHARACTER            
+RELEVE                               NEXT     *   ;  O(") CHARACTER            
+PRORATA                              NEXT     *   ;  O(") CHARACTER            
+RELIQUA                              NEXT     *   ;  O(") CHARACTER            
+CODCTRT                              NEXT     *   ;  O(") CHARACTER            
+CODRESIL                             NEXT     *   ;  O(") CHARACTER            
+FRAIPREAV                            NEXT     *   ;  O(") CHARACTER            
+FRAIFERM                             NEXT     *   ;  O(") CHARACTER            
+FRAIDEPO                             NEXT     *   ;  O(") CHARACTER            
+CODDIV                               NEXT     *   ;  O(") CHARACTER            
+DIVERS                               NEXT     *   ;  O(") CHARACTER            
+CONSMOY                              NEXT     *   ;  O(") CHARACTER            
+CODLOCALI                            NEXT     *   ;  O(") CHARACTER            
+ECHTONAS                             NEXT     *   ;  O(") CHARACTER            
+ECHRONAS                             NEXT     *   ;  O(") CHARACTER            
+CAPITONAS                            NEXT     *   ;  O(") CHARACTER            
+INTERONAS                            NEXT     *   ;  O(") CHARACTER            
+CODPOSTAL                            NEXT     *   ;  O(") CHARACTER            
+CODAR                                NEXT     *   ;  O(") CHARACTER            
+ARROND                               NEXT     *   ;  O(") CHARACTER            
+
+Enregistrement 1135 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 1339 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 1613 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 1672 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 1802 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 1803 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 2703 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 2747 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 2847 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 3344 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 3700 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 3787 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 3789 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 4175 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 4941 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 4956 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 4986 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 7065 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+second séparateur de fin manquant
+Enregistrement 7420 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 7831 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 10565 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 10572 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 10822 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 10947 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 10948 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 11401 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 11828 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 12546 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 13467 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 13977 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 14695 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 15541 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 15634 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 15635 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 22082 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 24178 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 24179 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 25092 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 23636 : Rejeté - Erreur sur table ABONNEES, colonne CODONAS.
+ORA-12899: valeur trop grande pour la colonne CODONAS (réelle : 12, maximum : 10)
+
+Enregistrement 27341 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 27404 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 27677 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 27878 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 29481 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 29494 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 29636 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 29686 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 29769 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 29775 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 29823 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 29825 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 30829 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 31505 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 34089 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 37063 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 37064 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 37065 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 37583 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 37827 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 37828 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 38062 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 38228 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 38230 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 38256 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 38824 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 39293 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 40221 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 41447 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 43744 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 44268 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 45179 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 45330 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 45397 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 45720 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 45226 : Rejeté - Erreur sur table ABONNEES, colonne CODONAS.
+ORA-12899: valeur trop grande pour la colonne CODONAS (réelle : 53, maximum : 10)
+
+Enregistrement 47718 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 49566 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+second séparateur de fin manquant
+Enregistrement 49867 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 50021 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 50126 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 47427 : Rejeté - Erreur sur table ABONNEES, colonne CODONAS.
+ORA-12899: valeur trop grande pour la colonne CODONAS (réelle : 11, maximum : 10)
+
+Enregistrement 51352 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 51623 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 53066 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 53067 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 53075 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 53076 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 53080 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 53086 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 53094 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 53095 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 55028 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 55791 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 54986 : Rejeté - Erreur sur table ABONNEES, colonne CODONAS.
+ORA-12899: valeur trop grande pour la colonne CODONAS (réelle : 18, maximum : 10)
+
+Enregistrement 55424 : Rejeté - Erreur sur table ABONNEES, colonne CODONAS.
+ORA-12899: valeur trop grande pour la colonne CODONAS (réelle : 12, maximum : 10)
+
+Enregistrement 58316 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 59045 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 59048 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 59061 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 62281 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 64104 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 63408 : Rejeté - Erreur sur table ABONNEES, colonne CODONAS.
+ORA-12899: valeur trop grande pour la colonne CODONAS (réelle : 48, maximum : 10)
+
+Enregistrement 67168 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 70144 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 70941 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 71136 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 75582 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 76997 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 78197 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 78202 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 78237 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 78245 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 78246 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 78247 : Rejeté - Erreur sur table ABONNEES, colonne NOMADR.
+aucun caractère de fin trouvé après les champs TERMINATED et ENCLOSED
+Enregistrement 77767 : Rejeté - Erreur sur table ABONNEES, colonne CODONAS.
+ORA-12899: valeur trop grande pour la colonne CODONAS (réelle : 31, maximum : 10)
+
+
+Table ABONNEES :
+  78134 Lignes - Chargement terminé.
+  115 Lignes chargement impossible dû à des erreurs de données.
+  0 Lignes chargement impossible car échec de toutes les clauses WHEN.
+  0 Lignes chargement impossible car tous les champs étaient non renseignés.
+
+Taille du tableau de variables non utilisée dans le chemin direct.
+Lignes de tableau de colonnes :    5000
+Octets de tampon de flux de données :  256000
+Octets de tampon de lecture : 1048576
+
+Nombre total d'enregistrements logiques ignorés :          0
+Nombre total d'enregistrements logiques lus :         78249
+Nombre total d'enregistrements logiques rejetés :       115
+Nombre total d'enregistrements logiques mis au rebut :        0
+Nombre total de tampons de flux de données chargés par le thread principal de SQL*Loader :       21
+Nombre total de tampons de flux de données chargés par le thread de chargement de SQL*Loader :       60
+
+Le début de l'exécution a été effectué sur Mer. Févr. 07 13:27:03 2018
+La fin de l'exécution a été effectuée sur Mer. Févr. 07 13:27:04 2018
+
+Temps écoulé (ELAPSED) :     00:00:00.51
+Temps processeur (CPU) :    00:00:00.31

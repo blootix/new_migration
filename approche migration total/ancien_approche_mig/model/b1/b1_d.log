@@ -1,0 +1,82 @@
+
+SQL*Loader: Release 12.1.0.2.0 - Production on Jeu. Févr. 8 18:14:34 2018
+
+Copyright (c) 1982, 2014, Oracle and/or its affiliates.  All rights reserved.
+
+Fichier de contrôle :   b1_d.ctl
+Fichier de données :      b1_d.csv
+  Fichier des enregistrements refusés :     b1_d.bad
+  Fichier de rebut :  aucune spécification
+
+ (Allouer tous les rebuts)
+
+Nombre à charger : ALL
+Nombre à ignorer : 0
+Erreurs autorisés : 2000
+Continuation :    aucune spécification
+Chemin utilisé:      Direct
+
+Table B1, chargé à partir de chaque enregistrement physique.
+Option d'insertion en vigueur pour cette table : REPLACE
+
+   Nom de colonne                  Position   Long  Type de données encadr.
+------------------------------ ---------- ----- ---- ---- ---------------------
+CCAR                                FIRST     *   ;  O(") CHARACTER            
+CATE                                 NEXT     *   ;  O(") CHARACTER            
+DIST                                 NEXT     *   ;  O(") CHARACTER            
+POLI                                 NEXT     *   ;  O(") CHARACTER            
+ZONN                                 NEXT     *   ;  O(") CHARACTER            
+CADM                                 NEXT     *   ;  O(") CHARACTER            
+CROL                                 NEXT     *   ;  O(") CHARACTER            
+MDOV                                 NEXT     *   ;  O(") CHARACTER            
+MATR                                 NEXT     *   ;  O(") CHARACTER            
+FGEN                                 NEXT     *   ;  O(") CHARACTER            
+FACA                                 NEXT     *   ;  O(") CHARACTER            
+EXTE                                 NEXT     *   ;  O(") CHARACTER            
+CPRF                                 NEXT     *   ;  O(") CHARACTER            
+PRFI                                 NEXT     *   ;  O(") CHARACTER            
+RCHA                                 NEXT     *   ;  O(") CHARACTER            
+ACON                                 NEXT     *   ;  O(") CHARACTER            
+Z1                                   NEXT     *   ;  O(") CHARACTER            
+DPCH                                 NEXT     *   ;  O(") CHARACTER            
+NET                                  NEXT     *   ;  O(") CHARACTER            
+MTPA                                 NEXT     *   ;  O(") CHARACTER            
+Z2                                   NEXT     *   ;  O(") CHARACTER            
+DPAI                                 NEXT     *   ;  O(") CHARACTER            
+CPAI                                 NEXT     *   ;  O(") CHARACTER            
+Z3                                   NEXT     *   ;  O(") CHARACTER            
+DEXE                                 NEXT     *   ;  O(") CHARACTER            
+CEXE                                 NEXT     *   ;  O(") CHARACTER            
+Z4                                   NEXT     *   ;  O(") CHARACTER            
+DFAC                                 NEXT     *   ;  O(") CHARACTER            
+CFAC                                 NEXT     *   ;  O(") CHARACTER            
+TOUR                                 NEXT     *   ;  O(") CHARACTER            
+ORDR                                 NEXT     *   ;  O(") CHARACTER            
+CNAT                                 NEXT     *   ;  O(") CHARACTER            
+FONCAGE                              NEXT     *   ;  O(") CHARACTER            
+CREDIT                               NEXT     *   ;  O(") CHARACTER            
+
+
+Table B1 :
+  40760 Lignes - Chargement terminé.
+  0 Lignes chargement impossible dû à des erreurs de données.
+  0 Lignes chargement impossible car échec de toutes les clauses WHEN.
+  0 Lignes chargement impossible car tous les champs étaient non renseignés.
+
+Taille du tableau de variables non utilisée dans le chemin direct.
+Lignes de tableau de colonnes :    5000
+Octets de tampon de flux de données :  256000
+Octets de tampon de lecture : 1048576
+
+Nombre total d'enregistrements logiques ignorés :          0
+Nombre total d'enregistrements logiques lus :         40760
+Nombre total d'enregistrements logiques rejetés :         0
+Nombre total d'enregistrements logiques mis au rebut :        0
+Nombre total de tampons de flux de données chargés par le thread principal de SQL*Loader :       11
+Nombre total de tampons de flux de données chargés par le thread de chargement de SQL*Loader :       17
+
+Le début de l'exécution a été effectué sur Jeu. Févr. 08 18:14:34 2018
+La fin de l'exécution a été effectuée sur Jeu. Févr. 08 18:14:34 2018
+
+Temps écoulé (ELAPSED) :     00:00:00.44
+Temps processeur (CPU) :    00:00:00.13

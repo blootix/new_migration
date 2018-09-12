@@ -1,0 +1,15 @@
+delete  from  ABONNEES where dist = 'DIST';
+ delete  from  ABONNEES_GR where dist = 'DIST';
+ delete  from  FAIRE_SUIVRE_PART where dist = 'DIST';
+ delete  from  FAIRE_SUIVRE_GC where dist = 'DIST';
+ delete  from  B1 where dist = 'DIST';
+ delete  from  B2 where dist = 'DIST';
+ delete  from  FACTURE_AS400GC where dist = 'DIST';
+ delete  from  IMPAYEES_PART where district = 'DISTRICT';
+ delete  from  IMPAYEES_GC where district = 'DISTRICT';
+ delete  from  FACTURE_AS400 where dist = 'DIST';  
+ delete  from  ROLE_TRIM where distr = 'DISTR';
+ delete  from  RIB_GR where dist = 'DIST';
+ delete  from  RIB_PART where dist = 'DIST';
+ delete  from  ROLE_MENS where distr = 'DISTR';
+ commit;
