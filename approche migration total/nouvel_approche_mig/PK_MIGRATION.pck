@@ -199,14 +199,14 @@ PROCEDURE MigrationSitePdl
   )
   IS
   v_psc_id number;
-  v_pre_id number;
-  v_spt_id number;
+  --v_pre_id number;
+  --v_spt_id number;
   v_dpr_id number;
   v_spo_id number;
   v_sps_id number;
   v_cnn_id number;
   v_hcs_id number;
-  v_rou_id number;
+  --v_rou_id number;
   v_tiers number;
   v_sixieme number;
   v_code_br varchar2(100);
@@ -227,21 +227,23 @@ PROCEDURE MigrationSitePdl
 
     MigrationAdresse(p_pk_etape,p_pk_exception,v_adr_id,p_adresse,p_code_postal);
     p_pk_etape := 'Creation du site/pdl';
+
     if(p_tourne in ('898','899'))then
+			
       BEGIN
         select rou_id
-        into   v_rou_id
+        into   p_rou_id 
         from   tecroute
         where  rou_code=p_district||'_AS';
       EXCEPTION WHEN no_data_found THEN
-        select seq_tecroute.nextval into v_rou_id from dual;
+        select seq_tecroute.nextval into p_rou_id from dual;
         insert into tecroute(rou_id,rou_sect,rou_code,rou_name,rou_updtby)
-                values(v_rou_id,p_dvt_id,p_district||'_AS',p_district||'_AS', v_g_age_id);
+                values(p_rou_id,p_dvt_id,p_district||'_AS',p_district||'_AS', v_g_age_id);
       END;
     else
       BEGIN
         select rou_id
-        into   v_rou_id
+        into   p_rou_id
         from   tecroute
         where  rou_code = p_district||'-'||p_tourne;
       EXCEPTION WHEN OTHERS THEN
@@ -249,12 +251,12 @@ PROCEDURE MigrationSitePdl
         into   v_tiers,v_sixieme
         from   test.tourne t
         where  lpad(trim(t.code),3,'0') = p_tourne;
-        select seq_tecroute.nextval into v_rou_id from dual;
+        select seq_tecroute.nextval into p_rou_id from dual;
         insert into tecroute(rou_id,rou_sect,rou_code,rou_name,rou_updtby)
-                values(v_rou_id,p_dvt_id,p_district||'-'||p_tourne,p_tourne,v_g_age_id);
+                values(p_rou_id,p_dvt_id,p_district||'-'||p_tourne,p_tourne,v_g_age_id);
 
         insert into tecroucut(rou_id,rcu_third,rcu_sixth,rcu_monthly)
-                       values(v_rou_id,v_tiers,v_sixieme,decode(v_tiers,0,1,0));
+                       values(p_rou_id,v_tiers,v_sixieme,decode(v_tiers,0,1,0));
       END;
     end if;
     
@@ -262,33 +264,33 @@ PROCEDURE MigrationSitePdl
     insert into tecpremise(pre_id,pre_refe,adr_id,vow_premisetp,pre_updtby)
                     values(p_pre_id,v_code_br,v_adr_id,v_g_vow_premisetp,v_g_age_id);
 
-    select seq_tecservicepoint.nextval into v_spt_id from dual;
+    select seq_tecservicepoint.nextval into p_spt_id from dual;
     insert into tecservicepoint(spt_id,spt_refe,pre_id,rou_id,fld_id,adr_id,spt_updtby,ctt_id)
-                           values(v_spt_id,v_code_br,v_pre_id,v_rou_id,v_g_fld_id,v_adr_id,v_g_age_id,v_g_ctt_id);
+                           values(p_spt_id,v_code_br,p_pre_id,p_rou_id,v_g_fld_id,v_adr_id,v_g_age_id,v_g_ctt_id);
 
     p_pk_etape := 'Creation du proprietaire site';
     select seq_tecpresptcontact.nextval into v_psc_id from dual;
     insert into tecpresptcontact(psc_id,pre_id,par_id,vow_precontacttp,psc_startdt,psc_enddt,psc_rank,psc_updtby)
-                          values(v_psc_id, v_pre_id,p_par_id,v_g_vow_precontacttp_id, p_date_creation, decode(p_etat_branchement, '0', Null, p_date_resil), 1, v_g_age_id);
+                          values(v_psc_id, p_pre_id,p_par_id,v_g_vow_precontacttp_id, p_date_creation, decode(p_etat_branchement, '0', Null, p_date_resil), 1, v_g_age_id);
 
     select seq_tecpresptcontact.nextval into v_psc_id from dual;
     insert into tecpresptcontact(psc_id,pre_id,spt_id,par_id,vow_precontacttp,psc_startdt,psc_enddt,psc_rank,psc_updtby)
-                          values(v_psc_id,v_pre_id,v_spt_id,p_par_id,v_g_vow_precontacttp_id, p_date_creation, decode(p_etat_branchement, '0', Null, p_date_resil), 2, v_g_age_id);
+                          values(v_psc_id,p_pre_id,p_spt_id,p_par_id,v_g_vow_precontacttp_id, p_date_creation, decode(p_etat_branchement, '0', Null, p_date_resil), 2, v_g_age_id);
 
     p_pk_etape := 'Creation du organisation spt';
     select seq_tecsptorg.nextval into v_spo_id from dual;
       insert into tecsptorg(spo_id,spt_id,org_id,spo_updtby)
-                     values(v_spo_id,v_spt_id,p_org_id,v_g_age_id);
+                     values(v_spo_id,p_spt_id,p_org_id,v_g_age_id);
 
     p_pk_etape := 'Creation du secteur spt';
     select seq_gendivspt.nextval into v_dpr_id from dual;
     insert into gendivspt(dpr_id,dvt_id,spt_id,dpr_updtby)
-                   values(v_dpr_id,p_dvt_id,v_spt_id,v_g_age_id);
+                   values(v_dpr_id,p_dvt_id,p_spt_id,v_g_age_id);
 
     p_pk_etape := 'Creation du etat PDL';
     select seq_tecspstatus.nextval into v_sps_id from dual;
     insert into tecspstatus(sps_id,spt_id,vow_spstatus,sps_startdt,sps_enddt,sps_updtby,sps_comment)
-                     values(v_sps_id,v_spt_id,decode(p_date_resil,null,v_g_vow_spstatus_actif,v_g_vow_spstatus_res),
+                     values(v_sps_id,p_spt_id,decode(p_date_resil,null,v_g_vow_spstatus_actif,v_g_vow_spstatus_res),
                             p_date_creation,null,v_g_age_id,'MIGRATION');
 
     p_pk_etape := 'Création de liaison PDL /BRA';
@@ -297,13 +299,13 @@ PROCEDURE MigrationSitePdl
                        values(v_cnn_id, v_code_br, v_adr_id, v_g_fld_id, p_date_creation,v_g_age_id);
     select seq_techconspt.nextval into v_hcs_id from dual;
     insert into techconspt(hcs_id, spt_id, con_id, hcs_startdt,hcs_updtby)
-                    values(v_hcs_id, v_spt_id, v_cnn_id, p_date_creation, v_g_age_id);
+                    values(v_hcs_id, p_spt_id, v_cnn_id, p_date_creation, v_g_age_id);
 
     p_pk_etape := 'Création du PDL EAU';
     insert into tecsptwater(spt_id, swa_updtby)
-                     values(v_spt_id, v_g_age_id);
+                     values(p_spt_id, v_g_age_id);
 
-    p_rou_id := v_rou_id;
+    --p_rou_id := v_rou_id;
   EXCEPTION WHEN OTHERS THEN
      v_g_err_code := SQLCODE;
      v_g_err_msg := SUBSTR(SQLERRM, 1, 200);
@@ -582,6 +584,7 @@ PROCEDURE MigrationCompteurEncours
         end loop;
       end if;
     end if;
+	
     p_pk_etape := 'Creation du compteur';
     MigrationCompteur(p_pk_etape,p_pk_exception,p_equ_id,p_district,p_tourne,p_ordre,p_compteur_actuel,p_code_marque);
 
@@ -820,8 +823,8 @@ PROCEDURE MigrationQuotidien
       into   v_org_id
       from   genorganization
       where  org_code = s2.district;
-
-      --selection de la date de resiliation en cas de resilier
+	  
+	  --selection de la date de resiliation en cas de resilier
       v_date_resil := null;
       /*if s2.etat_branchement='9' and trim(s2.compteur_actuel) is null then
         select max(date_res)
