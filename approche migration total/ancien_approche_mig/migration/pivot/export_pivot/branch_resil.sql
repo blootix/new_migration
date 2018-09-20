@@ -65,12 +65,13 @@ cursor R is (select  periode, ref_pdl,etat from (
 			);
  ------------rest branch_resil
 cursor B is select distinct  trim(b.tourne)||trim(b.ordre) ref_pdl 
-             from branchement b 
-             where trim(b.etat_branchement)='9'
-             and b.district=v_district
-             and trim(b.tourne)||trim(b.ordre) not in(select r.ref_pdl
-                                                           from branchement_res_max r 
-                                                           where r.DIST=b.district  )       ;
+            from branchement b 
+            where trim(b.etat_branchement)='9'
+			and   trim(b.compteur_actuel) is null
+            and b.district=v_district
+            and trim(b.tourne)||trim(b.ordre) not in(select r.ref_pdl
+													  from branchement_res_max r 
+													  where r.DIST=b.district  );
 
 err_code    varchar2(200);
 err_msg     varchar2(200);
