@@ -5,7 +5,7 @@ declare
            fdb.cred/1000 cred, (rgl.nbr_echeance_total-1) nbre_ech, dvi.prix_global_ds_ht/1000 mnt_ht, 
            dvi.prix_global_ds_ttc/1000 mnt_ttc, rgl.montant_pr_vers_ds/1000 mnt_encaisse, rgl.nbrannee,
            dmd.etat
-    from   test.fdbt108 fdb , --79004 --57316
+    from   test.fdbt108 fdb,
            test.reglement_ds rgl,
            test.devis_ds dvi,
            test.demande_ds dmd
@@ -22,9 +22,6 @@ declare
     and    rgl.district = dmd.district
     and    rgl.code_localite_ds = dmd.localite
     and    rgl.num_ds = dmd.num;
-    --and    trunc(rgl.date_prise_charge) <'31/05/2018';
-    --and    fdb.pol = '48148'
-    --and    fdb.dist = '01';
   
   cursor c2(sag varchar2)
   is
@@ -37,8 +34,20 @@ declare
     and    sag.sag_id = cot.sag_id
     and    cot.cot_rank = 1
     and    cot.par_id = par.par_id
-    and    sag.sag_id = sco.sag_id
-    and    sco.sco_enddt is null;
+    and    sag.sag_id = sco.sag_id;
+    
+  cursor c3(sag varchar2)
+  is
+    select sag.sag_id, par.par_id, par.adr_id, aco.aco_id, sag.sag_refe
+    from   agrserviceagr sag,
+           agrcustagrcontact cot,
+           genparty par,
+           genaccount aco
+    where  sag.sag_refe = sag
+    and    sag.sag_id = cot.sag_id
+    and    cot.cot_rank = 1
+    and    cot.par_id = par.par_id
+    and    par.par_id = aco.par_id;
     
   v_dvt_id number;
   v_dit_id number := 1;
@@ -77,7 +86,7 @@ declare
   v_deb_id number;
   v_paa_id number;
   v_twn_name varchar2(4000);
-  v_imp_id number := 5 ;
+  v_imp_id number := 5 ; 
   v_vow_acotp_id number := 2558;
   v_vow_usgsag_id number := 4762;
   v_vow_agrcontacttp_a number := 2574;
@@ -127,6 +136,17 @@ begin
       v_adr_id := s2.adr_id;
       exit;
     end loop;
+    
+    if v_sag_id is null then
+      for s3 in c3(v_sag_refe_2) loop
+        v_sag_id := s3.sag_id;
+        v_par_id := s3.par_id;
+        v_aco_id := s3.aco_id;
+        v_adr_id := s3.adr_id;
+        exit;
+      end loop;
+    end if;
+    
     if v_sag_id is not null then
       select max(bil.bil_id), max(deb.deb_withshed), max(deb.deb_id)
       into   v_bil_devis_id, v_deb_withshed, v_deb_id
@@ -300,11 +320,11 @@ begin
                      
       select seq_agrcustomeragr.nextval into v_cag_id from dual;
       insert into agrcustomeragr(cag_id,cag_refe,cag_startdt,pre_id,par_id,cag_updtby)
-                          values(v_cag_id,to_char(v_cag_id),s1.date_prise_charge,v_pre_id,v_par_id,v_age_id);
+                          values(v_cag_id,v_sag_refe_2,s1.date_prise_charge,v_pre_id,v_par_id,v_age_id);
                           
       select seq_agrserviceagr.nextval into v_sag_id from dual;
       insert into agrserviceagr(sag_id,sag_refe,sag_startdt,cag_id,spt_id,ctt_id,vow_usgsag,sag_comment_a)
-                         values(v_sag_id,to_char(v_cag_id),s1.date_prise_charge,v_cag_id,v_spt_id,v_ctt_id,v_vow_usgsag_id,'MIGRATION FDB108');
+                         values(v_sag_id,v_sag_refe_2,s1.date_prise_charge,v_cag_id,v_spt_id,v_ctt_id,v_vow_usgsag_id,'MIGRATION FDB108');
       
       select seq_agrcustagrcontact.nextval into v_cot_id from dual;
       insert into agrcustagrcontact(cot_id,cag_id,sag_id,par_id,cot_startdt,vow_agrcontacttp,cot_rank,cot_updtby)

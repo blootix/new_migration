@@ -8,6 +8,20 @@ PROCEDURE MigrationQuotidien
     p_param in number default 0
   );
 
+PROCEDURE MigrationDossierEnCours
+  (
+    p_pk_etape out varchar2,
+    p_pk_exception out varchar2,
+    p_param in number default 0
+  );
+  
+PROCEDURE MigrationSuppressionGmf
+  (
+    p_pk_etape out varchar2,
+    p_pk_exception out varchar2,
+    p_param in number default 0
+  );
+
 end PK_MIGRATION;
 /
 CREATE OR REPLACE PACKAGE BODY PK_MIGRATION
@@ -45,6 +59,57 @@ v_g_vow_cutagree_id number := 4103;
 v_vow_agrcontacttp_a number := 2574;
 v_vow_agrcontacttp_p number := 4848;
 v_vow_partytp_a number := 2887;
+v_g_mod_con_id number := 10446;
+v_g_vow_typlist_age number := 3045;
+v_g_vow_typlist_lit number := 3046;
+v_g_vow_roleage_id number := 2943;
+v_g_vow_roleitc_id number := 2959;
+v_g_rec_part_id number := 4;
+v_g_rec_adm_id number := 7;
+v_g_rec_mens_id number := 8;
+v_g_rec_dom_id number := 9;
+v_g_dlp_part_id number := 2;
+v_g_dlp_adm_id number := 4;
+v_g_dlp_mens_id number := 3;
+v_g_dlp_dom_id number := 5;
+v_g_vow_oridmd_id number := 5595;
+v_g_vow_frqfact_trm number := 2790;
+v_g_vow_frqfact_mns number := 2788;
+v_g_imp_id number := 5;
+v_g_vow_acotp_id number := 2558;
+v_g_agp_factday date := sysdate;
+v_g_vow_modefactnext number := 5563;
+v_g_vow_settlemode_a number := 2975;
+v_g_vow_settlemode_d number := 2973;
+v_g_vow_nbbill_1 number := 2869;
+v_g_ofr_mig number := 49;
+v_g_ofr_01 number := 23;
+v_g_ofr_03 number := 25;
+v_g_ofr_04 number := 26;
+v_g_ofr_05 number := 27;
+v_g_ofr_06 number := 28;
+v_g_ofr_11 number := 46;
+v_g_ofr_21 number := 47;
+v_g_ofr_onas0 number := 48;
+v_g_ofr_onas1 number := 32;
+v_g_ofr_onas2 number := 40;
+v_g_ofr_onas3 number := 35;
+v_g_ofr_onas4 number := 31;
+v_g_ofr_onas5 number := 41;
+v_g_ofr_onas6 number := 43;
+v_g_ofr_onas8 number := 36;
+v_g_ofr_onas9 number := 39;
+v_g_ofr_onasA number := 33;
+v_g_ofr_onasC number := 34;
+v_g_sut_arr number := 100030;
+v_g_sut_echt_onas number := 100026;
+v_g_sut_echr_onas number := 100027;
+v_g_sut_capi_onas number := 100029;
+v_g_sut_intr_onas number := 100028;
+v_g_sut_pol_onas number := 100004;
+v_g_sut_puit_onas number := 100025;
+v_g_sut_plaf_onas number := 100003;
+v_g_sut_gros_cons number := 100033;
 
 -------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------
@@ -71,14 +136,14 @@ PROCEDURE MigrationAdresse
 
     --Creation ville sil nexiste pas
     if(v_twn_id is null)then
-       select p.libelle
+       select max(p.libelle)
        into   v_ville_name
        from   r_cpostal p
        where  to_char(p.kcpost) = p_code_postal;
 
        select seq_gentown.nextval into v_twn_id from dual;
        insert into gentown(twn_id, twn_code, twn_name, twn_namek, twn_zipcode, coy_id, twn_served, twn_updtby)
-                    values(v_twn_id, p_code_postal,v_ville_name,v_ville_name,p_code_postal,v_g_coy_id, 1, v_g_age_id);
+                    values(v_twn_id, p_code_postal,nvl(v_ville_name,p_code_postal),nvl(v_ville_name,p_code_postal),p_code_postal,v_g_coy_id, 1, v_g_age_id);
     end if;
     --Creation rue
     p_pk_etape := 'Creation rue';
@@ -184,6 +249,7 @@ PROCEDURE MigrationSitePdl
     p_pre_id out number,
     p_spt_id out number,
     p_rou_id out number,
+    p_adr_id out number,
     p_par_id in number,
     p_adresse in varchar2,
     p_code_postal in number,
@@ -199,8 +265,6 @@ PROCEDURE MigrationSitePdl
   )
   IS
   v_psc_id number;
-  v_pre_id number;
-  v_spt_id number;
   v_dpr_id number;
   v_spo_id number;
   v_sps_id number;
@@ -210,7 +274,6 @@ PROCEDURE MigrationSitePdl
   v_tiers number;
   v_sixieme number;
   v_code_br varchar2(100);
-  v_adr_id number;
   BEGIN
     v_code_br := p_district||p_tourne||p_ordre||p_police;
     p_pk_etape := 'PDL existante';
@@ -225,7 +288,7 @@ PROCEDURE MigrationSitePdl
       return;
     end if;
 
-    MigrationAdresse(p_pk_etape,p_pk_exception,v_adr_id,p_adresse,p_code_postal);
+    MigrationAdresse(p_pk_etape,p_pk_exception,p_adr_id,p_adresse,p_code_postal);
     p_pk_etape := 'Creation du site/pdl';
     if(p_tourne in ('898','899'))then
       BEGIN
@@ -260,48 +323,48 @@ PROCEDURE MigrationSitePdl
     
     select seq_tecpremise.nextval into p_pre_id from dual;
     insert into tecpremise(pre_id,pre_refe,adr_id,vow_premisetp,pre_updtby)
-                    values(p_pre_id,v_code_br,v_adr_id,v_g_vow_premisetp,v_g_age_id);
+                    values(p_pre_id,v_code_br,p_adr_id,v_g_vow_premisetp,v_g_age_id);
 
-    select seq_tecservicepoint.nextval into v_spt_id from dual;
+    select seq_tecservicepoint.nextval into p_spt_id from dual;
     insert into tecservicepoint(spt_id,spt_refe,pre_id,rou_id,fld_id,adr_id,spt_updtby,ctt_id)
-                           values(v_spt_id,v_code_br,v_pre_id,v_rou_id,v_g_fld_id,v_adr_id,v_g_age_id,v_g_ctt_id);
-
+                           values(p_spt_id,v_code_br,p_pre_id,v_rou_id,v_g_fld_id,p_adr_id,v_g_age_id,v_g_ctt_id);
+    
     p_pk_etape := 'Creation du proprietaire site';
     select seq_tecpresptcontact.nextval into v_psc_id from dual;
     insert into tecpresptcontact(psc_id,pre_id,par_id,vow_precontacttp,psc_startdt,psc_enddt,psc_rank,psc_updtby)
-                          values(v_psc_id, v_pre_id,p_par_id,v_g_vow_precontacttp_id, p_date_creation, decode(p_etat_branchement, '0', Null, p_date_resil), 1, v_g_age_id);
+                          values(v_psc_id, p_pre_id,p_par_id,v_g_vow_precontacttp_id, p_date_creation, decode(p_etat_branchement, '0', Null, p_date_resil), 1, v_g_age_id);
 
     select seq_tecpresptcontact.nextval into v_psc_id from dual;
     insert into tecpresptcontact(psc_id,pre_id,spt_id,par_id,vow_precontacttp,psc_startdt,psc_enddt,psc_rank,psc_updtby)
-                          values(v_psc_id,v_pre_id,v_spt_id,p_par_id,v_g_vow_precontacttp_id, p_date_creation, decode(p_etat_branchement, '0', Null, p_date_resil), 2, v_g_age_id);
+                          values(v_psc_id,p_pre_id,p_spt_id,p_par_id,v_g_vow_precontacttp_id, p_date_creation, decode(p_etat_branchement, '0', Null, p_date_resil), 2, v_g_age_id);
 
     p_pk_etape := 'Creation du organisation spt';
     select seq_tecsptorg.nextval into v_spo_id from dual;
       insert into tecsptorg(spo_id,spt_id,org_id,spo_updtby)
-                     values(v_spo_id,v_spt_id,p_org_id,v_g_age_id);
+                     values(v_spo_id,p_spt_id,p_org_id,v_g_age_id);
 
     p_pk_etape := 'Creation du secteur spt';
     select seq_gendivspt.nextval into v_dpr_id from dual;
     insert into gendivspt(dpr_id,dvt_id,spt_id,dpr_updtby)
-                   values(v_dpr_id,p_dvt_id,v_spt_id,v_g_age_id);
+                   values(v_dpr_id,p_dvt_id,p_spt_id,v_g_age_id);
 
     p_pk_etape := 'Creation du etat PDL';
     select seq_tecspstatus.nextval into v_sps_id from dual;
     insert into tecspstatus(sps_id,spt_id,vow_spstatus,sps_startdt,sps_enddt,sps_updtby,sps_comment)
-                     values(v_sps_id,v_spt_id,decode(p_date_resil,null,v_g_vow_spstatus_actif,v_g_vow_spstatus_res),
+                     values(v_sps_id,p_spt_id,decode(p_date_resil,null,v_g_vow_spstatus_actif,v_g_vow_spstatus_res),
                             p_date_creation,null,v_g_age_id,'MIGRATION');
 
     p_pk_etape := 'Création de liaison PDL /BRA';
     select seq_tecconnection.nextval into v_cnn_id from dual;
     insert into tecconnection(cnn_id, cnn_refe, adr_id, fld_id, cnn_startdt, cnn_updtby)
-                       values(v_cnn_id, v_code_br, v_adr_id, v_g_fld_id, p_date_creation,v_g_age_id);
+                       values(v_cnn_id, v_code_br, p_adr_id, v_g_fld_id, p_date_creation,v_g_age_id);
     select seq_techconspt.nextval into v_hcs_id from dual;
     insert into techconspt(hcs_id, spt_id, con_id, hcs_startdt,hcs_updtby)
-                    values(v_hcs_id, v_spt_id, v_cnn_id, p_date_creation, v_g_age_id);
+                    values(v_hcs_id, p_spt_id, v_cnn_id, p_date_creation, v_g_age_id);
 
     p_pk_etape := 'Création du PDL EAU';
     insert into tecsptwater(spt_id, swa_updtby)
-                     values(v_spt_id, v_g_age_id);
+                     values(p_spt_id, v_g_age_id);
 
     p_rou_id := v_rou_id;
   EXCEPTION WHEN OTHERS THEN
@@ -603,14 +666,23 @@ PROCEDURE MigrationAbonnement
   (
     p_pk_etape out varchar2,
     p_pk_exception out varchar2,
+    p_sag_id out number,
     p_district in varchar2,
     p_tourne in varchar2,
     p_ordre in varchar2,
     p_police in varchar2,
-    p_date_creation date,
-    p_date_resil date,
-    p_gros_consom varchar2,
-    p_usage varchar2,
+    p_date_creation in date,
+    p_date_resil in date,
+    p_gros_consom in varchar2,
+    p_categorie in varchar2,
+    p_banque in varchar2,
+    p_agence in varchar2,
+    p_num_compte in varchar2,
+    p_cle_rib in varchar2,
+    p_usage in varchar2,
+    p_tarif in varchar2,
+    p_tarif_onas varchar2,
+    p_vol_puit number,
     p_par_id in number,
     p_pre_id in number,
     p_spt_id in number,
@@ -621,7 +693,6 @@ PROCEDURE MigrationAbonnement
     v_cag_id number;
     v_cag_refe varchar2(20);
     v_nbre number;
-    v_sag_id number;
     v_grf_id number;
     v_grf_code varchar2(10);
     v_vow_usgsag number;
@@ -631,7 +702,68 @@ PROCEDURE MigrationAbonnement
     v_adr_fs_id number;
     v_paa_id number;
     v_pay_id number;
+    v_rec_id number;
+    v_dlp_id number;
+    v_tarif_onas varchar2(4);
+    v_codpoll varchar2(4);
+    v_tarif varchar2(4);
+    v_echt number;
+    v_echr number;
+    v_brt number;
+    v_echronas number;
+    v_echtonas number;
+    v_capitonas number;
+    v_interonas number;
+    v_arrond number;
+    v_vow_frqfact number;
+    v_sco_id number;
+    v_aco_id number;
+    v_stl_id number;
+    v_vow_settlemode number;
+    v_categ number;
+    v_bap_id number;
+    v_ban_id number;
+    v_ofr_id number;
+    v_ofr_detail_id number;
+    v_asu_num number := 0;
+    v_asu_id number;
+    v_hsf_id number;
+    v_suv_id number;
+    v_asu_id1 number;
+    v_asu_id2 number;
+    v_asu_id3 number;
+    v_asu_id4 number;
+    v_gros_consom varchar2(4);
   BEGIN
+    p_pk_etape := 'Recuperation info depuis abonnees';
+    begin
+      select upper(substr(tarif_onas,-1,1)),codpoll,lpad(trim(tarif),2,'0'),echt,echr,brt/1000,echronas,
+             echtonas,capitonas/1000,interonas/1000,arrond/1000,categ,trim(gros_consommateur)
+      into   v_tarif_onas,v_codpoll,v_tarif,v_echt,v_echr,v_brt,v_echronas,
+             v_echtonas,v_capitonas,v_interonas,v_arrond,v_categ,v_gros_consom
+      from   test.src_abonnees
+      where  lpad(trim(dist),2,'0') = p_district
+      and    lpad(trim(pol),5,'0') = p_police
+      and    lpad(trim(tou),3,'0') = p_tourne
+      and    lpad(trim(ord),3,'0') = p_ordre;
+    exception when no_data_found then
+      p_pk_etape := 'Recuperation info depuis branchement en cas inexistante dans abonnees';
+      v_tarif_onas := p_tarif_onas;
+      v_codpoll := null;
+      v_tarif := p_tarif;
+      v_echt := null;
+      v_echr := null;
+      v_brt := null;
+      v_echronas := null;
+      v_echtonas := null;
+      v_capitonas := null;
+      v_interonas := null;
+      v_arrond := null;
+      v_categ := to_number(p_categorie);
+      v_gros_consom := 'N';
+      --gerer une exception pour dir qu'il n'ya pas d'info dans abonnees ou double
+    end;
+    
     p_pk_etape := 'Creation Contrat';
     v_cag_refe := p_district||'0'||p_police;
     begin
@@ -694,27 +826,22 @@ PROCEDURE MigrationAbonnement
     end;
 
     p_pk_etape := 'Creation abonnement';
-    select seq_agrserviceagr.nextval into v_sag_id from dual;
+    select seq_agrserviceagr.nextval into p_sag_id from dual;
     insert into agrserviceagr(sag_id,sag_refe,sag_startdt,sag_enddt,cag_id,spt_id,grf_id,ctt_id,
                               vow_cutagree,vow_usgsag,sag_updtby)
-                       values(v_sag_id,v_cag_refe,p_date_creation,p_date_resil,v_cag_id,p_spt_id,v_grf_id,v_g_ctt_id,
+                       values(p_sag_id,v_cag_refe,p_date_creation,p_date_resil,v_cag_id,p_spt_id,v_grf_id,v_g_ctt_id,
                               v_g_vow_cutagree_id,v_vow_usgsag,v_g_age_id);
 
     p_pk_etape := 'Creation abonne';
     select seq_agrcustagrcontact.nextval into v_cot_id from dual;
     insert into agrcustagrcontact(cot_id,cag_id,sag_id,par_id,cot_startdt,cot_enddt,vow_agrcontacttp,cot_rank,cot_updtby)
-                           values(v_cot_id,v_cag_id,v_sag_id,p_par_id,p_date_creation,p_date_resil,v_vow_agrcontacttp_a,1,v_g_age_id);
+                           values(v_cot_id,v_cag_id,p_sag_id,p_par_id,p_date_creation,p_date_resil,v_vow_agrcontacttp_a,1,v_g_age_id);
 
 
-    p_pk_etape := 'Adresse de faire suivre';
-    select max(decode(adr1,null,decode(adr2,null,adr3,adr2),adr1)), max(codpostal)
+    p_pk_etape := 'Creation Adresse de faire suivre';
+    select max(adr2), max(codpostal)
     into   v_adr_fs,v_code_p_fs
-    from
-    (
-      select dist,pol,tou,ord,adr1,adr2,adr3,codpostal from test.abn_trimcat7
-      union
-      select dist,pol,tou,ord,ad1 adr1,ad2 adr2,ad3 adr3, codpostal from test.abn_gccat7
-    )
+    from   test.src_faire_suivre
     where  lpad(trim(dist),2,'0') = p_district
     and    lpad(trim(pol),5,'0') = p_police
     and    lpad(trim(tou),3,'0') = p_tourne
@@ -733,13 +860,210 @@ PROCEDURE MigrationAbonnement
     p_pk_etape := 'Creation payeur';
     select seq_agrcustagrcontact.nextval into v_cot_id from dual;
     insert into agrcustagrcontact(cot_id,cag_id,sag_id,par_id,cot_startdt,cot_enddt,vow_agrcontacttp,cot_rank,cot_updtby)
-                           values(v_cot_id,v_cag_id,v_sag_id,p_par_id,p_date_creation,p_date_resil,v_vow_agrcontacttp_p,2,v_g_age_id);
+                           values(v_cot_id,v_cag_id,p_sag_id,p_par_id,p_date_creation,p_date_resil,v_vow_agrcontacttp_p,2,v_g_age_id);
     select seq_agrpayor.nextval into v_pay_id from dual;
     insert into agrpayor(pay_id,cot_id,paa_id,pay_updtby)
                   values(v_pay_id,v_cot_id,v_paa_id,v_g_age_id);
-
-
-
+    
+    
+    p_pk_etape := 'Recuperation de la chaine de relance/delai de paiement/frequence';
+    if p_gros_consom = 'O' then
+       v_rec_id := v_g_rec_mens_id;
+       v_dlp_id := v_g_dlp_mens_id;
+       v_vow_frqfact := v_g_vow_frqfact_mns;
+    elsif p_categorie in ('02','04','08') then
+        v_rec_id := v_g_rec_adm_id;
+        v_dlp_id := v_g_dlp_adm_id;
+        v_vow_frqfact := v_g_vow_frqfact_trm;
+    else
+        v_rec_id := v_g_rec_part_id;
+        v_dlp_id := v_g_dlp_part_id;
+        v_vow_frqfact := v_g_vow_frqfact_trm;
+    end if;
+    
+    p_pk_etape := 'Creation du compte client';
+    select seq_genaccount.nextval into v_aco_id from dual;
+    insert into genaccount(aco_id,par_id,imp_id,rec_id,vow_acotp,aco_status,aco_updtby)
+                    values(v_aco_id,p_par_id,v_g_imp_id,v_rec_id,v_g_vow_acotp_id,1,v_g_age_id);
+    
+    p_pk_etape := 'Affectation du compte client au contrat';
+    select seq_agrsagaco.nextval into v_sco_id from dual;
+    insert into agrsagaco(sco_id,sco_startdt,sco_enddt,sag_id,aco_id,sco_updtby)
+                   values(v_sco_id,p_date_creation,p_date_resil,p_sag_id,v_aco_id,v_g_age_id);
+    
+    p_pk_etape := 'Creation du planning';
+    insert into agrplanningagr(sag_id,vow_frqfact,agp_factday,agp_nextfactdt,vow_modefactnext,agp_updtby)
+                        values(p_sag_id,v_vow_frqfact,10,v_g_agp_factday,v_g_vow_modefactnext,v_g_age_id);
+    
+    
+    
+    p_pk_etape := 'Coordonnees bancaire';   
+    if v_categ = 5 then
+      select count(*)
+      into   v_nbre
+      from   test.src_rib r
+      where  r.rib = p_banque||p_agence||p_num_compte||p_cle_rib;
+      
+      if v_nbre > 0 then
+        select max(ban_id)
+        into   v_ban_id
+        from   genbank ban
+        where  ban.ban_code = p_banque||p_agence;
+        if v_ban_id is null then
+          select seq_genbank.nextval into v_ban_id from dual;
+          insert into genbank(ban_id,ban_code,ban_name,ban_updtby)
+                       values(v_ban_id,p_banque||p_agence,p_banque||p_agence,v_g_age_id);
+        end if;
+        select seq_genbankparty.nextval into v_bap_id from dual;
+        insert into genbankparty(bap_id,bap_num,bap_name,par_id,ban_id,bap_accountnumber,
+                                 bap_accountkey,bap_ibannumber,bap_updtby)
+                          values(v_bap_id,1,'-',p_par_id,v_ban_id,p_num_compte||p_cle_rib,
+                                 p_cle_rib,p_banque||p_agence||p_num_compte||p_cle_rib,v_g_age_id);
+        v_vow_settlemode := v_g_vow_settlemode_d;
+      else
+        v_bap_id := null;
+        v_vow_settlemode := v_g_vow_settlemode_a;
+      end if;               
+    end if;
+    
+    p_pk_etape := 'Ajouter modalite de paiement';
+    select seq_agrsettlement.nextval into v_stl_id from dual;
+    insert into agrsettlement(stl_id,sag_id,stl_startdt,stl_enddt,vow_settlemode,vow_nbbill,dlp_id,bap_id,stl_updtby)
+                       values(v_stl_id,p_sag_id,p_date_creation,p_date_resil,v_vow_settlemode,v_g_vow_nbbill_1,v_dlp_id,v_bap_id,v_g_age_id);
+    
+    p_pk_etape := 'Selection du tarif SONEDE';
+    case 
+      when v_tarif = '01' then v_ofr_id := v_g_ofr_01;
+      when v_tarif = '03' then v_ofr_id := v_g_ofr_03;
+      when v_tarif = '04' then v_ofr_id := v_g_ofr_04;
+      when v_tarif = '05' then v_ofr_id := v_g_ofr_05;
+      when v_tarif = '06' then v_ofr_id := v_g_ofr_06;
+      when v_tarif = '11' then v_ofr_id := v_g_ofr_11;
+      when v_tarif = '21' then v_ofr_id := v_g_ofr_21;
+      else v_ofr_id := v_g_ofr_mig;
+    end case;
+    
+    p_pk_etape := 'Selection du tarif ONAS';
+    case v_tarif_onas
+      when '0' then
+        v_ofr_detail_id := v_g_ofr_onas0;
+      when '1' then
+        v_ofr_detail_id := v_g_ofr_onas1;
+      when '2' then
+        v_ofr_detail_id := v_g_ofr_onas2;
+      when '3' then
+        v_ofr_detail_id := v_g_ofr_onas3;
+      when '4' then
+        v_ofr_detail_id := v_g_ofr_onas4;
+      when '5' then
+        v_ofr_detail_id := v_g_ofr_onas5;
+      when '6' then
+        v_ofr_detail_id := v_g_ofr_onas6;
+      when '8' then
+        v_ofr_detail_id := v_g_ofr_onas8;
+      when '9' then
+        v_ofr_detail_id := v_g_ofr_onas9;
+      when 'A' then
+        v_ofr_detail_id := v_g_ofr_onasA;
+      when 'C' then
+        v_ofr_detail_id := v_g_ofr_onasC;
+      else
+        v_ofr_detail_id := v_g_ofr_mig;
+    end case;
+    
+    p_pk_etape := 'Ajouter detail profil de facturation';
+    insert into agrbillingitem(bii_id,meu_id,ite_id,bii_startdt,bii_enddt,sag_id,ofr_id,bii_updtby)
+          select seq_agrbillingitem.nextval,meu_id,ite_id,p_date_creation,p_date_resil,
+                 p_sag_id,i.ofr_id,v_g_age_id
+           from   agrofferitem i
+           where  i.ofr_id in(v_ofr_id,v_ofr_detail_id);
+    
+    p_pk_etape := 'Ajouter historique offre';
+    select seq_agrhsagofr.nextval into v_hsf_id from dual;
+    insert into agrhsagofr(hsf_id,sag_id,ofr_id,ofr_detail_id,hsf_startdt,hsf_enddt,hsf_updtby)
+                    values(v_hsf_id,p_sag_id,v_ofr_id,v_ofr_detail_id,p_date_creation,p_date_resil,v_g_age_id);
+    
+    p_pk_etape := 'Ajouter engagement arrondis';
+    if nvl(v_arrond,0)>0 then
+      v_asu_num := v_asu_num + 1;
+      select seq_agrsubscription.nextval into v_asu_id from dual;
+      insert into agrsubscription(asu_id,asu_num,hsf_id,sag_id,ofr_id,sut_id,asu_startdt,asu_enddt,asu_updtby)
+                           values(v_asu_id,v_asu_num,v_hsf_id,p_sag_id,v_ofr_id,v_g_sut_arr,p_date_creation,p_date_resil,v_g_age_id);
+      
+      select seq_agrsubscriptionvalue.nextval into v_suv_id from dual;
+      insert into agrsubscriptionvalue(suv_id,asu_id,suv_value,suv_updtby)
+                                values(v_suv_id,v_asu_id,v_arrond,v_g_age_id);                     
+    end if;
+    
+    p_pk_etape := 'Ajouter engagement facilite onas';
+    if nvl(v_echtonas,0)>0then
+      select seq_agrsubscription.nextval into v_asu_id1 from dual;
+      select seq_agrsubscription.nextval into v_asu_id2 from dual;
+      select seq_agrsubscription.nextval into v_asu_id3 from dual;
+      select seq_agrsubscription.nextval into v_asu_id4 from dual;
+      insert into agrsubscription(asu_id,asu_num,hsf_id,sag_id,ofr_id,sut_id,asu_startdt,asu_enddt,asu_updtby)
+                  select v_asu_id1,v_asu_num + 1,v_hsf_id,p_sag_id,v_ofr_id,v_g_sut_echt_onas,
+                         p_date_creation,p_date_resil,v_g_age_id from dual
+                  union
+                  select v_asu_id2,v_asu_num + 2,v_hsf_id,p_sag_id,v_ofr_id,v_g_sut_echr_onas,
+                         p_date_creation,p_date_resil,v_g_age_id from dual
+                  union
+                  select v_asu_id3,v_asu_num + 3,v_hsf_id,p_sag_id,v_ofr_id,v_g_sut_capi_onas,
+                         p_date_creation,p_date_resil,v_g_age_id from dual
+                  union
+                  select v_asu_id4,v_asu_num + 4,v_hsf_id,p_sag_id,v_ofr_id,v_g_sut_intr_onas,
+                         p_date_creation,p_date_resil,v_g_age_id from dual;
+       
+      insert into agrsubscriptionvalue(suv_id,asu_id,suv_value,suv_updtby)
+                                select seq_agrsubscriptionvalue.nextval,asu_id,
+                                       decode(sut_id,v_g_sut_echt_onas,v_echtonas,
+                                                     v_g_sut_echr_onas,v_echronas,
+                                                     v_g_sut_capi_onas,v_capitonas,
+                                                     v_g_sut_intr_onas,v_interonas,
+                                                     null),
+                                       v_g_age_id
+                                from   agrsubscription
+                                where  sag_id = p_sag_id
+                                and    sut_id in (v_g_sut_echt_onas,v_g_sut_echr_onas,v_g_sut_capi_onas,v_g_sut_intr_onas);
+    end if;
+    
+    p_pk_etape := 'Ajouter engagement coef pollution';
+    if nvl(v_codpoll,0)>0 then
+      v_asu_num := v_asu_num + 5;
+      select seq_agrsubscription.nextval into v_asu_id from dual;
+      insert into agrsubscription(asu_id,asu_num,hsf_id,sag_id,ofr_id,sut_id,asu_startdt,asu_enddt,asu_updtby)
+                           values(v_asu_id,v_asu_num,v_hsf_id,p_sag_id,v_ofr_id,v_g_sut_pol_onas,p_date_creation,p_date_resil,v_g_age_id);
+      
+      select seq_agrsubscriptionvalue.nextval into v_suv_id from dual;
+      insert into agrsubscriptionvalue(suv_id,asu_id,suv_value,suv_updtby)
+                                values(v_suv_id,v_asu_id,v_codpoll,v_g_age_id);                     
+    end if;
+    
+    p_pk_etape := 'Ajouter engagement volume puit';
+    if nvl(p_vol_puit,0)>0 then
+      v_asu_num := v_asu_num + 5;
+      select seq_agrsubscription.nextval into v_asu_id from dual;
+      insert into agrsubscription(asu_id,asu_num,hsf_id,sag_id,ofr_id,sut_id,asu_startdt,asu_enddt,asu_updtby)
+                           values(v_asu_id,v_asu_num,v_hsf_id,p_sag_id,v_ofr_id,v_g_sut_puit_onas,p_date_creation,p_date_resil,v_g_age_id);
+      
+      select seq_agrsubscriptionvalue.nextval into v_suv_id from dual;
+      insert into agrsubscriptionvalue(suv_id,asu_id,suv_value,suv_updtby)
+                                values(v_suv_id,v_asu_id,p_vol_puit,v_g_age_id);                     
+    end if; 
+    
+    p_pk_etape := 'Ajouter engagement gros consommateur';
+    v_asu_num := v_asu_num + 1;
+    select seq_agrsubscription.nextval into v_asu_id from dual;
+    insert into agrsubscription(asu_id,asu_num,hsf_id,sag_id,ofr_id,sut_id,asu_startdt,asu_enddt,asu_updtby)
+                         values(v_asu_id,v_asu_num,v_hsf_id,p_sag_id,v_ofr_id,v_g_sut_gros_cons,p_date_creation,p_date_resil,v_g_age_id);
+      
+    select seq_agrsubscriptionvalue.nextval into v_suv_id from dual;
+    insert into agrsubscriptionvalue(suv_id,asu_id,suv_value,suv_updtby)
+                              values(v_suv_id,v_asu_id,v_gros_consom,v_g_age_id);                  
+  EXCEPTION WHEN OTHERS THEN
+   v_g_err_code := SQLCODE;
+   v_g_err_msg := SUBSTR(SQLERRM, 1, 200);
+   p_pk_exception := v_g_err_code || ' : ' ||  v_g_err_msg;
   END;
 --------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------
@@ -765,10 +1089,11 @@ PROCEDURE MigrationQuotidien
     --Curseur des branchement actif
     cursor c2(etat varchar2)
     is
-     select lpad(trim(b.district),2,'0') district, lpad(trim(b.police),5,'0') police, lpad(trim(b.tourne),3,'0') tourne, lpad(trim(b.ordre),3,'0') ordre, b.adresse, date_creation,
-            lpad(trim(categorie_actuel),2,'0') categorie_actuel, upper(trim(client_actuel)) client_actuel, lpad(trim(b.code_marque),3,'0') code_marque, lpad(trim(b.compteur_actuel),11, '0') compteur_actuel, b.code_postal,
-            trim(b.usage) usage, b.type_branchement, b.aspect_branchement, b.marche, trim(b.etat_branchement) etat_branchement,
-            lpad(trim(district),2,'0')||lpad(trim(categorie_actuel),2,'0')||trim(upper(client_actuel)) code_cli
+     select lpad(trim(b.district),2,'0') district, lpad(trim(b.police),5,'0') police, lpad(trim(b.tourne),3,'0') tourne, lpad(trim(b.ordre),3,'0') ordre, b.adresse, b.date_creation,
+            lpad(trim(b.categorie_actuel),2,'0') categorie_actuel, upper(trim(b.client_actuel)) client_actuel, lpad(trim(b.code_marque),3,'0') code_marque, lpad(trim(b.compteur_actuel),11, '0') compteur_actuel, b.code_postal,
+            trim(b.usage) usage, b.type_branchement, b.aspect_branchement, b.marche, trim(b.etat_branchement) etat_branchement,trim(b.banque) banque,trim(b.agence) agence,trim(b.num_compte) num_compte,
+            trim(b.cle_rib) cle_rib,lpad(trim(b.tarif),2,'0') tarif, substr(b.onas,-1,1) tarif_onas,b.volume_puit_onas vol_puit,upper(trim(b.gros_consommateur)) mensu,
+            lpad(trim(b.district),2,'0')||lpad(trim(b.categorie_actuel),2,'0')||trim(upper(b.client_actuel)) code_cli
      from   test.branchement b
      where  trim(b.etat_branchement) = etat;
 
@@ -779,7 +1104,9 @@ PROCEDURE MigrationQuotidien
    v_spt_id number;
    v_rou_id number;
    v_dvt_id number;
+   v_sag_id number;
    v_org_id number;
+   v_adr_id number;
   BEGIN
     --Securite
     if p_param <> 3 then
@@ -836,7 +1163,7 @@ PROCEDURE MigrationQuotidien
       end if;*/
 
       --Creation du site/pdl
-      MigrationSitePdl(p_pk_etape,p_pk_exception,v_pre_id,v_spt_id,v_rou_id,v_par_id,s2.adresse,s2.code_postal,
+      MigrationSitePdl(p_pk_etape,p_pk_exception,v_pre_id,v_spt_id,v_rou_id,v_adr_id,v_par_id,s2.adresse,s2.code_postal,
                        s2.district,s2.tourne,s2.ordre,s2.police,s2.date_creation,v_date_resil,
                        v_dvt_id,v_org_id,s2.etat_branchement);
 
@@ -845,10 +1172,909 @@ PROCEDURE MigrationQuotidien
                                s2.district,s2.tourne,s2.ordre,s2.date_creation,v_date_resil,s2.usage);
 
       --Contrat
-      --MigrationAbonnement(
+      MigrationAbonnement(p_pk_etape,p_pk_exception,v_sag_id,s2.district,s2.tourne,s2.ordre,s2.police,s2.date_creation,v_date_resil,
+                          s2.mensu,s2.categorie_actuel,s2.banque,s2.agence,s2.num_compte,s2.cle_rib,s2.usage,s2.tarif,s2.tarif_onas,
+                          s2.vol_puit,v_par_id,v_pre_id,v_spt_id,v_rou_id,v_adr_id);
+      
+      commit;
     end loop; --Curseur des branchement
   END;
 ---------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------
+PROCEDURE MigrationInstanceProcess
+  (
+    p_pk_etape out varchar2,
+    p_pk_exception out varchar2,
+    p_con_id out number,
+    p_dos_id out number,
+    p_wdo_id out number,
+    p_date_creation in date,
+    p_etat in varchar2,
+    p_par_id in number,
+    p_org_id in number,
+    p_dos_refe in varchar2,
+    p_con_row in wfcontact%rowtype,
+    p_dos_row in wfdossier%rowtype,
+    p_wmd_id in number
+  )
+  IS
+    v_lag_id number;
+    v_lit_id number;
+    v_lag_id2 number;
+    v_lit_id2 number;
+    v_cod_id number;
+    v_hpr_id number;
+  BEGIN
+    --Ajouter le LAG
+    select seq_wflist.nextval into v_lag_id from dual;
+    insert into wflist(lst_id,vow_typlist,lst_updtby)
+                values(v_lag_id,v_g_vow_typlist_age,v_g_age_id);
+    insert into wflistage(lag_id,lag_order,age_id,vow_roleage,lag_default,lag_startdt,lag_updtby)
+                   values(v_lag_id,0,v_g_age_id,v_g_vow_roleage_id,1,p_date_creation,v_g_age_id);       
+    --Ajouter le LIT
+    select seq_wflist.nextval into v_lit_id from dual;
+    insert into wflist(lst_id,vow_typlist,lst_updtby)
+                values(v_lit_id,v_g_vow_typlist_lit,v_g_age_id);
+    insert into wflistitc(lit_id,lit_ordre,par_id,vow_roleitc,lit_startdt,lit_default,lit_updtby)
+                   values(v_lit_id,0,p_par_id,v_g_vow_roleitc_id,p_date_creation,1,v_g_age_id);
+    --Ajouter contact selon modele
+    select seq_wfcontact.nextval into p_con_id from dual;
+    insert into wfcontact(con_id,con_name,con_mcon_id,con_inout,cls_id,lag_id,lit_id,org_id,vow_oridmd,
+                          vow_urgenc,vow_centre,con_comment,con_startdt,con_updtby,con_refe)
+                   values(p_con_id,p_con_row.con_name||' '||p_dos_refe,v_g_mod_con_id,p_con_row.con_inout,
+                          p_con_row.cls_id,v_lag_id,v_lit_id,p_org_id,v_g_vow_oridmd_id,
+                          p_con_row.vow_urgenc,p_con_row.vow_centre,'ETAT_DEMANDE:'||p_etat,p_date_creation,v_g_age_id,p_con_id);
+           
+          
+    --Ajouter le LAG
+    select seq_wflist.nextval into v_lag_id2 from dual;
+    insert into wflist(lst_id,vow_typlist,lst_updtby)
+                values(v_lag_id2,v_g_vow_typlist_age,v_g_age_id);
+    insert into wflistage(lag_id,lag_order,age_id,vow_roleage,lag_default,lag_startdt,lag_updtby)
+                   values(v_lag_id2,0,v_g_age_id,v_g_vow_roleage_id,1,p_date_creation,v_g_age_id);       
+    --Ajouter le LIT
+    select seq_wflist.nextval into v_lit_id2 from dual;
+    insert into wflist(lst_id,vow_typlist,lst_updtby)
+                values(v_lit_id2,v_g_vow_typlist_lit,v_g_age_id);
+    insert into wflistitc(lit_id,lit_ordre,par_id,vow_roleitc,lit_startdt,lit_default,lit_updtby)
+                   values(v_lit_id2,0,p_par_id,v_g_vow_roleitc_id,p_date_creation,1,v_g_age_id);
+    --Ajouter le dossier selon modele
+    select seq_wfdossier.nextval into p_dos_id from dual;
+    insert into wfdossier(dos_id,dos_name,dos_mdos_id,cls_id,lag_id,lit_id,org_id,vow_urgenc,dos_comment,
+                          dos_startdt,dos_updtby,dos_refe,dos_status)
+                   values(p_dos_id,p_dos_row.dos_name,p_dos_row.dos_id,p_dos_row.cls_id,v_lag_id2,v_lit_id2,
+                          p_org_id,p_dos_row.vow_urgenc,'ETAT_DEMANDE:'||p_etat,p_date_creation,v_g_age_id,
+                          p_dos_refe,1);
+    insert into wfetape(etp_id,etp_name,etp_metp_id,dos_id,etp_ordre,vow_objetetp,
+                        etp_startdt,etp_duedate,etp_updtby,vow_respetp,res_id,vow_typstruct,vow_rolecttage)
+                 select seq_wfetape.nextval,etp_name,etp_id,p_dos_id,etp_ordre,vow_objetetp,
+                        etp_startdt,etp_duedate,etp_updtby,vow_respetp,res_id,vow_typstruct,vow_rolecttage
+                 from   wfetape
+                 where  dos_id = p_dos_row.dos_id;
+          
+          
+    --Ajouter lien contact et dossier
+    select seq_wfcondos.nextval into v_cod_id from dual;
+    insert into wfcondos(cod_id,con_id,dos_id,cod_updtby)
+                  values(v_cod_id,p_con_id,p_dos_id,v_g_age_id);
+                        
+    --Ajouter processus
+    select seq_wffolder.nextval into p_wdo_id from dual;
+    insert into wffolder(wdo_id,wdo_nom,wdo_commentaire,wdo_dtcre,age_cre_id,wmd_id,int_resp_id,par_id)
+                  values(p_wdo_id,p_dos_refe,'ETAT_DEMANDE:'||p_etat,p_date_creation,v_g_age_id,p_wmd_id,-1,p_par_id);
+                        
+    --Ajouter lien process/dossier/contact
+    select seq_wfhprocess.nextval into v_hpr_id from dual;
+    insert into wfhprocess(hpr_id,dos_id,con_id,wdo_id,hpr_startdt,hpr_updtby)
+                    values(v_hpr_id,p_dos_id,p_con_id,p_wdo_id,p_date_creation,v_g_age_id);   
+    --Ajouter les taches/ecran/field
+    insert into wfstep(wta_id,wta_nom,wdo_id,wta_dtcre,age_cre_id,wta_execauto,
+                       wta_etatexecution,wtt_id,wmt_id)
+               select seq_wfstep.nextval,wmt.wmt_nom,p_wdo_id,p_date_creation,v_g_age_id,0,
+                      1,wmt.wtt_id,wmt.wmt_id
+               from   wfmodstep wmt  
+               where  wmt.wmd_id = p_wmd_id;
+          
+    update wfstep wta    
+    set    wta.wta_pere_id = (select wta2.wta_id
+                              from   wfmodstep wmt2,
+                                     wfstep wta2
+                              where  wta.wmt_id = wmt2.wmt_id 
+                              and    wmt2.wmt_pere_id = wta2.wmt_id
+                              and    wta2.wdo_id = wta.wdo_id
+                             )
+    where wta.wdo_id = p_wdo_id;
+    insert into wfscrean(screanid,name,type,wta_id,wdo_id,nbligne,nbcolumn,mscreanid,scr_comments)
+                  select seq_wfscrean.nextval,msc.mname,msc.mtype,wta.wta_id,p_wdo_id,msc.mnbligne,msc.nbcolumn,msc.mscreenid,msc.mscr_comments
+                  from   wfstep wta,
+                         wfmodstep wmt,
+                         wfmodscreen msc
+                  where  wta.wdo_id = p_wdo_id
+                  and    wta.wmt_id = wmt.wmt_id
+                  and    wmt.wmt_id = msc.wmt_id; 
+                        
+    insert into wffield(fieldid, web_type, java_type, label, value, screanid, varname, 
+                        width, height, lov, required, defaultvalue, refobjet, visible, 
+                        partialtarget, disabled, ordre, positionx, positiony, hasvalidation, 
+                        hastraitement, fld_master, isupdatable, fld_insert, fld_delete, 
+                        mfieldid, fld_select, fld_masst, wdo_id, varname_a, 
+                        fld_extvarname)
+               select seq_wffield.nextval,mfl.mweb_type,mfl.mjava_type,mfl.mlabel,mfl.mvalue,scr.screanid,mfl.mvarname,
+                      mfl.mwidth,mfl.mheight,mfl.mlov,mfl.mrequired,mfl.mdefaultvalue,mfl.mrefobjet,mfl.mvisible,
+                      mfl.mpartialtarget,mfl.mdisabled,mfl.mordre,mfl.mpositionx,mfl.mpositiony,decode(mvl.mtype,1,1,0),
+                      decode(mvl.mtype,0,1,0),mfl.mfld_master,mfl.misupdatable,mfl.mfld_insert,mfl.mfld_delete,
+                      mfl.mfieldid,mfl.mfld_select,mfl.mfld_masst,p_wdo_id,mfl.mvarname_a,mfl.mfld_extvarname
+               from   wfstep wta,
+                      wfscrean scr,
+                      wfmodscreen msc,
+                      wfmodfield mfl,
+                      wfmodfvalid mvl
+               where  wta.wdo_id = p_wdo_id
+               and    wta.wta_id = scr.wta_id
+               and    scr.mscreanid = msc.mscreenid
+               and    msc.mscreenid = mfl.mscreanid
+               and    mfl.mfieldid = mvl.mfieldid(+);
+          
+    insert into wffvalid(wfvalid, type, expression, fieldid)
+                  select seq_wffvalid.nextval,mvl.mtype,mvl.mexpression, fld.fieldid
+                  from   wffield fld,
+                         wfmodfield mfl,
+                         wfmodfvalid mvl
+                  where  fld.wdo_id = p_wdo_id
+                  and    fld.mfieldid = mfl.mfieldid
+                  and    mfl.mfieldid = mvl.mfieldid;
+  EXCEPTION WHEN OTHERS THEN
+     v_g_err_code := SQLCODE;
+     v_g_err_msg := SUBSTR(SQLERRM, 1, 200);
+     p_pk_exception := v_g_err_code || ' : ' ||  v_g_err_msg;
+  END;
+---------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------
+PROCEDURE MigrationDossierEnCours
+  (
+    p_pk_etape out varchar2,
+    p_pk_exception out varchar2,
+    p_param in number default 0
+  )
+  IS
+    --Curseur pour les demandes DBS en cours
+    cursor c1
+    is
+      select d.* 
+      from   test.demande_ds d
+      where  d.annuler = 'N'
+      and    d.etat between 3 and 7
+      and    ((d.etat in (3,4,5) and d.annee>2016) or (d.etat>5))
+      and  trim(d.annee)||trim(d.district)||trim(d.localite)||lpad(trim(d.num),4,'0') = '201820050015';
+    
+    --Curseur des données etude
+    cursor c3(ann varchar2, dist varchar2, loc varchar2, numero varchar2)
+    is 
+      select *
+      from   test.donnee_techniques_ds t
+      where  t.annee = ann 
+      and    t.district = dist 
+      and    t.localite = loc
+      and    t.num = numero
+      order by t.date_instruction desc;
+    
+    --Curseur des types refections de l'etude
+    cursor c4(ann varchar2, dist varchar2, loc varchar2, numero varchar2)
+    is 
+      select *
+      from   test.refection_ds t
+      where  t.annee = ann 
+      and    t.district = dist 
+      and    t.localite = loc
+      and    t.num = numero;
+    
+    --Curseur des devis
+    cursor c5(ann varchar2, dist varchar2, loc varchar2, numero varchar2)
+    is 
+      select *
+      from   test.devis_ds t
+      where  t.annee_ds = ann 
+      and    t.district = dist 
+      and    t.code_localite_ds = loc
+      and    t.num_ds = numero
+      and    t.etat != 'A';
+    
+    --Curseur des articles stock du devis
+    cursor c6(ann varchar2, dist varchar2, loc varchar2, numero varchar2)
+    is
+      select i.ite_id, i.ite_code ,i.ite_name , i.vow_unit, p.tva_id,s.pta_id, s.psl_name, a.*
+      from   test.article_ds a,
+             genitem i,
+             genitemtarif t,
+             genitemperiodtarif p,
+             genptaslice s
+      where  a.annee = ann 
+      and    a.district = dist 
+      and    a.localite = loc
+      and    a.num = numero
+      and    upper(trim(a.code_article)) = upper(i.ite_code)
+      and    i.ite_id = t.ite_id
+      and    t.tar_id = p.tar_id
+      and    p.pta_enddt is null
+      and    p.pta_id = s.pta_id
+      and    s.psl_rank = 1;
+    
+    --Curseur des autres articles devis  
+    cursor c7(code varchar2)
+    is
+      select i.ite_id, i.ite_code ,i.ite_name , i.vow_unit, p.tva_id,s.pta_id, s.psl_name
+      from   genitem i,
+             genitemtarif t,
+             genitemperiodtarif p,
+             genptaslice s
+      where  upper(i.ite_code) = upper(code)
+      and    i.ite_id = t.ite_id
+      and    t.tar_id = p.tar_id
+      and    p.pta_enddt is null
+      and    p.pta_id = s.pta_id
+      and    s.psl_rank = 1;
+    
+    --Curseur des bon de commande
+    cursor c8(ann varchar2, dist varchar2, loc varchar2, numero varchar2)
+    is
+      select *
+      from   test.bon_commandeds t
+      where  t.annee_ds = ann 
+      and    t.district = dist 
+      and    t.localite = loc
+      and    t.num_ds = numero;
+    
+    --Curseur des paiement devis  
+    cursor c9(ann varchar2, dist varchar2, loc varchar2, numero varchar2, numdevis number)
+    is
+      select *
+      from   test.reglement_ds t
+      where  t.annee_ds = ann 
+      and    t.district = dist 
+      and    t.code_localite_ds = loc
+      and    t.num_ds = numero
+      and    t.num_devis_ds = numdevis;
+      
+    --Curseur des credits (entete)
+    cursor c10(ann varchar2, dist varchar2, loc varchar2, numero varchar2, numdevis number)
+    is
+      select distinct t.annee_ds, t.district, t.code_localite_ds, t.num_ds, t.it, t.trimes, t.echetotal
+      from   test.credits t
+      where  t.annee_ds = ann 
+      and    t.district = dist 
+      and    t.code_localite_ds = loc
+      and    t.num_ds = numero
+      and    t.num_devis_ds = numdevis;
+    
+    --Curseur des crredits (détails)
+    cursor c11(ann varchar2, dist varchar2, loc varchar2, numero varchar2, numdevis number)
+    is
+      select *
+      from   test.credits t
+      where  t.annee_ds = ann 
+      and    t.district = dist 
+      and    t.code_localite_ds = loc
+      and    t.num_ds = numero
+      and    t.num_devis_ds = numdevis
+      order by t.numecheance;
+          
+    v_con_row wfcontact%rowtype;
+    v_dos_row wfdossier%rowtype;
+    v_j number;
+    v_categ varchar2(10);
+    v_par_id number;
+    v_par_name varchar2(400);
+    v_par_telw varchar2(100);
+    v_par_telm varchar2(100);
+    v_cd_ps varchar2(100);
+    v_adresse varchar2(4000);
+    v_dos_id number;
+    v_con_id number;
+    v_wdo_id number;
+    v_adr_id number;
+    v_wmd_id number;
+    v_wot_id number;
+    v_wot_code varchar2(100);
+    v_org_id number;
+    v_dvt_id number;
+    v_dos_refe varchar2(100);
+    v_par_refe varchar2(100);
+    v_hpr_id number;
+  BEGIN
+    --Securite
+    if p_param <> 3 then
+      return;
+    end if;
+    
+    p_pk_etape := 'Selection du modele contact/dossier/process';
+    
+    select *
+    into   v_con_row
+    from   wfcontact
+    where  con_id = v_g_mod_con_id;
+    
+    select dos.*
+    into   v_dos_row
+    from   wfdossier dos,
+           wfcondos  cod
+    where  cod.con_id = v_g_mod_con_id
+    and    cod.dos_id = dos.dos_id;
+    
+    select max(wmd_id) 
+    into   v_wmd_id
+    from   wfmenu m 
+    where  m.men_mdos_id = v_dos_row.dos_id;
+    
+    p_pk_etape := 'Selection du type intervention DBS Classique';
+    select wot_id,wot_code
+    into   v_wot_id,v_wot_code
+    from   worwotype
+    where  wot_code = 'DBS_CLASSIQUE';
+    
+    
+    
+    for s1 in c1 loop
+      p_pk_etape := 'recuperation organisation';
+      select max(org_id)
+      into   v_org_id
+      from   genorganization
+      where  org_code = lpad(trim(s1.district),2,'0');
+      if v_org_id is null then
+         PK_WFSTEP.WF_INSERT_MIG_EXCP(v_dos_refe, 'ERR_ORG : Impossible de recuperer l organisation du code '||lpad(trim(s1.district),2,'0'));
+         rollback;
+         continue;
+         --GOTO end_loop;
+      end if;
+      
+      p_pk_etape := 'Recuperation du secteur';
+      select max(dvt.dvt_id)
+      into   v_dvt_id
+      from   gendivision div,
+             gendivdit dvt
+      where  div.div_code = lpad(trim(s1.district),2,'0')
+      and    div.div_id = dvt.div_id
+      and    dvt.dit_id = v_g_dit_id;
+    
+      if v_dvt_id is null then
+         PK_WFSTEP.WF_INSERT_MIG_EXCP(v_dos_refe, 'ERR_DVT : Impossible de recuperer le secteur district du code '||lpad(trim(s1.district),2,'0'));
+         rollback;
+         continue;
+         --GOTO end_loop;
+      end if; 
+      
+      begin
+        --chercher si le dossier a ete migrer ou non
+        v_dos_refe := trim(s1.annee)||lpad(trim(s1.district),2,'0')||trim(s1.localite)||lpad(trim(s1.num),4,'0');
+        
+        p_pk_etape := 'Verification existance dossier';
+        select max(dos_id)
+        into   v_dos_id
+        from   wfdossier
+        where  dos_refe = v_dos_refe;
+        if (v_dos_id is not null) then
+          --Le cas ou le dossier est créer on le met a jour
+          begin
+            select con_id 
+            into   v_con_id
+            from   wfcondos
+            where  dos_id = v_dos_id;
+            
+            select wdo_id
+            into   v_wdo_id
+            from   wfhprocess
+            where  dos_id = v_dos_id;
+          exception when others then
+            PK_WFSTEP.WF_INSERT_MIG_EXCP(v_dos_refe,'ERR1 : ' ||v_dos_refe ||' - Impossible de recuperer le con_id ou le wdo_id du dossier') ;
+            continue;
+            --GOTO end_loop;
+          end;
+        end if;
+        
+        p_pk_etape := 'Selection/Creation client';
+        --Rechecher le client demandeur
+        v_par_refe := lpad(trim(s1.district),2,'0')||lpad(trim(s1.CATEGORIE),2,'0')||trim(upper(s1.CLIENT));
+        select max(par_id)
+        into   v_par_id
+        from   genparty p
+        where  p.par_refe = v_par_refe;
+        
+        --Creer le client s'il n'existe pas
+        if(v_par_id is null) then
+          --Selection de la categorie
+          select decode(lpad(trim(s1.categorie),2,'0'),'01','01','02','02','03','03','04','04','08','08','01')
+          into   v_categ
+          from   dual; 
+          
+          --Selection des infos clients depuis  
+          begin
+            select c.nom, c.tel, c.autre_tel, trim(c.code_postal), c.adresse
+            into   v_par_name, v_par_telw, v_par_telm, v_cd_ps, v_adresse
+            from   test.client c
+            where  lpad(trim(c.categorie),2,'0') = lpad(trim(s1.categorie),2,'0')
+            and    trim(c.code) = trim(s1.client) 
+            and    lpad(trim(c.district),2,'0') = lpad(trim(s1.district),2,'0');
+          exception when no_data_found then
+            v_par_name := s1.client;
+            v_cd_ps := s1.code_postal;
+            v_adresse := '-';
+          end;  
+          
+          MigrationClient(p_pk_etape,p_pk_exception,v_par_id,lpad(trim(s1.district),2,'0'),trim(upper(s1.CLIENT)),
+                          v_adresse,v_cd_ps,v_par_refe,v_categ,v_par_name,v_par_telw,v_par_telm,null);
+        end if;
+        
+        --Creation de l'adresse du site
+        p_pk_etape := 'Creation adresse branchement';
+        if(s1.etat<8)then
+          MigrationAdresse(p_pk_etape,p_pk_exception,v_adr_id,s1.adresse_brt,s1.code_postal);        
+        end if;
+        
+        --Instantiation du processus
+        p_pk_etape := 'Creation adresse branchement';
+        
+        if v_dos_id is null then
+          MigrationInstanceProcess(p_pk_etape,p_pk_exception,v_con_id,v_dos_id,v_wdo_id,
+                                   nvl(s1.date_creation,sysdate),s1.etat,v_par_id,v_org_id,
+                                   v_dos_refe,v_con_row,v_dos_row,v_wmd_id);
+          null;
+        end if;
+        
+      exception when others then
+        v_g_err_code := SQLCODE;
+        v_g_err_msg := SUBSTR(SQLERRM, 1, 200);
+        PK_WFSTEP.WF_INSERT_MIG_EXCP(v_dos_refe,'ERR_X : ' ||v_dos_refe ||' - '||v_g_err_code||':'||v_g_err_msg) ;
+        rollback;
+        v_j:= v_j+1;  
+      end;
+    end loop;
+    
+    
+  END;
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
+PROCEDURE MigrationSuppressionGmf
+  (
+    p_pk_etape out varchar2,
+    p_pk_exception out varchar2,
+    p_param in number default 0
+  )
+  IS
+  
+  BEGIN
+    --Securite
+    if p_param <> 3 then
+      return;
+    end if;
+    update WFLISTITC t set t.par_id=null;
+    update WFLISTAGE w set w.age_id=null;
+    update WFMETAPE w set w.age_id = null;
+    COMMIT;
+    
+    
+
+    delete from WFTMODFOLDER;
+    commit;	
+    delete from AGRADDDETAIL;
+    commit;
+    delete from AGRADDENDUM;
+    commit;
+    delete from AGRAVGCONSUM;
+    commit;
+    commit;
+    delete from AGRCGHBILL;  
+    commit; 
+    delete from AGRCUSTAGRCONTACT;  
+    commit;
+    delete from AGRCUSTOMERAGR;  
+    commit;
+    delete from AGRHSAGOFR;  
+    commit;
+    delete from AGRMONTHPAY;  
+    commit;
+    delete from AGRMONTHPAYSCHED;  
+    commit;
+    delete from AGRPAYOR;  
+    commit;
+    delete from AGRPLANNINGAGR;  
+    commit;
+    delete from AGRSAGACO;  
+    commit;
+    delete from AGRSAGBUN;  
+    commit;
+    delete from AGRSERVICEAGR;  
+    commit;
+    delete from AGRSETTLEMENT;  
+    commit;
+    delete from AGRSUBSCRIPTION;  
+    commit;
+    delete from AGRSUBSCRIPTIONVALUE;  
+    commit;
+    delete from AGRTMPITEBILL;  
+    commit;
+    delete from AGRTMPTARIF;  
+    commit;
+    delete from AGRTMPWORBILL;  
+    commit;
+    delete from BILTMPBILLINGITEM;  
+    commit;
+    delete from BILTMPCONSUMACO;  
+    commit;
+    delete from BILTMPLASTBILL;  
+    commit;
+    delete from BILTMPNEXTMRD;  
+    commit;
+    delete from BILTMPSAG;  
+    commit;
+    delete from BILTMPSUBSCRIPTIONVALUE;  
+    commit;
+    delete from BILTMPTARIF;  
+    commit;
+    delete from FILTRE_SAV_AGRCONTRATTYPE;  
+    commit;
+    delete from FILTRE_SAV_GENAGENT;  
+    commit;
+    delete from FILTRE_SAV_GENPARTY;  
+    commit;
+    delete from FILTRE_SAV_WFMCONTACT;  
+    commit;
+    delete from FILTRE_SAV_WFMDOSSIER;  
+    commit;
+    delete from DEFALCROUTE;
+    commit;
+    delete from DEFALCROUTEHIST;
+    commit;
+    delete from GENACCOUNT where aco_status != 1 and par_id not in (select org_id from genorganization);  
+    commit;
+    delete from GENACTIVERECO;  
+    commit;
+    delete from GENACTIVERECODETAIL;
+    commit;
+    delete from GENACTIVITY;
+    commit;
+    /*
+    delete from GENADRESS w where w.adr_id not in (0,98772,100158,100167,157900);
+    delete from GENSTREET w where str_id not in (select str_id from genadress);*/
+    delete from GENADRESS where adr_id not in (select adr_id from genparty where par_id in (select org_id from genorganization) union select adr_id from genagent);  
+    commit;
+    delete from GENANOMALY;  
+    commit;
+    delete from GENAVGCONSUM;  
+    commit;
+    delete from GENBANKPARTY where bap_id not in (select * from (select NVL(o.bap_credit_id,o.bap_debit_id) bap_id
+     from genorganization o union select NVL(o.bap_debit_id,o.bap_credit_id) bap_id
+      from genorganization o)
+      where bap_id is not null); 
+    commit;
+    delete from GENBILL;   
+    commit;
+    delete from GENBUNDLE;  
+    commit;
+    delete from GENCAD;  
+    commit;
+    delete from GENCADPRESPT;  
+    commit;
+    delete from GENCONTEST;  
+    commit;
+    delete from GENCTRANOMALY;  
+    commit;
+    delete from GENDATADYN;  
+    commit;
+    delete from GENDATADYNDFT;  
+    commit;
+    delete from GENDEBIMP;  
+    commit;
+    delete from GENDEBREC;  
+    commit;
+    delete from GENPAYSCHEDBRDETAIL;
+    commit;
+    delete from GENPAYSCHEDBR;
+    commit;
+    delete from GENDIVSPT;  
+    commit;
+    delete from GENDOCISSUE;  
+    commit;
+    delete from GENFILE;  
+    commit;
+    delete from GENHCTRL;  
+    commit;
+    delete from GENHIMPCTT;  
+    commit;
+    delete from GENHTREATMENT;  
+    commit;
+    delete from GENHTREATPARAM;  
+    commit;
+    delete from GENLETTDEBT;  
+    commit;
+    delete from GENLETTDEBTDETAIL;  
+    commit;
+    delete from GENNEWS;  
+    commit;
+    delete from GENPAYSCHEDDETAIL;
+    commit;
+    delete from GENPAYSCHEDBRDETAIL;
+    commit;
+    delete from GENPAYSCHEDBR;
+    commit;
+    delete from GENPAYSCHED;
+    commit;
+    delete from GENPASDEB;
+    commit;
+    delete from GENPARTY where par_id not in(select org_id from genorganization 
+                                            union 
+                        select 1 from dual 
+                        union 
+                        select par.par_id
+                        from  genparty par,
+                            genrefext rex, 
+                            genrefextdft ref,
+                            genvocword vow
+                        where par.par_id = rex.rex_idorig 
+                        and   ref.ref_id = rex.rex_id
+                        and   ref.ref_table = 'GENPARTY'
+                        and   ref.ref_column = 'PAR_REFE'
+                        and   ref.vow_soft = vow.vow_id 
+                        and   vow.vow_code in ('RHUI','REXP'));  
+    commit;
+    delete from GENPARTYPARTY where par_parent_id not in(select par_id from genparty);  
+    commit;
+    delete from GENPASDEB;  
+    commit;
+    delete from GENPAYSCHED;  
+    commit;
+    delete from GENPAYSCHEDDETAIL;  
+    commit;
+    delete from GENPROJECT;
+    commit;
+    delete from GENPROVIDER;
+    commit;
+    delete from GENREFEXT;  
+    commit;
+    delete from GENRUN;  
+    commit;
+    delete from GENRUNAGR;  
+    commit;
+    delete from GENRUNDETAIL;  
+    commit;
+    delete from GENRUNDVT;  
+    commit;
+    delete from GENRUNGRF;   
+    commit;
+    delete from GENSOCIALSTATUS;  
+    commit; 
+    delete from GENSTREET where str_id != 0;  
+    commit; 
+    delete from GENTMPBILLINE;  
+    commit;
+    delete from GENTMPEDDEBT;  
+    commit;
+    delete from GENTMPHGED;  
+    commit;
+    delete from GENTMPITEMTARIF;  
+    commit;
+    delete from GENTMPSEPA;  
+    commit; 
+    delete from GENWORKSTATE;  
+    commit;
+    delete from LIGNE_PLGREL;
+    commit;
+    delete from LIGNE_PLGRELHIST;
+    commit;
+    delete from PAYCASHBLI;  
+    commit;
+    delete from PAYCASHDEBT;  
+    commit;
+    delete from PAYCASHDESKMOVE;  
+    commit;
+    delete from PAYCASHDESKSESSION WHERE CSS_ID not in (select css_id from paycashdesk where cah_code = '01');--  CAISSE
+    commit;
+    delete from PAYCASHIMP;  
+    commit;
+    delete from PAYCASHING;  
+    commit;
+    delete from PAYJOURNAL;  
+    commit;
+    delete from PAYSLIP;  
+    commit;
+    delete from PLGREL;
+    commit;
+    delete from PLGRELHIST;
+    commit;
+    delete from TECCONNECTION;  
+    commit;
+    delete from TECCONNHIER;
+    commit;
+    delete from TECDEVICE;
+    commit;
+    delete from TECEQUIPMENT;  
+    commit;
+    delete from TECEQUMODEL;  
+    commit;
+    delete from TECHCONSPT;  
+    commit;
+    delete from TECHEQUCOM;  
+    commit;
+    delete from TECHEQUIPMENT;  
+    commit;
+    delete from TECHEQUMTRCFG;  
+    commit;
+    delete from TECIMPORTDETAIL;  
+    commit;
+    delete from TECIMPORTMODEL;  
+    commit;
+    delete from TECMETER;  
+    commit;
+    delete from TECMTRELEC;  
+    commit;
+    delete from TECMTRGAS;  
+    commit;
+    delete from TECMTRMEASURE;  
+    commit;
+    delete from TECMTRMEASURECHARGE;  
+    commit;
+    delete from TECMTRWATER;  
+    commit;
+    delete from TECMTRWASTE;
+    commit;
+    delete from TECPLGREL;
+    commit;
+    delete from TECPLGRELHIST;
+    commit;
+    delete from TECPREINFOETUDE;
+    commit;
+    delete from TECPREMISE;  
+    commit;
+    delete from TECPREMISEHIER;  
+    commit;
+    delete from TECPREREJECT;  
+    commit;
+    delete from tecpreinfoetude;
+    commit;
+    delete from TECPRESPTCONTACT;  
+    commit;
+    delete from TECREADITEBILL;  
+    commit;
+    delete from TECROUCUT;  
+    commit;
+    delete from TECROUFLD;  
+    commit;
+    delete from TECROUSTR;  
+    commit;
+    delete from TECROUTE;  
+    commit;
+    delete from TECROUTEDEFALC;  
+    commit;
+    delete from TECROUTEDEFALCDETAIL;  
+    commit;
+    delete from TECROUTELOAD;  
+    commit;
+    delete from TECROUTELOADDETAIL;  
+    commit;
+    delete from TECROUTEPLAN;  
+    commit;
+    delete from TECROUTEUNLOAD;  
+    commit;
+    delete from TECSERVICEPOINT;  
+    commit;
+    delete from TECSPSTATUS;  
+    commit;
+    delete from TECSPTELECTRIC;  
+    commit;
+    delete from TECSPTGAS;  
+    commit;
+    delete from TECSPTHIER;  
+    commit;
+    delete from TECSPTORG;  
+    commit;
+    delete from TECSPTREJECT;  
+    commit;
+    delete from TECSPTWASTE;  
+    commit;
+    delete from TECSPTWATER;  
+    commit;
+    delete from WFCONDOS where con_id in (select con_id from wfcontact where con_mcon_id is not null);
+    commit;
+    delete from WFCONTACT where con_mcon_id is not null;
+    commit;
+    delete from WFDOCTAG;
+    commit;
+    delete from WFDOCUMENTLIE;
+    commit;
+    delete from WFDOSSIER where dos_mdos_id is not null;
+    commit;
+    delete from WFETAPE where dos_id in (select dos_id from WFDOSSIER where dos_mdos_id is not null);
+    commit;
+    delete from WFFIELD;
+    commit;
+    delete from WFFIELDARCH;
+    commit;
+    delete from WFFOLDER;
+    commit;
+    delete from WFFVALID;
+    commit;
+    delete from WFFVALIDARCH;
+    commit;
+    delete from WFHPROCESS where dos_id in (select dos_id from WFDOSSIER where dos_mdos_id is not null);
+    commit;
+    delete from WFLIST where lst_id in (select lag_id from wfcontact where con_mcon_id is not null
+                                        union  
+                      select lit_id from wfcontact where con_mcon_id is not null
+                      union
+                      select lob_id from wfcontact where con_mcon_id is not null
+                      union
+                      select lag_id from wfdossier where dos_mdos_id is not null
+                                        union  
+                      select lit_id from wfdossier where dos_mdos_id is not null
+                      union
+                      select lob_id from wfdossier where dos_mdos_id is not null);
+    commit;
+    delete from WFLISTAGE where lag_id in (select lag_id from wfcontact where con_mcon_id is not null
+                         union
+                         select lag_id from wfdossier where dos_mdos_id is not null);
+    commit;
+    delete from WFLISTITC where lit_id in (select lit_id from wfcontact where con_mcon_id is not null
+                         union
+                         select lit_id from wfdossier where dos_mdos_id is not null);
+    commit;
+    delete from WFLISTOBJECT where lob_id in (select lob_id from wfcontact where con_mcon_id is not null
+                            union
+                            select lob_id from wfdossier where dos_mdos_id is not null);
+    commit;
+    delete from WFLOTDEDEPENDANCE;
+    commit;
+    delete from WFMOTIF;
+    commit;
+    delete from WFSCREAN;
+    commit;
+    delete from WFSCREANARCH;
+    commit;
+    delete from WFSTEP;
+    commit;
+    delete from WFTAFFECTATION;
+    commit;
+    delete from WFTASSISTANT;
+    commit;
+    delete from WFTCONDITION;
+    commit;
+    delete from WFTCOURRIER;
+    commit;
+    delete from WFTDEMANDE;
+    commit;
+    delete from WFTIMPRESSION;
+    commit;
+    delete from WFTINTERVENTION;
+    commit;
+    delete from WFTITERATIF;
+    commit;
+    delete from WFTOBJETMETIER;
+    commit;
+    delete from WFTROLLBACK;
+    commit;
+    delete from WFTTRAITEMENT;
+    commit;
+    delete from WFTTRAVAUX;
+    commit;
+    delete from WORASSIGNMENT;  
+    commit;
+    delete from WORBILL;  
+    commit;
+    delete from WORBILLINTERV;
+    commit;
+    delete from WORLINEQUOTATION;  
+    commit;
+    delete from WORQUOTATION;  
+    commit;
+    delete from WORREPORTORDER;   
+    commit;
+    delete from WORTEMPJER;  
+    commit;
+    delete from WORWOPLAN;
+    commit;
+    delete from WORWORKORDER;  
+    commit;
+    delete from WORWORKSHEET;  
+    commit;
+    delete from WORWORKSHEETITEM;  
+    commit;
+  END;
 end PK_MIGRATION;
 /
