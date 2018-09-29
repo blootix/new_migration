@@ -396,7 +396,7 @@ BEGIN
 			V_mrd_dt := to_date(V_DTE_RL,'dd/mm/yy');
 		------------------------------------------------------
 			BEGIN
-				select to_date(lpad(trim(t.datexp),8,'0'),'dd/mm/yyyy')- 7
+				select to_date(lpad(trim(t.datexp),8,'0'),'dd/mm/yyyy')-7
 				into V_mrd_dt
 				from ROLE_TRIM t
 				where lpad(TRIM(t.distr),2,'0')||
@@ -406,7 +406,7 @@ BEGIN
 				and   TRIM(t.trim)             = trim(V_trim);
 			EXCEPTION WHEN OTHERS THEN
 				BEGIN
-					select to_date(lpad(trim(t.datexp),8,'0'),'dd/mm/yyyy')- 7
+					select to_date(lpad(trim(t.datexp),8,'0'),'dd/mm/yyyy')-7
 					into V_mrd_dt
 					from ROLE_MENS t
 					where lpad(TRIM(t.distr),2,'0')||
@@ -477,12 +477,12 @@ BEGIN
 			AND    vow.vow_code = substr(V_anomalie,1,2)
 			AND    voc.voc_code = 'VOW_COMM3';
 							
-			if to_NUMBER(releve_.prorata)> 0 then
+			if to_NUMBER(releve_.prorata)>0 then
 			  V_MME_DEDUCEMANUAL := nvl(to_NUMBER(trim(releve_.consommation)),0)-releve_.prorata;
 			end if;		
 			V_MRD_MULTICAD:=V_trim;		
 			BEGIN
-			if to_NUMBER(trim(V_avisforte))> 0 then
+			if to_NUMBER(trim(V_avisforte))>0 then
 			  V_avisforte := 'N°Avis FORte='||V_avisforte;
 			end if;
 			EXCEPTION WHEN OTHERS THEN

@@ -172,9 +172,8 @@ end Genere_genimp;
  Procedure Genere_genaccount (Newgenaccount genaccount%rowtype ,genaccountId  in out number ,ref_genaccount out number,agrsagacoId  in out   number,Newagrsagaco agrsagaco%rowtype) is
  BEGIN
 
-select aco.aco_id  INTO  ref_genaccount  from genaccount aco ,agrsagaco sco
-where
-  aco.aco_id = sco.aco_id
+  select aco.aco_id  INTO  ref_genaccount  from genaccount aco ,agrsagaco sco
+  where aco.aco_id = sco.aco_id
   and nvl(par_id,0)        = nvl(Newgenaccount.par_id ,0)
   and nvl(imp_id,0)        = nvl(Newgenaccount.imp_id ,0)
   and nvl(sag_id,0)        = nvl(Newagrsagaco.sag_id ,0) ;
