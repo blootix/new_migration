@@ -1243,7 +1243,7 @@ procedure MigrationHitoriquereleve
 	v_mrd_agrtype        number := 0;
 	v_mrd_locked         number := 0;
 	v_mrd_techtype       number := 0;
-  v_mrd_subread        number := 0;
+    v_mrd_subread        number := 0;
 	v_mrd_etatfact       number := 0; 
 	v_mrd_usecr          number := 1;
 	v_mrd_multicad       number;
@@ -1432,81 +1432,37 @@ procedure MigrationDernierreleve
 BEGIN
 	p_pk_etape:='Création dernier réleve trimestriel';
 	v_mrd_year:=replace(to_number(p_anneeT),0,to_char(sysdate,'yyyy'));
-		if to_number(p_prorataT)>0 then
-		  v_mme_deducemanual := nvl(to_number(trim(p_consommationT)),0)-p_prorataT;
+	if to_number(p_prorataT)>0 then
+	  v_mme_deducemanual := nvl(to_number(trim(p_consommationT)),0)-p_prorataT;
+	end if;	
+	v_mrd_multicad:= trim(p_trimestreT);
+	p_pk_etape:='Récupération date relevet';
+	v_dte_rl  :=replace(substr(p_date_releveT,1,instr(replace(replace(p_date_releveT,' ','#'),':','#'),'#')-1),'-','/');
+	begin 
+		if (p_mois=12 and v_mrd_multicad=4) then
+		   v_mrd_dt :=to_date('08/'||'01'||'/'||p_anneeT+1,'dd/mm/yyyy');
+		elsif (p_mois in(1,2,3)and v_mrd_multicad=4)then 
+		   v_mrd_dt:=to_date('08/'||lpad(p_mois+1,2,'0')||'/'||p_anneeT+1,'dd/mm/yyyy');
+		elsif (p_mois=12) then
+		   v_mrd_dt :=to_date('08/'||'01'||'/'||p_anneeT,'dd/mm/yyyy');
+		else
+		   v_mrd_dt:=to_date('08/'||lpad(p_mois+1,2,'0')||'/'||p_anneeT,'dd/mm/yyyy');
 		end if;	
-		
-		select p.m3
-		into  v_mois
-		from  test.tourne t,test.param_tournee p
-		where t.ntiers  =p.tier
-		and   t.nsixieme=p.six
-		and   lpad(trim(t.district),2,'0')= lpad(trim(p.district),2,'0')
-		and   lpad(trim(t.district),2,'0')= p_district
-		and   lpad(trim(t.code),3,'0')    = p_tourne
-		and p.trim=p_trimestreT;
-		
-		select t.mrd_multicad
-		into v_trim
-        from tecmtrread t
-        where t.mrd_year||t.mrd_multicad=(select max(to_number(mrd_year||mrd_multicad))
-										  from tecmtrread 
-										  where spt_id=p_spt_id)
-        and t.spt_id  =p_spt_id
-        and t.mrd_year=v_mrd_year;		
-		
-		if(trim(p_trimestreT)='0')then
-			v_mrd_multicad:= v_trim;
-	    else
-			v_mrd_multicad:= trim(p_trimestreT);
-		end if;
-		
-	    select count(*) 
-		into v_nbr
-		from tecmtrread t
-		where t.spt_id=p_spt_id
-		and t.mrd_year=v_mrd_year
-		and t.mrd_multicad=v_mrd_multicad;
-		
-		if v_nbr=1 then	
-			update tecmtrmeasure 
-			set mme_value=to_number(p_index_releve),
-				mme_consum=nvl(to_number(trim(p_consommationT)),0),
-				mme_deducemanual=v_mme_deducemanual
-			where mrd_id in (select t.mrd_id
-							   from tecmtrread t
-							   where t.spt_id=p_spt_id
-							   and t.mrd_year=v_mrd_year
-							   and t.mrd_multicad=v_mrd_multicad)
-			and mme_num=1;	
-		else 
-			p_pk_etape:='Récupération date relevet';
-			v_dte_rl  :=replace(substr(p_date_releveT,1,instr(replace(replace(p_date_releveT,' ','#'),':','#'),'#')-1),'-','/');
-			begin 
-				if (p_mois=12 and v_mrd_multicad=4) then
-				   v_mrd_dt :=to_date('08/'||'01'||'/'||p_anneeT+1,'dd/mm/yyyy');
-				elsif (p_mois in(1,2,3)and v_mrd_multicad=4)then 
-				   v_mrd_dt:=to_date('08/'||lpad(p_mois+1,2,'0')||'/'||p_anneeT+1,'dd/mm/yyyy');
-				elsif (p_mois=12) then
-				   v_mrd_dt :=to_date('08/'||'01'||'/'||p_anneeT,'dd/mm/yyyy');
-				else
-				   v_mrd_dt:=to_date('08/'||lpad(p_mois+1,2,'0')||'/'||p_anneeT,'dd/mm/yyyy');
-				end if;	
-			exception when others then
-			   v_mrd_dt:=v_dte_rl;
-			end;
-			select seq_tecmtrread.nextval into v_mrd_id from dual;
-			insert into tecmtrread(mrd_id,equ_id,mtc_id,mrd_dt,spt_id,vow_comm1,vow_comm2,vow_comm3,vow_readcode,
-			                       vow_readorig,vow_readmeth,vow_readreason,mrd_comment,mrd_locked,mrd_msgbill,mrd_agrtype,mrd_techtype,
-								   mrd_subread,mrd_deduction_id,mrd_etatfact,age_id,mrd_usecr,mrd_year,mrd_multicad) 
-							values(v_mrd_id,p_equ_id,p_mtc_id,v_mrd_dt,p_spt_id,p_vow_comm1,v_g_vow_comm2,v_g_vow_comm3,v_g_vow_readcode,
-							       p_vow_readorig,p_vow_readmeth,p_vow_readreason,v_mrd_comment,v_mrd_locked,null,v_mrd_agrtype,v_mrd_techtype,
-								   v_mrd_subread,null,v_mrd_etatfact,p_age_id,v_mrd_usecr,v_mrd_year,v_mrd_multicad);	
-			select seq_tecmtrmeasure.nextval into v_mme_id from dual;
-			insert into tecmtrmeasure(mme_id,mrd_id,meu_id,mme_num,mme_value,mme_consum,mme_avgconsum,mme_deducemanual)
-							   values(v_mme_id,v_mrd_id,p_meu_id,1,to_number(p_index_releve),nvl(to_number(trim(p_consommationT)),0),0,v_mme_deducemanual);					
-		    commit;
-		end if;
+	exception when others then
+	   v_mrd_dt:=v_dte_rl;
+	end;
+	select seq_tecmtrread.nextval into v_mrd_id from dual;
+	insert into tecmtrread(mrd_id,equ_id,mtc_id,mrd_dt,spt_id,vow_comm1,vow_comm2,vow_comm3,vow_readcode,
+						   vow_readorig,vow_readmeth,vow_readreason,mrd_comment,mrd_locked,mrd_msgbill,mrd_agrtype,mrd_techtype,
+						   mrd_subread,mrd_deduction_id,mrd_etatfact,age_id,mrd_usecr,mrd_year,mrd_multicad) 
+					values(v_mrd_id,p_equ_id,p_mtc_id,v_mrd_dt,p_spt_id,p_vow_comm1,v_g_vow_comm2,v_g_vow_comm3,v_g_vow_readcode,
+						   p_vow_readorig,p_vow_readmeth,p_vow_readreason,v_mrd_comment,v_mrd_locked,null,v_mrd_agrtype,v_mrd_techtype,
+						   v_mrd_subread,null,v_mrd_etatfact,p_age_id,v_mrd_usecr,v_mrd_year,v_mrd_multicad);	
+	select seq_tecmtrmeasure.nextval into v_mme_id from dual;
+	insert into tecmtrmeasure(mme_id,mrd_id,meu_id,mme_num,mme_value,mme_consum,mme_avgconsum,mme_deducemanual)
+					   values(v_mme_id,v_mrd_id,p_meu_id,1,to_number(p_index_releve),nvl(to_number(trim(p_consommationT)),0),0,v_mme_deducemanual);					
+	commit;
+
 EXCEPTION WHEN OTHERS THEN
  v_g_err_code := SQLCODE;
  v_g_err_msg := SUBSTR(SQLERRM, 1, 200);
@@ -1526,22 +1482,12 @@ procedure MigrationHitoriquerelevegc
 	p_spt_id 		 in number,
 	p_meu_id 		 in number,
 	p_age_id 		 in number,
+	p_nindex 		 in number,      
 	p_vow_readorig   in number,
 	p_vow_readmeth   in number,
 	p_vow_readreason in number
   )
   IS
- 
-	
-	cursor c2 (v_annee varchar2,v_trim varchar2)
-	is
-	select a.code_anomalie
-	from  test.listeanomalies_releve a
-	where lpad(trim(a.district),2,'0') = p_district
-	and   lpad(trim(a.tourne),3,'0')   = p_tourne
-	and   lpad(trim(a.ordre),3,'0')    = p_ordre
-	and   a.annee                      = v_annee
-	and   a.trim                       = v_trim;
 	
 	v_mrd_multicad       number;
 	v_mrd_year           number; 
@@ -1554,7 +1500,7 @@ procedure MigrationHitoriquerelevegc
 	v_mrd_agrtype        number := 0;
 	v_mrd_locked         number := 0;
 	v_mrd_techtype       number := 0;
-  v_mrd_subread        number := 0;
+    v_mrd_subread        number := 0;
 	v_mrd_etatfact       number := 0; 
 	v_mrd_usecr          number := 1;
 	v_mrd_comment        varchar2(100);
@@ -1563,8 +1509,8 @@ procedure MigrationHitoriquerelevegc
 	v_mme_id             number;
 begin	
 	p_pk_etape:='Création historique réleve gros consomateur';
-	for s1 in c1 loop	     
-		if trim(s1.nindex) is null then
+      
+		if trim(p_nindex) is null then
 			for s2 in c2('20'||trim(s1.refc02),s1.refc01)loop
 				v_code_anomalie := trim(s2.code_anomalie);
 			end loop ;
@@ -1619,89 +1565,72 @@ END;
     p_spt_id         in number,
     p_meu_id         in number,
     p_age_id         in number,
+	p_date_releve    in date ,
+	p_annee          in number,
+	p_mois           in number,
+	p_prorata        in number,
+	p_consommation   in number,
+	p_code_anomalie  in varchar2(10),
+	p_indexr         in number,
     p_vow_comm1      in number,
     p_vow_readorig   in number,
     p_vow_readmeth   in number,
     p_vow_readreason in number
   )
   is
-	cursor c1 
-	is
-	select a.* 
-	from test.relevegc a 
-	where trim(a.mois) is not null
-	and lpad(trim(a.district),2,'0')= p_district
-	and lpad(trim(a.tourne),3,'0')  = p_tourne
-	and lpad(trim(a.ordre),3,'0')   = p_ordre;
-  
-	cursor c2 (v_annee varchar2,v_trim varchar2)
-	is
-	select a.code_anomalie
-	from  test.listeanomalies_releve a
-	where lpad(trim(a.district),2,'0') = p_district
-	and   lpad(trim(a.tourne),3,'0')   = p_tourne
-	and   lpad(trim(a.ordre),3,'0')    = p_ordre
-	and   trim(a.annee)                = v_annee
-	and   trim(a.trim)                 = v_trim;
-    
-  v_mrd_year         number;
-  v_mrd_multicad     number;
-  v_mme_deducemanual number;
-  v_g_vow_comm2      number;
-  v_g_vow_comm3      number;
-  v_g_vow_readcode   number;
+	    
+	v_mrd_year         number;
+	v_mrd_multicad     number;
+	v_mme_deducemanual number;
+	v_g_vow_comm2      number;
+	v_g_vow_comm3      number;
+	v_g_vow_readcode   number;
 	v_mrd_id           number;
 	v_mrd_agrtype      number := 0;
 	v_mrd_locked       number := 0;
 	v_mrd_techtype     number := 0;
-  v_mrd_subread      number := 0;
+	v_mrd_subread      number := 0;
 	v_mrd_etatfact     number := 0; 
 	v_mrd_usecr        number := 1;
 	v_mrd_dt           date;
-	v_mrd_comment      varchar2(100);
-	v_code_anomalie    varchar2(10);
-  v_vow_comm1        number;
-  v_mme_id           number;
+	v_mrd_comment      varchar2(100);	   
+	v_vow_comm1        number;
+	v_mme_id           number;
 	
 begin
 	p_pk_etape:='Création derniere réleve gros consomateur';
 	for s1 in c1 loop
 	   	 
-		/*if trim(s1.nindex) is null then
-			for s2 in c2(trim(s1.annee),trim(s1.mois))loop
-				v_code_anomalie := trim(s2.code_anomalie);
-			end loop ;
-		end if;*/
-		v_mrd_dt:=trim(s1.date_releve);
-		if to_number(trim(s1.annee))=0 then
-			v_mrd_year:=to_number(to_char(sysdate,'yyyy'));
-		else
-			v_mrd_year:=to_number(trim(s1.annee));
-		end if;
-		v_mrd_multicad:=to_number(s1.mois);
-		if to_number(s1.prorata)> 0 then
-		  v_mme_deducemanual := nvl(to_number(trim(s1.consommation)),0)-s1.prorata;
+		v_mrd_dt:=trim(p_date_releve);
+	    v_mrd_year:=to_number(trim(p_annee));
+		v_mrd_multicad:=to_number(p_mois);
+		if to_number(p_prorata)> 0 then
+		  v_mme_deducemanual := nvl(to_number(trim(p_consommation)),0)-p_prorata;
 		end if;
 		p_pk_etape := 'Récupération Raison de relève';
-		select vow.vow_id
-		into   v_vow_comm1
-		from   genvoc     voc,
-			   genvocword vow
-		where  voc.voc_id   = vow.voc_id
-		and    vow.vow_code = v_code_anomalie
-		and    voc.voc_code = 'VOW_COMM1';
+		if (p_code_anomalie is not null ) then
+			select vow.vow_id
+			into   v_vow_comm1
+			from   genvoc     voc,
+				   genvocword vow
+			where  voc.voc_id   = vow.voc_id
+			and    vow.vow_code = p_code_anomalie
+			and    voc.voc_code = 'VOW_COMM1';
+		else
+			v_vow_comm1:=5741;
+		end if;
 			 				
 		select seq_tecmtrread.nextval into v_mrd_id from dual;			   
 		insert into tecmtrread(mrd_id,equ_id,mtc_id,mrd_dt,spt_id,vow_comm1,vow_comm2,vow_comm3,vow_readcode,vow_readorig,
 							   vow_readmeth,vow_readreason,mrd_comment,mrd_locked,mrd_msgbill,mrd_agrtype,mrd_techtype,
 							   mrd_subread,mrd_deduction_id,mrd_etatfact,age_id,mrd_usecr,mrd_year,mrd_multicad) 
-						values(v_mrd_id,p_equ_id,p_mtc_id,v_mrd_dt,p_spt_id,p_vow_comm1,v_g_vow_comm2,v_g_vow_comm3,v_g_vow_readcode,p_vow_readorig,
+						values(v_mrd_id,p_equ_id,p_mtc_id,v_mrd_dt,p_spt_id,v_vow_comm1,v_g_vow_comm2,v_g_vow_comm3,v_g_vow_readcode,p_vow_readorig,
 							   p_vow_readmeth,p_vow_readreason,v_mrd_comment,v_mrd_locked,null,v_mrd_agrtype,v_mrd_techtype,v_mrd_subread,
 							   null,v_mrd_etatfact,p_age_id,v_mrd_usecr,v_mrd_year,v_mrd_multicad);
 
 		select seq_tecmtrmeasure.nextval into v_mme_id from dual;
 		insert into tecmtrmeasure(mme_id,mrd_id,meu_id,mme_num,mme_value,mme_consum,mme_avgconsum,mme_deducemanual)
-						   values(v_mme_id,v_mrd_id,p_meu_id,1,to_number(s1.indexr),nvl(to_number(trim(s1.consommation)),0),0,v_mme_deducemanual);
+						   values(v_mme_id,v_mrd_id,p_meu_id,1,to_number(p_indexr),nvl(to_number(trim(p_consommation)),0),0,v_mme_deducemanual);
 		commit;
 	end loop;
 EXCEPTION WHEN OTHERS THEN
@@ -1763,82 +1692,88 @@ PROCEDURE MigrationQuotidien
      order by trim(b.etat_branchement);
 	 
 	 
-	------------------cureur releve_trimestrielle
+	--------------cureur historique fiche_releve
     cursor c3
     is
-     select lpad(trim(b.district),2,'0') district, lpad(trim(b.police),5,'0') police, lpad(trim(b.tourne),3,'0') tourne, lpad(trim(b.ordre),3,'0') ordre,
+    select lpad(trim(b.district),2,'0') district, lpad(trim(b.police),5,'0') police, lpad(trim(b.tourne),3,'0') tourne, lpad(trim(b.ordre),3,'0') ordre,
             r.annee,r.trim,r.releve,r.prorata,r.releve2,r.releve3,r.releve4,r.releve5,r.date_releve,
 		    r.compteurt,r.consommation,lpad(trim(r.anomalie),18,0)anomalie,r.avisforte,r.message_temporaire,
 		    r.date_controle,r.index_controle,p.m3 mois,
 			b.spt_id,b.mtc_id,b.equ_id,
 			decode(a.annee,0,a.indexa,indexr) index_releve,a.annee anneeT,a.prorata prorataT,a.trimestre trimestreT,
 			a.date_releve date_releveT,a.consommation consommationT,L.m3 moisT
-	from   test.branchement b
-    left join test.src_fiche_releve r 	  
-	on  	lpad(trim(r.district),2,'0')= lpad(trim(b.district),2,'0')
-	and     lpad(trim(r.tourne),3,'0') = lpad(trim(b.tourne),3,'0')
-	and     lpad(trim(r.ordre),3,'0')  = lpad(trim(b.ordre),3,'0')
-	left join test.releveT a
-	on      lpad(trim(a.district),2,'0')= lpad(trim(b.district),2,'0')
-	and     lpad(trim(a.tourne),2,'0')= lpad(trim(b.tourne),3,'0')
-	and     lpad(trim(a.ordre),2,'0') = lpad(trim(b.ordre),3,'0')	
-	and     lpad(trim(a.police),5,'0') = lpad(trim(b.police),5,'0')
-	left join   test.tourne t
-	on   lpad(trim(t.district),2,'0')= lpad(trim(b.district),2,'0')
-	and   lpad(trim(t.code),3,'0')    = lpad(trim(b.tourne),3,'0')
-	left join test.param_tournee p
-	on  lpad(trim(t.district),2,'0')= lpad(trim(p.district),2,'0')
-	and   p.trim=r.trim
-	and   t.ntiers  =p.tier
-	and   t.nsixieme=p.six
-	
-	left join  test.param_tournee l
-	on   lpad(trim(t.district),2,'0')= lpad(trim(l.district),2,'0')
-	and   l.trim=a.trimestre
-	and   t.ntiers  =l.tier
-	and   t.nsixieme=l.six
-	where b.spt_id is not null
-	and   b.mtc_id is not  null
-	and   b.equ_id is not null
-	and   r.mrd_id is null
-	and   a.mrd_id is null
-	and   lpad(trim(b.district),2,'0') = '25'
-	order by trim(b.etat_branchement);
+	from    test.src_fiche_releve r 	
+		left join   test.branchement b
+		on     lpad(trim(b.district),2,'0')=lpad(trim(r.district),2,'0')
+		and    lpad(trim(b.tourne),3,'0')  =lpad(trim(r.tourne),3,'0')
+		and    lpad(trim(b.ordre),3,'0')   =lpad(trim(r.tourne),3,'0') 
+		and    b.spt_id is not null
+	    and    b.mtc_id is not  null
+	    and    b.equ_id is not null
+		left join   test.tourne t
+		on     lpad(trim(t.district),2,'0')= lpad(trim(r.district),2,'0')
+		and    lpad(trim(t.code),3,'0')    = lpad(trim(r.tourne),3,'0')
+		left join test.param_tournee p
+		on    lpad(trim(t.district),2,'0')= lpad(trim(p.district),2,'0')
+		and   p.trim=r.trim
+		and   t.ntiers  =p.tier
+		and   t.nsixieme=p.six
+	where   r.mrd_id is null
+	and   lpad(trim(b.district),2,'0') = '25';
 	 
-	------------------
-	cursor c4
+	-----------cureur relevet
+	cursor c4 
 	is
-     select lpad(trim(b.district),2,'0') district, lpad(trim(b.police),5,'0') police, lpad(trim(b.tourne),3,'0') tourne, lpad(trim(b.ordre),3,'0') ordre, b.adresse, b.date_creation,
-           	b.spt_id,b.mtc_id,b.equ_id,
-			a.nindex,a.prorata,a.cons,a.refc02,a.refc01,l.code_anomalie
-	from   test.branchement b
-    left join test.relevegc c 
-	  on lpad(trim(c.district),2,'0')= lpad(trim(b.district),2,'0')
-	  and lpad(trim(c.tourne),3,'0') = lpad(trim(b.tourne),3,'0')
-	  and lpad(trim(c.ordre),3,'0')  = lpad(trim(b.ordre),3,'0')
-	  and lpad(trim(c.police),5,'0') = lpad(trim(b.police),5,'0')
-	left join test.fich24_gc a  
-	on lpad(trim(a.dist),2,'0')  = lpad(trim(c.district),2,'0')
-	  and   lpad(trim(a.tou) ,3,'0') = lpad(trim(c.tourne),3,'0')
-	  and   lpad(trim(a.ord) ,3,'0') = lpad(trim(c.ordre),3,'0') 
-	  and   lpad(trim(a.pol) ,5,'0') = lpad(trim(c.police),5,'0')
-	left join   test.listeanomalies_releve l
-	on    lpad(trim(l.district),2,'0')   = lpad(trim(b.district),2,'0')
-	and   lpad(trim(l.tourne),3,'0')   = lpad(trim(b.tourne),3,'0')
-	and   lpad(trim(l.ordre),3,'0')    = lpad(trim(b.ordre),3,'0')
-	and   l.annee                      = '20'||trim(c.refc02)
-	and   l.trim                       = c.refc01
-	where  b.spt_id is not null
+	 select lpad(trim(b.district),2,'0') district, lpad(trim(b.police),5,'0') police, lpad(trim(b.tourne),3,'0') tourne, lpad(trim(b.ordre),3,'0') ordre,
+            b.spt_id,b.mtc_id,b.equ_id,
+			decode(a.annee,0,a.indexa,indexr) index_releve,a.annee,a.prorata ,a.trimestre ,
+			a.date_releve ,a.consommation ,p.m3 moisT
+	from    test.relevet a 	
+		left join   test.branchement b
+		on     lpad(trim(b.district),2,'0')=lpad(trim(a.district),2,'0')
+		and    lpad(trim(b.tourne),3,'0')  =lpad(trim(a.tourne),3,'0')
+		and    lpad(trim(b.ordre),3,'0')   =lpad(trim(a.ordre),3,'0') 
+		and    lpad(trim(b.police) ,5,'0') = lpad(trim(a.police),5,'0')
+		and    b.spt_id is not null
+	    and    b.mtc_id is not  null
+	    and    b.equ_id is not null
+		left join   test.tourne t
+		on     lpad(trim(t.district),2,'0')= lpad(trim(a.district),2,'0')
+		and    lpad(trim(t.code),3,'0')    = lpad(trim(a.tourne),3,'0')
+		left join test.param_tournee p
+		on    lpad(trim(t.district),2,'0')= lpad(trim(p.district),2,'0')
+		and   p.trim    =a.trimestre
+		and   t.ntiers  =p.tier
+		and   t.nsixieme=p.six
+	where   r.mrd_id is null
+	and trim(a.annee)<>0
+	and   lpad(trim(b.district),2,'0') = '25';
+	-------------cureur releve_gc
+    cursor c5 
+	is
+	select lpad(trim(b.district),2,'0') district, lpad(trim(b.police),5,'0') police, lpad(trim(b.tourne),3,'0') tourne, lpad(trim(b.ordre),3,'0') ordre,
+           b.spt_id,b.mtc_id,b.equ_id,
+		   a.date_releve,a.annee,a.mois,a.prorata,a.consommation,a.indexr,t.code_anomalie
+	from test.relevegc a 
+	left join test.branchement b
+	on     lpad(trim(b.district),2,'0')=lpad(trim(a.district),2,'0')
+	and    lpad(trim(b.tourne),3,'0')  =lpad(trim(a.tourne),3,'0')
+	and    lpad(trim(b.ordre),3,'0')   =lpad(trim(a.ordre),3,'0') 
+	and    lpad(trim(b.police) ,5,'0') = lpad(trim(a.police),5,'0')
+	and    b.spt_id is not null
 	and    b.mtc_id is not  null
-	and   b.equ_id is not null
-	and   c.mrd_id is null 
-	and   lpad(trim(b.district),2,'0') = '25'
-	order by trim(b.etat_branchement);
-	
-	
-	
-	
-	
+	and    b.equ_id is not null
+	left join  test.listeanomalies_releve  t
+	where lpad(trim(t.district),2,'0') = lpad(trim(a.district),2,'0')
+	and   lpad(trim(t.tourne),3,'0')   = lpad(trim(a.tourne),3,'0')
+	and   lpad(trim(t.ordre),3,'0')    = lpad(trim(a.ordre),3,'0') 
+	and   trim(t.annee)                = trim(a.annee)
+	and   trim(t.trim)                 = trim(mois)
+	where trim(a.mois) is not null 
+	and  trim(a.annee)<>0
+	and mrd_id is null
+	----------------
+ 
 ------------------------	
 	 
 	/* 
@@ -2012,13 +1947,11 @@ PROCEDURE MigrationQuotidien
       end if;
       commit;
 	  
-	  end loop;
-	  
-
-	  
-	  
-	  --Releve
+	  end loop;  
+	  	  
+	  --Historique Releve
 	  for s3 in c3 loop
+	    
 		if s3.spt_id is null then
 			rollback;
 			EXCEPTION_releve(s3.district||s3.tourne||s3.ordre||s3.police,null,'Impossible de trouver le pdl','Selection du releve');
@@ -2030,40 +1963,75 @@ PROCEDURE MigrationQuotidien
 								v_g_meu_id,v_g_age_id,s3.prorata,s3.message_temporaire,s3.consommation,s3.trim,
 								s3.annee,s3.avisforte,s3.date_releve,s3.date_controle,s3.index_controle,s3.anomalie,s3.releve,
 								s3.releve2,s3.releve3,s3.releve4,s3.releve5,s3.mois,v_g_vow_readorig,v_g_vow_readmeth);
-							   
+		if p_pk_exception is not null then
+			rollback;
+			EXCEPTION_releve(s3.district||s3.tourne||s3.ordre||s3.police,null,p_pk_exception,p_pk_etape);
+			continue;
+        end if;					   
 		if v_mrd_id is not null then
-		update test.fiche_releve
+		update test.src_fiche_releve
 		set    mrd_id = v_mrd_id
 		where  rowid = s3.row_id;
 		end if;
 		commit;
-		
-		MigrationDernierreleve(p_pk_etape,p_pk_exception,s3.district,s3.tourne,s3.ordre,v_equ_id,
-	                           s3.mtc_id,v_spt_id,,v_g_meu_id,v_g_age_id,s3.anneeT,s3.prorataT,s3.trimestreT,
-							   s3.index_releve,s3.date_releveT,s3.consommationT,s3.moisT
+	  end loop;
+	  for s4 in c4 loop
+	    if s4.spt_id is null then
+			rollback;
+			EXCEPTION_releve(s4.district||s4.tourne||s4.ordre||s4.police,null,'Impossible de trouver le pdl','Selection du releve');
+			continue;
+		else
+			v_spt_id := s4.spt_id;
+		end if;
+	  
+		MigrationDernierreleve(p_pk_etape,p_pk_exception,s4.district,s4.tourne,s4.ordre,v_equ_id,
+	                           s4.mtc_id,v_spt_id,v_g_meu_id,v_g_age_id,s4.annee,s4.prorata,s4.trimestre,
+							   s4.index_releve,s4.date_releve,s4.consommation,s4.moisT
 							   v_g_vow_comm1,v_g_vow_readorig,v_g_vow_readmeth,p_vow_readreason);
-		
+												   
+		if p_pk_exception is not null then
+			rollback;
+			EXCEPTION_releve(s4.district||s4.tourne||s4.ordre||s4.police,null,p_pk_exception,p_pk_etape);
+			continue;
+        end if;	
 		if v_mrd_id is not null then
 		update test.relevet
 		set    mrd_id= v_mrd_id
-		where  rowid = s3.row_id;
+		where  rowid = s4.row_id;
 		end if;
-		commit;
-      end loop;
-	    						   
-	 for s4 in c4 loop
+		commit;  
+	  end loop;
+	   
+	  for s5 in c5 loop
+		MigrationRelevegc(p_pk_etape,p_pk_exception,s5.district,s5.tourne,s5.ordre,v_equ_id,
+						  v_mtc_id,v_spt_id,v_g_meu_id,v_g_age_id,s5.date_releve,s5.annee,s5.mois,s5.prorata,
+						  s5.consommation,s5.code_anomalie,s5.indexr,v_g_vow_readorig,v_g_vow_readmeth,p_vow_readreason);
+		 
+		if p_pk_exception is not null then
+			rollback;
+			EXCEPTION_releve(s4.district||s4.tourne||s4.ordre||s4.police,null,p_pk_exception,p_pk_etape);
+			continue;
+		end if;	
+		if v_mrd_id is not null then
+		update test.relever_gc
+		set    mrd_id= v_mrd_id
+		where  rowid = s5.row_id;
+		end if;
+		commit;  
+	  end loop;
+	   
 	 
-	 MigrationHitoriquerelevegc(p_pk_etape,p_pk_exception,s2.district,s2.tourne,s2.ordre,v_equ_id,
+	 
+	  /*
+	 
+			 MigrationHitoriquerelevegc(p_pk_etape,p_pk_exception,s2.district,s2.tourne,s2.ordre,v_equ_id,
 	                             v_mtc_id,v_spt_id,v_g_meu_id,v_g_age_id,v_g_vow_readorig,v_g_vow_readmeth,p_vow_readreason);
 	 
-     end loop;	 
-		 /*					   
+      				   
 	  
 	  
 								 
-      MigrationRrelevegc(p_pk_etape,p_pk_exception,s2.district,s2.tourne,s2.ordre,v_equ_id,
-	                     v_mtc_id,v_spt_id,v_g_meu_id,v_g_age_id,v_g_vow_comm1,v_g_vow_readorig,v_g_vow_readmeth,p_vow_readreason);
-		
+      
 		p_pk_etape:='Mise A jour releve precedente MRD_PREVIOUS_ID';				 
 	    for s3 in c3(v_spt_id) loop
 		

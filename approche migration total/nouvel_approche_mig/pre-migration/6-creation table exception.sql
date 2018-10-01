@@ -12,6 +12,10 @@ alter table genstreet modify str_namer varchar2(400);
 alter table client add par_id number(10);
 alter table branchement add spt_id number(10);
 alter table branchement add sag_id(number(10);
+alter table branchement add mtc_id number(10);
+alter table branchement add equ_id(number(10);
+alter table src_fiche_releve add mrd_id(number(10);
+
 
 update client set par_id = null where par_id is not null;
 update branchement set sag_id = null, spt_id = null where spt_id is not null;
