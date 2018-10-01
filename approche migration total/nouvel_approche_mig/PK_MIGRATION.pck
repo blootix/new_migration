@@ -1243,7 +1243,7 @@ procedure MigrationHitoriquereleve
 	v_mrd_agrtype        number := 0;
 	v_mrd_locked         number := 0;
 	v_mrd_techtype       number := 0;
-    v_mrd_subread        number := 0;
+  v_mrd_subread        number := 0;
 	v_mrd_etatfact       number := 0; 
 	v_mrd_usecr          number := 1;
 	v_mrd_multicad       number;
