@@ -36,14 +36,14 @@ select dist,pol,tou,ord,cfac,z1,nomadr,usag,codonas,mtonas,fraisctr,tva_ff,frais
 echtot,echrest,rbranche,rfacade,tva_capit,pfinancier,tva_pfin,aindex,nindex,cons,prorata,const1,montt1,const2,montt2,const3,montt3,z3,mtctot,
 tvacons,preavis,tva_preav,codctr,cods,cleref,monttrim,clemt,restpc,cbo,eto,ero,capit,inter,codeso,echtos,codptt,reston,fixonas,z5,qonas,volon1,
 tauon1,mon1,volon2,tauon2,mon2,refc01,refc02,refc03,refc04,volon3,tauon3,mon3,caron,arepor,narond,volon4,tauon4,mttonas,fermeture,tvaferm,
-deplacement,tvadeplac,depose_dem,tvadepose_dem,depose_def,tvadepose_def,net,arriere 
+deplacement,tvadeplac,depose_dem,tvadepose_dem,depose_def,tvadepose_def,net,arriere ,'TRIM' type
 from facture_as400 
 union
 select  dist,pol,tou,ord,cfac,z1,nomadr,usag,codonas,mtonas,fraisctr,tva_ff,fraisbrt,ctarif,tauxt1,tauxt2,tauxt3,nbreapp,partcon,codbrt, 
 echtot,echrest,rbranche,rfacade,tva_capit,pfinancier,tva_pfin,aindex,nindex,cons,prorata,const1,montt1,const2,montt2,const3,montt3,z3,mtctot,
 tvacons,preavis,tva_preav,codctr,cods,cleref,monttrim,clemt,restpc,cbo,eto,ero,capit,inter,codeso,echtos,codptt,reston,fixonas,z5,qonas,volon1,
 tauon1,mon1,volon2,tauon2,mon2,refc01,refc02,refc03,refc04,volon3,tauon3,mon3,caron,arepor,narond,volon4,tauon4,mttonas,fermeture,tvaferm,
-deplacement,tvadeplac,depose_dem,tvadepose_dem,depose_def,tvadepose_def, null net, null arriere 
+deplacement,tvadeplac,depose_dem,tvadepose_dem,depose_def,tvadepose_def, null net, null arriere ,'MENS' type
 from fich24_gc ;
 
 ---creation facture impayee
@@ -73,7 +73,7 @@ create table src_fiche_releve as
 select r.* from fiche_releve r
 where trim(r.annee)>=2015;
 ---creation releveT
-create table src_releveT
+create table src_releveT as
 select DISTRICT,TOURNE,ORDRE,POLICE,ANNEE,TRIMESTRE,INDEXR,INDEXA,PRORATA,CPT_TOURNE,ETAT,
 CODEFERMETURE,CODEOUVERTURE,CODERESILIATION,ANOMALIE_NICHE,ANOMALIE_COMPTEUR,ANOMALIE_FUITE,CONSOMMATION,DATE_RELEVE ,'TRIM' type
 from relevet
