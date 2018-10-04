@@ -1236,7 +1236,7 @@ procedure MigrationHitoriquereleve
     p_mrd_id       out number
  )
   IS
-  v_g_vow_comm1        number;	 	 
+    v_g_vow_comm1        number;	 	 
 	v_g_vow_comm2        number;
 	v_g_vow_comm3        number;
 	v_g_vow_readcode     number;
@@ -1245,7 +1245,7 @@ procedure MigrationHitoriquereleve
 	v_mrd_agrtype        number := 0;
 	v_mrd_locked         number := 0;
 	v_mrd_techtype       number := 0;
-  v_mrd_subread        number := 0;
+    v_mrd_subread        number := 0;
 	v_mrd_etatfact       number := 0; 
 	v_mrd_usecr          number := 1;
 	v_mrd_multicad       number;
@@ -1409,13 +1409,13 @@ procedure MigrationDernierreleve
     p_spt_id         in number,
     p_meu_id         in number,
     p_age_id         in number,
-	  p_anneeT         in number,
-	  p_prorataT       in number,
-	  p_trimestreT     in number,
-	  p_index_releve   in number,
-	  p_date_releveT   in date,
-	  p_consommationT  in number,
-	  p_mois           in number,
+	p_anneeT         in number,
+	p_prorataT       in number,
+	p_trimestreT     in number,
+	p_index_releve   in number,
+	p_date_releveT   in date,
+	p_consommationT  in number,
+	p_mois           in number,
     p_vow_comm1      in number,
     p_vow_readorig   in number,
     p_vow_readmeth   in number,
@@ -1633,8 +1633,13 @@ procedure MigrationFacture_as400
     p_tottvaa     in number,
     p_tothte      in number,
     p_solde       in number,
-    p_deb_comment in varchar2
-) 
+    p_deb_comment in varchar2,
+	  p_deb_amountinit in number,
+	  p_deb_amount_cash  in number,
+	  p_bil_amountht  in number,
+	  p_bil_amounttva in number,
+	  p_bil_amountttc in number
+  ) 
   IS 
   v_run_id           number;
   v_aco_id           number;
@@ -1642,11 +1647,11 @@ procedure MigrationFacture_as400
   v_ite_id           number;
   v_tva_id           number;
   v_pta_id           number; 
-  v_deb_amountinit   number(25,10);
-  v_deb_amount_cash  number(25,10);
-  v_bil_amountht     number(25,10);
-  v_bil_amounttva    number(25,10);
-  v_bil_amountttc    number(25,10);
+  --v_deb_amountinit   number(25,10);
+  --v_deb_amount_cash  number(25,10);
+  --v_bil_amountht     number(25,10);
+  --v_bil_amounttva    number(25,10);
+  --v_bil_amountttc    number(25,10);
   v_bli_volumebase   number(25,10);
   v_bli_volumefact   number(25,10);
   v_bli_puht         number(25,10);
@@ -1659,13 +1664,8 @@ procedure MigrationFacture_as400
   v_val              number; 
   v_ite_name         varchar2(100);
  
-
 begin
-    select count(*) 
-    into v_nbr
-    from genbill b
-    where b.bil_code=p_id_facture;
-      
+    select count(*)into v_nbr from genbill b where b.bil_code=p_id_facture;
     if v_nbr=0 then    
       if (p_annee is not null and p_periode is not null and p_train_fact is not null) then      
         begin
@@ -1705,39 +1705,37 @@ begin
       end;    
      --for s2 in c2(v_id_facture) loop     
        -- if  s2.nombre=0 then
-          v_deb_amountinit   := p_tothte+p_tva+p_tothta+p_tottvaa;
-          v_deb_amount_cash  := p_tothte+p_tva+p_tothta+p_tottvaa;
           select seq_gendebt.nextval into v_deb_id from dual; 
           insert into gendebt(deb_id,deb_refe,org_id,par_id,adr_id,deb_date,deb_duedt,deb_printdt,
                               deb_amountinit,deb_amountremain,bap_id,vow_settlemode,aco_id,deb_norecovery,deb_credt,
                               deb_updtby,deb_updtdt,deb_comment,deb_amount_cash,sag_id,vow_debtype,deb_prel)
                       values (v_deb_id,p_id_facture,p_org_id,p_par_id,p_adr_id,p_fac_datecalcul,p_fac_datelim,p_fac_datecalcul,
-                              v_deb_amountinit,p_solde,null,p_vow_settlemode,v_aco_id,0,sysdate,
-                              null,null,p_deb_comment,v_deb_amount_cash,p_sag_id,p_vow_debtype,1);  
+                              p_deb_amountinit,p_solde,null,p_vow_settlemode,v_aco_id,0,sysdate,
+                              null,null,p_deb_comment,p_deb_amount_cash,p_sag_id,p_vow_debtype,1);  
           commit;
        -- else
        --------NB:partie impayee
-          /*v_deb_amountinit   := 0;
-          v_deb_amount_cash  :=(p_tothte+p_tva+p_tothta+p_tottvaa);
+          /*p_deb_amountinit   := 0;
+          p_deb_amount_cash  :=(p_tothte+p_tva+p_tothta+p_tottvaa);
           select seq_gendebt.nextval into v_deb_id from dual; 
           insert into gendebt(deb_id,deb_refe,org_id,par_id,adr_id,deb_date,deb_duedt,deb_printdt,
                               deb_amountinit,deb_amountremain,bap_id,vow_settlemode,aco_id,deb_norecovery,deb_credt,
                               deb_updtby,deb_updtdt,deb_comment,deb_amount_cash,sag_id,vow_debtype,deb_prel)
                       values (v_deb_id,p_id_facture,p_org_id,p_par_id,p_adr_id,p_fac_datecalcul,p_fac_datelim,p_fac_datecalcul,
-                              v_deb_amountinit,p_solde,null,p_vow_settlemode,v_aco_id,0,sysdate,
-                              null,null,p_deb_comment,v_deb_amount_cash,p_sag_id,p_vow_debtype,1);  
+                              p_deb_amountinit,p_solde,null,p_vow_settlemode,v_aco_id,0,sysdate,
+                              null,null,p_deb_comment,p_deb_amount_cash,p_sag_id,p_vow_debtype,1);  
           commit;*/
        -- end if; 
     --  end loop;
       select seq_agrbill.nextval into v_bil_id from dual; 
-      v_bil_amountht      := p_tothte+p_tothta;
-      v_bil_amounttva     := p_tva+p_tottvaa;
-      v_bil_amountttc     := p_tothte+p_tva+p_tothta+p_tottvaa; 
+      p_bil_amountht      := p_tothte+p_tothta;
+      p_bil_amounttva     := p_tva+p_tottvaa;
+      p_bil_amountttc     := p_tothte+p_tva+p_tothta+p_tottvaa; 
       insert into agrbill(bil_id,sag_id,vow_agrbilltype,vow_modefact)
                    values(v_bil_id,p_sag_id,p_vow_agrbilltype,p_vow_modefact);
       insert into genbill(bil_id,bil_code,bil_calcdt,bil_amountht,bil_amounttva,bil_amountttc,
                           deb_id,par_id,bil_status,bil_amountttcdec,bil_debtdt,run_id)
-                   values(v_bil_id,p_id_facture,p_fac_datecalcul,v_bil_amountht,v_bil_amounttva,v_bil_amountttc,
+                   values(v_bil_id,p_id_facture,p_fac_datecalcul,p_bil_amountht,p_bil_amounttva,p_bil_amountttc,
                           v_deb_id,p_par_id,1,null,p_fac_datecalcul,v_run_id); 
       commit; 
       v_val := 0;
@@ -2301,12 +2299,12 @@ begin
 end;  
 --------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------
-procedure MigrationFacture_version
+/*procedure MigrationFacture_version
  (
   p_pk_etape     out varchar2,
   p_pk_exception out varchar2,
-  p_deb_id out number,
-  p_bil_id out number,
+  p_deb_id       out number,
+  p_bil_id       out number,
   p_district     in varchar2,
   p_tourne       in varchar2,
   p_ordre        in varchar2,
@@ -2324,17 +2322,28 @@ procedure MigrationFacture_version
   p_bil_amounttva   in number,
   p_bil_amountttc  in number,
   p_version in number,
+  p_tothte   in number,
+  p_tva      in number,
+  p_tothta    in number,
+  p_tottvaa   in number,
   p_bil_calcdt   in date ,
   p_dt_abn      in date,
+  p_fac_datecalcul  in date,
   p_etat in varchar2,
+  p_train_fact in varchar2,
   p_deb_comment in varchar2,
   p_net_a_payer  in number,
+  p_deb_amount_cash in number,
+  p_deb_amountinit in number,
+  p_solde          in number,
+  c_bil_id       in number,
   p_vow_settlemode in number,
   p_vow_acotp     in number,
-  p_vow_modefact  in number
-) 
+  p_vow_modefact  in number,
+  p_vow_debtype in number
+)  
   IS 
-  cursor c2(v_bil_id number)
+  cursor c1(v_bil_id number)
   is 
   select * 
   from genbilline e  
@@ -2350,163 +2359,112 @@ procedure MigrationFacture_version
       lpad(trim(t.ordre),3,'0')||
       to_char(t.annee)||
       lpad(trim(t.trimestre),2,'0')||'0'=v_fact;*/
-  
-  v_periode          number;
   v_run_id           number;
   v_aco_id           number;
   v_sco_id           number;
   v_nbr              number;
-  v_tothte           number(25,10);
-  v_tva              number(25,10);
-  v_tothta           number(25,10);
-  v_tottvaa          number(25,10);
-  v_solde            number(25,10);
-  v_deb_amountinit   number(25,10);
-  v_deb_amountremain number(25,10);
-  v_deb_amount_cash  number(25,10);
-  v_bil_amountht     number(25,10);
-  v_bil_amounttva    number(25,10);
-  v_bil_amountttc    number(25,10);
-  v_vow_debtype      number;
-  v_vow_agrbilltype  number;
-  v_id_facture       varchar2(50);
-  v_anneereel        varchar2(4);
-  v_deb_comment      varchar2(100);
-  v_train_fact       varchar2(200);
-  v_fac_datecalcul   date;
-begin
-      v_periode   := p_periode;
-      v_anneereel := p_annee;
-      v_fac_datecalcul := p_bil_calcdt + 5;
-      v_id_facture:= lpad(trim(p_district),2,'0')||
-                     lpad(trim(p_tourne),3,'0')||
-                     lpad(trim(p_ordre),3,'0')||
-                     to_char(v_anneereel)||
-                     lpad(trim(v_periode),2,'0')||
-                     trim(p_version);
-      v_train_fact:='ANNEE:'||trim(v_anneereel)||' MOIS:'||trim(v_periode);
-        
-    v_tothte   :=(p_net_a_payer/1000);
-    v_tva      :=0;
-    v_tothta   :=0;
-    v_tottvaa  :=0;
-    v_solde    :=(p_net_a_payer/1000); 
-    select count(*) into v_nbr from genbill b where b.bil_code=v_id_facture;
+begin 
+    select count(*) into v_nbr from genbill b where b.bil_code=p_id_facture;
     if v_nbr=0 then
-        if (v_anneereel is not null and v_periode is not null and v_train_fact is not null) then      
-        begin
-          select t.run_id
-          into v_run_id
-          from genrun t 
-          where t.run_exercice=v_anneereel
-          and run_number      =v_periode;
-        exception when others then        
-          select seq_genrun.nextval into v_run_id from dual;        
-            insert into genrun (run_id,run_exercice,run_number,org_id,run_startdt,run_comment,RUN_NAME,RUN_DTCALC,RUN_ENDDT)
-                  values (v_run_id,V_anneereel,V_periode,p_org_id,V_FAC_DATECALCUL,'Role migré','Role '||V_TRAIN_FACT,V_FAC_DATECALCUL,V_FAC_DATECALCUL);
-        end;    
-      end if ;
-      begin 
-        select aco.aco_id 
-        into v_aco_id
-        from genaccount aco ,agrsagaco sco
-        where aco.aco_id = sco.aco_id
-        and nvl(aco.par_id,0)        = p_par_id
-        and nvl(aco.imp_id,0)        = p_imp_id
-        and nvl(sco.sag_id,0)        = p_sag_id;        
-      exception when others then 
-        select seq_genaccount.nextval into v_aco_id from dual;
-        insert into genaccount(aco_id,par_id,imp_id,vow_acotp,rec_id)
-                values(v_aco_id,p_par_id,p_imp_id,p_vow_acotp,null);
-      end;        
-      begin 
-        select t.sco_id
-        into v_sco_id
-        from agrsagaco t
-        where t.aco_id=v_aco_id;
-      exception when others then
-        select seq_agrsagaco.nextval  into v_sco_id  from dual;
-        insert into agrsagaco(sco_id,sag_id,aco_id,sco_startdt)
-                 values(v_sco_id,p_sag_id,v_aco_id,p_dt_abn);
-      end;
-        if upper(trim(p_etat))='A' then 
-        select seq_gendebt.nextval into p_deb_id from dual; 
-        V_deb_amount_cash  := -(p_deb_amountinit) ;
-        v_deb_amountinit   := 0;
-        v_vow_debtype      := 3135;--'Av'
-        v_deb_amountremain := p_deb_amountremain;
-        v_deb_comment      := p_deb_comment;
-        insert into gendebt(deb_id,deb_refe,org_id,par_id,adr_id,deb_date,deb_duedt,deb_printdt,
-                            deb_amountinit,deb_amountremain,bap_id,vow_settlemode,aco_id,deb_norecovery,deb_credt,
-                            deb_updtby,deb_updtdt,deb_comment,deb_amount_cash,sag_id,vow_debtype,deb_prel)
-                     values(p_deb_id,v_id_facture,p_org_id,p_par_id,p_adr_id,v_fac_datecalcul,v_fac_datecalcul,v_fac_datecalcul,
-                            v_deb_amountinit,v_deb_amountremain,null,p_vow_settlemode,v_aco_id,0,sysdate,
-                            null,null,v_deb_comment,v_deb_amount_cash,p_sag_id,v_vow_debtype,1);  
-        commit;
-        select seq_agrbill.nextval into p_bil_id from dual;
-        v_vow_agrbilltype   :=  2565;--'FA'; 
-        v_bil_amountht      :=  -(p_bil_amountht);
-        v_bil_amounttva     :=  -(p_bil_amounttva);
-        v_bil_amountttc     :=  -(p_bil_amountttc);
-        insert into agrbill(bil_id,sag_id,vow_agrbilltype,vow_modefact)
-                    values (p_bil_id,p_sag_id,v_vow_agrbilltype,p_vow_modefact);
-        insert into genbill(bil_id,bil_code,bil_calcdt,bil_amountht,bil_amounttva,bil_amountttc,
-                            deb_id,par_id,bil_status,bil_amountttcdec,bil_debtdt,run_id)
-                     values(p_bil_id,v_id_facture,v_fac_datecalcul,v_bil_amountht,v_bil_amounttva,v_bil_amountttc,
-                            p_deb_id,p_par_id,1,null,v_fac_datecalcul,v_run_id); 
-        commit; 
-        for s2 in c2(s1.bil_id)loop
-
-          insert into genbilline(bil_id,bli_reversebli_id,bli_number,bli_reverseblinumber,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
-                                 imp_id,bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
-                                 bli_enddt,vow_unit,bli_nbunites,bli_detail,bli_cancel,imc_id,imp_analytique_id,bli_periodeinit,
-                                 bli_periode,bli_reversedt,bli_credt,bli_updtdt,bli_updtby,meu_id,bli_name_a,bli_reverseblidec_id,bli_reverseblinumberdec,bli_reversedecdt)
-                          values(v_bil_id,null,s2.bli_number,null,s2.bli_name,v_anneereel,s2.ite_id,s2.pta_id,s2.psl_rank,
-                                 null,s2.bli_volumebase,s2.bli_volumebase,s2.bli_puht,s2.tva_id,s2.bli_mht,s2.bli_mttva,s2.bli_mttc,v_fac_datecalcul,
-                                 v_fac_datecalcul,s2.vow_unit,null,0,0,null,null,null,
-                                 null,null,sysdate,null,null,null,null,null,null,null);
-        end loop;
+        if (p_annee is not null and p_periode is not null and p_train_fact is not null) then      
+			begin
+			  select t.run_id
+			  into v_run_id
+			  from genrun t 
+			  where t.run_exercice=p_annee
+			  and run_number      =p_periode;
+			exception when others then        
+			  select seq_genrun.nextval into v_run_id from dual;        
+				insert into genrun (run_id,run_exercice,run_number,org_id,run_startdt,run_comment,RUN_NAME,RUN_DTCALC,RUN_ENDDT)
+					         values(v_run_id,p_annee,p_periode,p_org_id,p_fac_datecalcul,'Role migré','Role '||p_train_fact,p_fac_datecalcul,p_fac_datecalcul);
+			end;    
+        end if ;
+		begin 
+			select aco.aco_id 
+			into v_aco_id
+			from genaccount aco ,agrsagaco sco
+			where aco.aco_id = sco.aco_id
+			and nvl(aco.par_id,0)        = p_par_id
+			and nvl(aco.imp_id,0)        = p_imp_id
+			and nvl(sco.sag_id,0)        = p_sag_id;        
+		exception when others then 
+			select seq_genaccount.nextval into v_aco_id from dual;
+			insert into genaccount(aco_id,par_id,imp_id,vow_acotp,rec_id)
+					        values(v_aco_id,p_par_id,p_imp_id,p_vow_acotp,null);
+		end;        
+	    begin 
+			select t.sco_id
+			into v_sco_id
+			from agrsagaco t
+			where t.aco_id=v_aco_id;
+	    exception when others then
+			select seq_agrsagaco.nextval  into v_sco_id  from dual;
+			insert into agrsagaco(sco_id,sag_id,aco_id,sco_startdt)
+					       values(v_sco_id,p_sag_id,v_aco_id,p_dt_abn);
+	    end;
        
-      else 
-        v_deb_comment:= lpad(trim(s1.district),2,'0')||lpad(trim(s1.police),5,'0')||lpad(trim(s1.tournee),3,'0')||lpad(trim(s1.ordre),3,'0');
-        select seq_gendebt.nextval into v_deb_id from dual; 
-        for s3 in c3 loop
-            v_vow_debtype      := 3134;--'FA'
-          if (s3.nombre=0)  then  --- Facture Normal else Facture Avoire
-            v_deb_amountinit   := v_tothte+v_tva+v_tothta+v_tottvaa;
-            v_deb_amount_cash  := v_tothte+v_tva+v_tothta+v_tottvaa;
-            insert into gendebt(deb_id,deb_refe,org_id,par_id,adr_id,deb_date,deb_duedt,deb_printdt,
-                      deb_amountinit,deb_amountremain,bap_id,vow_settlemode,aco_id,deb_norecovery,deb_credt,
-                      deb_updtby,deb_updtdt,deb_comment,deb_amount_cash,sag_id,vow_debtype,deb_prel)
-                  values (v_deb_id,v_id_facture,p_org_id,p_par_id,p_adr_id,v_fac_datecalcul,v_fac_datecalcul,v_fac_datecalcul,
-                      v_deb_amountinit,v_solde,null,p_vow_settlemode,v_aco_id,v_deb_norecovery,sysdate,
-                      null,null,v_deb_comment,v_deb_amount_cash,p_sag_id,v_vow_debtype,1);  
-          else
-            V_deb_amount_cash  := (v_tothte+v_tva+v_tothta+v_tottvaa);
-            v_deb_amountinit   := 0;
-            insert into gendebt(deb_id,deb_refe,org_id,par_id,adr_id,deb_date,deb_duedt,deb_printdt,
-                      deb_amountinit,deb_amountremain,bap_id,vow_settlemode,aco_id,deb_norecovery,deb_credt,
-                      deb_updtby,deb_updtdt,deb_comment,deb_amount_cash,sag_id,vow_debtype,deb_prel)
-                  values (v_deb_id,v_id_facture,p_org_id,p_par_id,p_adr_id,v_fac_datecalcul,v_fac_datecalcul,v_fac_datecalcul,
-                      v_deb_amountinit,v_solde,null,p_vow_settlemode,v_aco_id,v_deb_norecovery,sysdate,
-                      null,null,v_deb_comment,v_deb_amount_cash,p_sag_id,v_vow_debtype,1);  
-          end if ; 
-        select seq_agrbill.nextval into v_bil_id from dual; 
-        v_bil_amountht      :=  v_tothte +v_tothta;
-        v_bil_amounttva     :=  v_tva+v_tottvaa;
-        v_bil_amountttc     :=  v_tothte +v_tva+v_tothta+v_tottvaa;
-        v_vow_agrbilltype   :=  pk_genvocword.getidbycode('VOW_AGRBILLTYPE',decode(s1.etat,'P','RF','O','FC','C','FHC','FC'),null) ;
+			select seq_gendebt.nextval into p_deb_id from dual; 
+			insert into gendebt(deb_id,deb_refe,org_id,par_id,adr_id,deb_date,deb_duedt,deb_printdt,
+								deb_amountinit,deb_amountremain,bap_id,vow_settlemode,aco_id,deb_norecovery,deb_credt,
+								deb_updtby,deb_updtdt,deb_comment,deb_amount_cash,sag_id,vow_debtype,deb_prel)
+						 values(p_deb_id,p_id_facture,p_org_id,p_par_id,p_adr_id,p_fac_datecalcul,p_fac_datecalcul,p_fac_datecalcul,
+								p_deb_amountinit,p_deb_amountremain,null,p_vow_settlemode,v_aco_id,0,sysdate,
+								null,null,p_deb_comment,p_deb_amount_cash,p_sag_id,p_vow_debtype,1);  
+			commit;
+			select seq_agrbill.nextval into p_bil_id from dual;
+			insert into agrbill(bil_id,sag_id,vow_agrbilltype,vow_modefact)
+						values (p_bil_id,p_sag_id,p_vow_agrbilltype,p_vow_modefact);
+			insert into genbill(bil_id,bil_code,bil_calcdt,bil_amountht,bil_amounttva,bil_amountttc,
+								deb_id,par_id,bil_status,bil_amountttcdec,bil_debtdt,run_id)
+						 values(p_bil_id,p_id_facture,p_fac_datecalcul,p_bil_amountht,p_bil_amounttva,p_bil_amountttc,
+								p_deb_id,p_par_id,1,null,p_fac_datecalcul,v_run_id); 
+			commit; 
+			for s1 in c1(c_bil_id)loop
+				insert into genbilline(bil_id,bli_reversebli_id,bli_number,bli_reverseblinumber,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
+									   imp_id,bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
+									   bli_enddt,vow_unit,bli_nbunites,bli_detail,bli_cancel,imc_id,imp_analytique_id,bli_periodeinit,
+									   bli_periode,bli_reversedt,bli_credt,bli_updtdt,bli_updtby,meu_id,bli_name_a,bli_reverseblidec_id,bli_reverseblinumberdec,bli_reversedecdt)
+								values(p_bil_id,null,s1.bli_number,null,s1.bli_name,p_annee,s1.ite_id,s1.pta_id,s1.psl_rank,
+									   null,s1.bli_volumebase,s1.bli_volumebase,s1.bli_puht,s1.tva_id,s1.bli_mht,s1.bli_mttva,s1.bli_mttc,v_fac_datecalcul,
+									   p_fac_datecalcul,s1.vow_unit,null,0,0,null,null,null,
+									   null,null,sysdate,null,null,null,null,null,null,null);
+			end loop;     
+    		select seq_gendebt.nextval into p_deb_id from dual; 
+		   -- for s3 in c3 loop
+				p_vow_debtype      := 3134;--'FA'
+			 -- if (s3.nombre=0)  then  --- Facture Normal else Facture Avoire
+			  p_deb_amount_cash  := p_tothte+p_tva+p_tothta+p_tottvaa;
+				p_deb_amountinit   := p_tothte+p_tva+p_tothta+p_tottvaa;
+				insert into gendebt(deb_id,deb_refe,org_id,par_id,adr_id,deb_date,deb_duedt,deb_printdt,
+								   deb_amountinit,deb_amountremain,bap_id,vow_settlemode,aco_id,deb_norecovery,deb_credt,
+								   deb_updtby,deb_updtdt,deb_comment,deb_amount_cash,sag_id,vow_debtype,deb_prel)
+						   values (v_deb_id,p_id_facture,p_org_id,p_par_id,p_adr_id,p_fac_datecalcul,p_fac_datecalcul,p_fac_datecalcul,
+								   p_deb_amountinit,p_solde,null,p_vow_settlemode,v_aco_id,v_deb_norecovery,sysdate,
+								   null,null,p_deb_comment,p_deb_amount_cash,p_sag_id,p_vow_debtype,1);  
+			 /* else
+			 partie_impayees
+				p_deb_amount_cash  := (p_tothte+p_tva+p_tothta+p_tottvaa);
+				p_deb_amountinit   := 0;
+				insert into gendebt(deb_id,deb_refe,org_id,par_id,adr_id,deb_date,deb_duedt,deb_printdt,
+						  deb_amountinit,deb_amountremain,bap_id,vow_settlemode,aco_id,deb_norecovery,deb_credt,
+						  deb_updtby,deb_updtdt,deb_comment,deb_amount_cash,sag_id,vow_debtype,deb_prel)
+					  values (v_deb_id,p_id_facture,p_org_id,p_par_id,p_adr_id,p_fac_datecalcul,p_fac_datecalcul,p_fac_datecalcul,
+						  p_deb_amountinit,p_solde,null,p_vow_settlemode,v_aco_id,v_deb_norecovery,sysdate,
+						  null,null,p_deb_comment,p_deb_amount_cash,p_sag_id,p_vow_debtype,1);  
+			  end if ; */
+        select seq_agrbill.nextval into p_bil_id from dual; 
+        p_bil_amountht      :=  p_tothte +p_tothta;
+        p_bil_amounttva     :=  p_tva+p_tottvaa;
+        p_bil_amountttc     :=  p_tothte +p_tva+p_tothta+p_tottvaa;
+        p_vow_agrbilltype   :=  pk_genvocword.getidbycode('VOW_AGRBILLTYPE',decode(s1.etat,'P','RF','O','FC','C','FHC','FC'),null) ;
         insert into agrbill(bil_id,sag_id,vow_agrbilltype,vow_modefact)
-               values(v_bil_id,p_sag_id,v_vow_agrbilltype,p_vow_modefact);  
+                     values(v_bil_id,p_sag_id,p_vow_agrbilltype,p_vow_modefact);  
         insert into genbill(bil_id,bil_code,bil_calcdt,bil_amountht,bil_amounttva,bil_amountttc,
-                  deb_id,par_id,bil_status,bil_amountttcdec,bil_debtdt,run_id)
-               values(v_bil_id,v_id_facture,v_fac_datecalcul,v_bil_amountht,v_bil_amounttva,v_bil_amountttc,
-                  v_deb_id,v_par_id,1,v_amountttcdec,v_fac_datecalcul,v_run_id); 
+						    deb_id,par_id,bil_status,bil_amountttcdec,bil_debtdt,run_id)
+				     values(p_bil_id,p_id_facture,p_fac_datecalcul,p_bil_amountht,p_bil_amounttva,p_bil_amountttc,
+						    p_deb_id,v_par_id,1,null,p_fac_datecalcul,v_run_id); 
         commit;
-       end loop;
       end if;
-      end if;
-
 end; 
 --------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------
@@ -2678,8 +2636,8 @@ PROCEDURE MigrationQuotidien
       on   lpad(trim(l.district),2,'0')= lpad(trim(f.dist),2,'0') 
       and  lpad(trim(l.tourne),3,'0')  = lpad(trim(f.tou),3,'0')
       and  lpad(trim(l.ordre),3,'0')   = lpad(trim(f.ord),3,'0')  
-      and  l.ANNEE                    = '20'||trim(f.refc02)
-			and  l.TRIM                     = f.refc01
+      and  l.ANNEE                     = '20'||trim(f.refc02)
+	  and  l.TRIM                      = f.refc01
     where f.bil_id is null;
 ---------------------
 --------curseur f_dist
@@ -2695,6 +2653,10 @@ PROCEDURE MigrationQuotidien
       and  lpad(trim(b.tourne),3,'0')  = lpad(trim(f.tournee),3,'0')   
       and  lpad(trim(b.ordre),3,'0')   = lpad(trim(f.ordre),3,'0') 
       and  lpad(trim(b.police) ,5,'0') = lpad(trim(f.police),3,'0')
+	  and b.spt_id is not null
+      and b.equ_id is not null 
+      and b.mtc_id is not null
+      and b.sag_id is not null 
       left join  test.tourne t
       on   lpad(trim(t.district),2,'0') = lpad(trim(f.district),2,'0') 
       and  lpad(trim(t.code),3,'0')     = lpad(trim(f.tournee),3,'0')
@@ -2704,17 +2666,22 @@ PROCEDURE MigrationQuotidien
       and  upper(trim(b.client_actuel)) = upper(trim(c.code))
     where  f.annee>='2015' 
     and    f.bil_id is null;
-------------------------	
-   cursor c8 
-   is     
-  select  g.bil_code,g.bil_calcdt,f.*,d.*,
-  b.spt_id,b.mtc_id,b.equ_id,b.sag_id,b.date_creation,c.par_id,t.ntiers,t.nsixieme
-  from facture f
+------------------------
+------curseur facture_version	
+  cursor c8 
+  is     
+  select g.bil_code,g.bil_calcdt,f.*,d.*,decode(f.etat,'P','RF','O','FC','C','FHC','FC') etat,
+         b.spt_id,b.mtc_id,b.equ_id,b.sag_id,b.date_creation,c.par_id,t.ntiers,t.nsixieme
+  from test.facture f
   left join test.branchement b 
   on   lpad(trim(b.district),2,'0')= lpad(trim(f.district),2,'0')
   and  lpad(trim(b.tourne),3,'0')  = lpad(trim(f.tournee),3,'0')   
   and  lpad(trim(b.ordre),3,'0')   = lpad(trim(f.ordre),3,'0') 
   and  lpad(trim(b.police),5,'0')  = lpad(trim(f.police),3,'0')
+  and b.spt_id is not null
+  and b.equ_id is not null 
+  and b.mtc_id is not null
+  and b.sag_id is not null 
   left join genbill g
   on g.bil_code = (lpad(trim(f.district),2,'0')||
                     lpad(trim(f.tournee),3,'0')||
@@ -2765,21 +2732,21 @@ PROCEDURE MigrationQuotidien
    v_mrd_id number;
    v_bil_id number;
    v_deb_id number;
-   v_annee number;
-   v_tva   number;
-   v_tothta  number;
-   v_tottvaa  number;
-   v_tothte  number;
-   v_solde number;
+   v_annee  number;
+   v_tva    number;
+   v_tothta number;
+   v_tottvaa number;
+   v_tothte number;
+   v_solde  number;
    v_periode number;
    v_vow_agrbilltype number;
    v_date    date;
    v_fac_datecalcul date;
-   v_fac_datelim   date;
-   v_id_facture varchar2(100);
-   v_train_fact varchar2(100);
-   v_deb_comment varchar2(100);
-   p_pk_etape varchar2(400);
+   v_fac_datelim  date;
+   v_id_facture   varchar2(100);
+   v_train_fact   varchar2(100);
+   v_deb_comment  varchar2(100);
+   p_pk_etape     varchar2(400);
    p_pk_exception varchar2(400);
   BEGIN
     --Securite
@@ -2969,7 +2936,7 @@ PROCEDURE MigrationQuotidien
       commit;  
     end loop;
 	  
-   /*			      p_pk_etape:='Mise A jour releve precedente MRD_PREVIOUS_ID';	
+   /*	p_pk_etape:='Mise A jour releve precedente MRD_PREVIOUS_ID';	
       for s3 in c3(v_spt_id) loop
   		
       UPDATE TECMTRREAD t 
@@ -3027,9 +2994,10 @@ PROCEDURE MigrationQuotidien
           v_fac_datelim    := nvl(s6.fac_datelim_mens,v_date);
           v_tothte    := (s6.monttrim-v_tva)/1000;
           v_solde     := s6.monttrim/1000; 
-      end if;   
+      end if;  
+      v_deb_amountinit   := v_tothte+v_tva+v_tothta+v_tottvaa;
+      v_deb_amount_cash  := v_tothte+v_tva+v_tothta+v_tottvaa; 
       v_id_facture := s6.district||s6.tourne||s6.ordre||to_char(v_annee)||lpad(trim(v_periode),2,'0')||'0';
-  
       MigrationFacture_as400(p_pk_etape,p_pk_exception,v_deb_id,v_bil_id,s6.district,s6.tourne,s6.ordre,s6.police,s6.spt_id,v_g_imp_id,s6.sag_id,s6.par_id,       
                             v_adr_id,v_org_id,s6.refc01,s6.refc03,s6.refc04,s6.refc02,s6.tvacons,s6.tva_ff,s6.tvaferm,s6.tva_preav,
                             s6.tvadeplac,s6.tvadepose_dem,s6.tvadepose_def,s6.tva_capit,s6.tva_pfin,v_fac_datecalcul,v_fac_datelim,s6.arriere,
@@ -3083,13 +3051,11 @@ PROCEDURE MigrationQuotidien
         where  rowid = s7.rowid;
       end if;
       commit;
-   
-     
     end loop;*/
     for s7 in c7 loop
      v_bil_id := null;
      v_deb_id := null;
-     v_id_facture:= s7.district||s7.tourne||s7.ordre||s7.annee||s7.periode||'0';
+     v_id_facture := s7.district||s7.tourne||s7.ordre||s7.annee||s7.periode||'0';
      v_train_fact :='Annee:'||trim(s7.annee)||' trim:'||trim(s7.periode)||' tier:'||trim(s7.ntiers)||' six:'||trim(s7.nsixieme);
      begin
       select last_day(to_date('01'||s7.periode||s7.annee,'dd/mm/yy'))
@@ -3098,7 +3064,7 @@ PROCEDURE MigrationQuotidien
      exception  when others then
        v_fac_datecalcul := '01/01/2016';
      end; 
-     v_fac_datelim    := (v_fac_datecalcul+45);
+     v_fac_datelim := (v_fac_datecalcul+45);
      v_tothte   :=(s7.net_a_payer/1000);
      v_tva      :=0;
      v_tothta   :=0;
@@ -3137,6 +3103,68 @@ PROCEDURE MigrationQuotidien
      end if;
      commit;                        
    end loop;  
+   for s8 in c8 loop
+    v_bil_id := null;
+    v_deb_id := null;
+   	v_fac_datecalcul := p_bil_calcdt +5;
+	v_id_facture:= s8.district||s8.tourne||s8.ordre||to_char(s8.annee)||s8.periode||trim(s8.version);
+	v_train_fact:='ANNEE:'||trim(s8.annee)||' MOIS:'||trim(s8.periode);    
+    v_tothte    :=(s8.net_a_payer/1000);
+    v_tva       :=0;
+    v_tothta    :=0;
+    v_tottvaa   :=0;
+    v_solde     :=(s8.net_a_payer/1000); 
+	
+	if upper(trim(s8.etat))='A' then 
+		v_deb_amount_cash  := -(s8.deb_amountinit) ;
+		v_deb_amountinit   := 0;
+		v_vow_debtype      := 3135;--'Av'
+		v_deb_amountremain := s8.deb_amountremain;
+		v_deb_comment      := s8.deb_comment;
+		v_vow_agrbilltype  := 2565;--'FA'; 
+		v_bil_amountht     := -(s8.bil_amountht);
+		v_bil_amounttva    := -(s8.bil_amounttva);
+		v_bil_amountttc    := -(s8.bil_amountttc);
+		
+		for s1 in c1(c_bil_id)loop
+			insert into genbilline(bil_id,bli_reversebli_id,bli_number,bli_reverseblinumber,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
+								   imp_id,bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
+								   bli_enddt,vow_unit,bli_nbunites,bli_detail,bli_cancel,imc_id,imp_analytique_id,bli_periodeinit,
+								   bli_periode,bli_reversedt,bli_credt,bli_updtdt,bli_updtby,meu_id,bli_name_a,bli_reverseblidec_id,bli_reverseblinumberdec,bli_reversedecdt)
+							values(p_bil_id,null,s1.bli_number,null,s1.bli_name,p_annee,s1.ite_id,s1.pta_id,s1.psl_rank,
+								   null,s1.bli_volumebase,s1.bli_volumebase,s1.bli_puht,s1.tva_id,s1.bli_mht,s1.bli_mttva,s1.bli_mttc,v_fac_datecalcul,
+								   p_fac_datecalcul,s1.vow_unit,null,0,0,null,null,null,
+								   null,null,sysdate,null,null,null,null,null,null,null);
+		end loop; 
+		
+	else
+		v_deb_amountinit   := v_tothte+v_tva+v_tothta+v_tottvaa;
+		v_deb_amount_cash  := v_tothte+v_tva+v_tothta+v_tottvaa;
+		v_vow_debtype      := 3134;--'FA'
+		v_deb_comment:= s8.district||s8.police||s8.tourne||s8.ordre;
+		v_bil_amountht     :=  v_tothte+v_tothta;
+        v_bil_amounttva    :=  v_tva+v_tottvaa;
+        v_bil_amountttc    :=  v_tothte +v_tva+v_tothta+v_tottvaa;
+        if(s7.etat='RF')then--decode(s1.etat,'P','RF','O','FC','C','FHC','FC')
+		  v_vow_agrbilltype:=2566;
+		elsif(s7.etat='FC')then
+		  v_vow_agrbilltype:=2563;
+		elsif(s7.etat='FHC')then
+		  v_vow_agrbilltype:=2567;
+		else  
+		  v_vow_agrbilltype:=2563;
+		end if;
+	end if;
+	
+	
+	
+   
+   end loop;
+   
+   
+   
+   
+   
 END; 
 ---------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------
