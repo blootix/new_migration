@@ -30,35 +30,64 @@ procedure MigrationFacture_as400
 	p_vow_modefact  in number
 ) 
   IS
+    ---curseur f_trim
 	cursor c1   
 	is 
-	select * 
+    select f.*,lpad(trim(b.district),2,'0') district,lpad(trim(b.police),5,'0') police,lpad(trim(b.tourne),3,'0') tourne, lpad(trim(b.ordre),3,'0') ordre,
+	p.trim,p.tier,p.six,b.spt_id,b.mtc_id,b.equ_id,   
+	to_date(lpad(trim(r.datexp),8,'0'),'ddmmyyyy') fac_datecalcul,
+	to_date(lpad(trim(r.datl),8,'0'),'ddmmyyyy')  fac_dateli
 	from test.src_facture_as400 f
-	where lpad(trim(f.dist),2,'0')=p_district
-	and lpad(trim(f.tou),3,'0')   =p_tourne
-	and lpad(trim(f.ord),3,'0')   =p_ordre;
-
-	cursor c2(v_fact varchar2(50))
-	is
-	select count(*) nombre
-	from test.src_impayee t
-	where lpad(trim(t.district),2,'0')||
-	      lpad(trim(t.tournee),3,'0')||
-	      lpad(trim(t.ordre),3,'0')||
-	      to_char(t.annee)||
-	      lpad(trim(t.trimestre),2,'0')||'0'=v_fact;
-		  
-	cursor c1 
-	CASE &cnt
-	WHEN 1 THEN 
-    select * 
-	from test.src_facture_as400 f
-	where lpad(trim(f.dist),2,'0')=p_district
-	and lpad(trim(f.tou),3,'0')   =p_tourne
- 	and lpad(trim(f.ord),3,'0')   =p_ordre 
-
+	left join test.branchement b 
+	on lpad(trim(b.district),2,'0')=lpad(trim(f.dist),2,'0')
+	and lpad(trim(b.tourne),3,'0') =lpad(trim(f.tou),3,'0')   
+	and lpad(trim(b.ordre),3,'0')  =lpad(trim(f.ord),3,'0')   
+	and lpad(trim(b.police) ,5,'0')=lpad(trim(f.pol),3,'0')
+	left join test.tourne t
+	on lpad(trim(t.district),2,'0')= lpad(trim(f.dist),2,'0')
+	and   lpad(trim(t.code),3,'0') = lpad(trim(f.tou),3,'0')
+	left join test.param_tournee p
+	on  lpad(trim(p.district),2,'0')= lpad(trim(f.dist),2,'0')
+	and lpad(trim(p.district),2,'0')= lpad(trim(t.district),2,'0')
+	and   p.m1      = f.refc01
+	and   p.m2      = f.refc02
+	and   p.m3      = f.refc03
+	and   p.tier    = t.ntiers
+	and   p.six     = t.nsixieme 
+	left join  test.src_role r
+	on lpad(trim(r.distr),2,'0')    = lpad(trim(f.dist),2,'0')
+	and   lpad(trim(r.tour),3,'0')  = lpad(trim(f.tou),3,'0')
+	and   lpad(trim(r.ordr),3,'0')  = lpad(trim(f.ord),3,'0')
+	and   lpad(trim(r.police),5,'0')= lpad(trim(f.pol),5,'0')
+	and   r.tier                    = to_number(t.ntiers)
+	and   r.trim                    = p.trim
+	and   r.six                     = to_number(t.nsixieme)        
+	and   r.annee                   = '20'||f.refc04
+	and   rownum = 1
+	where f.type is null--='TRIM';
 	
-	p_org_id           number;
+	----curseur f_gc
+	cursor c2   
+	is 
+	select f.*,lpad(trim(b.district),2,'0') district,lpad(trim(b.police),5,'0') police,lpad(trim(b.tourne),3,'0') tourne, lpad(trim(b.ordre),3,'0') ordre,
+	b.spt_id,b.mtc_id,b.equ_id,to_date(lpad(trim(r.datexp),8,'0'),'ddmmyyyy') fac_datecalcul,
+	to_date(lpad(trim(r.datl),8,'0'),'ddmmyyyy') fac_dateli
+	from test.src_facture_as400 f
+	left join test.branchement b 
+	on   lpad(trim(b.district),2,'0')=lpad(trim(f.dist),2,'0')
+	and  lpad(trim(b.tourne),3,'0') =lpad(trim(f.tou),3,'0')   
+	and  lpad(trim(b.ordre),3,'0')  =lpad(trim(f.ord),3,'0')   
+	and  lpad(trim(b.police) ,5,'0')=lpad(trim(f.pol),3,'0')
+	left join  test.src_role r
+	on   lpad(trim(r.distr),2,'0') = lpad(trim(f.dist),2,'0')
+	and  lpad(trim(r.tour),3,'0')  = lpad(trim(f.tou),3,'0')
+	and  lpad(trim(r.ordr),3,'0')  = lpad(trim(f.ord),3,'0')
+	and  lpad(trim(r.police),5,'0')= lpad(trim(f.pol),5,'0')
+	and  r.trim                    = refc01      
+	and  r.annee                   = '20'||f.refc02
+	and  rownum = 1
+	where f.type ='MENS';
+	 
 	v_run_id           number;
 	v_deb_id           number;
 	v_aco_id           number;
@@ -99,24 +128,6 @@ procedure MigrationFacture_as400
 
 begin
 	for s1 in c1 loop
-	    begin
-	     	select trim,tier,six
-			into v_periode,v_tiers,v_six
-			from test.param_tournee p,test.tourne t
-			where lpad(trim(t.district),2,'0')= lpad(trim(s1.dist),2,'0')
-			and   lpad(trim(t.code),3,'0')    = lpad(trim(s1.tou),3,'0')
-			and   lpad(trim(p.district),2,'0')= lpad(trim(s1.dist),2,'0')
-			and   lpad(trim(t.district),2,'0')= lpad(trim(p.district),2,'0')
-            and   p.m1      = s1.refc01
-			and   p.m2      = s1.refc02
-			and   p.m3      = s1.refc03
-			and   p.tier    = t.ntiers
-			and   p.six     = t.nsixieme 
-			and s1.refc03 is not null
-			and s1.refc04 is not null;   
-		exception when others then
-			v_periode := 1;----------------------en cas de non existance de la periode !!!
-		end;
 	    if s1.refc04 is not null then 
 			if(to_number(s1.refc01)<to_number(s1.refc03) )then
 				v_anneereel := to_number('20'||s1.refc04);
@@ -142,58 +153,27 @@ begin
 		where b.bil_code=v_id_facture;
 		
 		if v_nbr=0 then 
-			if (refc04 is not null)then
-				begin
-					select to_date(lpad(trim(t.datexp),8,'0'),'ddmmyyyy'),
-					       to_date(lpad(trim(t.datl),8,'0'),'ddmmyyyy')   
-					into v_fac_datecalcul,v_fac_datelim
-					from test.src_role t
-					where lpad(trim(t.distr),2,'0') = lpad(trim(s1.dist),2,'0')
-					and   lpad(trim(t.tour),3,'0')  = lpad(trim(s1.tou),3,'0')
-					and   lpad(trim(t.ordr),3,'0')  = lpad(trim(s1.ord),3,'0')
-					and   lpad(trim(t.police),5,'0')= lpad(trim(s1.pol),5,'0')
-					and   t.tier                    = to_number(v_tiers)
-					and   t.trim					= v_periode
-					and   t.six						= to_number(v_six)        
-					and   t.annee 					= v_anneereel
-					and   rownum = 1;
-				exception when others then
+			if (s1.refc04 is not null)then
+				if p_fac_datecalcul is null then
 					select last_day(to_date('01'||lpad(s1.refc03,2,'0')||s1.refc04,'ddmmyy')) 
 					into v_fac_datecalcul
-					from dual; 
-					v_fac_datelim := '01/01/2016';------date a verifier 
-				end;  
+					from dual;
+				else
+				v_fac_datecalcul:=p_fac_datecalcul;
+				end if;	 
+				v_fac_datelim=nvl(p_fac_datelim,v_fac_datecalcul+45);  
 				v_train_fact :='Annee:'||trim(v_anneereel)||' trim:'||trim(v_periode)||' tier:'||trim(v_tiers)||' six:'||trim(v_six );
-			else 
-			-------------gc		
-				begin 
-					select to_date(lpad(trim(t.datexp),8,'0'),'ddmmyyyy'),
-						   to_date(lpad(trim(t.datl),8,'0'),'ddmmyyyy')    
-					into v_fac_datecalcul,v_fac_datelim 
-					from test.src_role t
-					where lpad(trim(t.distr),2,'0')  = lpad(trim(s1.dist),2,'0')
-					and	  lpad(trim(t.tour),3,'0')   = lpad(trim(s1.tou),3,'0')
-					and   lpad(trim(t.ordr),3,'0')   = lpad(trim(s1.ord),3,'0')
-					and	  lpad(trim(t.police),5,'0') = lpad(trim(s1.pol),5,'0')
-					and   t.trim =v_periode
-					and   t.annee=v_anneereel
-					and   rownum = 1;
-				exception when others then
-					v_fac_datecalcul := v_date;
-					v_fac_datelim    := v_date;
-				end; 
-				v_train_fact:='ANNEE:'||trim(v_anneereel)||' MOIS:'||trim(v_periode);
-            end if;
-			v_tva := (s1.tvacons+s1.tva_ff+s1.tvaferm+s1.tva_preav+s1.tvadeplac+s1.tvadepose_dem+s1.tvadepose_def+s1.tva_capit+s1.tva_pfin+)/1000;
-			if (s1.net is not null)then
-			------as_400
-				v_tothte    :=(s1.net-(v_tva+s1.arriere))/1000;
+			    v_tothte    :=(s1.net-(v_tva+s1.arriere))/1000;
 				v_solde     :=(s1.net-s1.arriere)/1000;
-			else
-			-------gc
+			else 
+			-------------gc	 
+				v_fac_datecalcul := nvl(p_fac_datecalcul,v_date);
+				v_fac_datelim    := nvl(p_fac_datelim,v_date);
+				v_train_fact:='ANNEE:'||trim(v_anneereel)||' MOIS:'||trim(v_periode);
 				v_tothte    := (s1.monttrim-v_tva)/1000;
 				v_solde     := s1.monttrim/1000; 
-			end if;
+            end if;
+			v_tva := (s1.tvacons+s1.tva_ff+s1.tvaferm+s1.tva_preav+s1.tvadeplac+s1.tvadepose_dem+s1.tvadepose_def+s1.tva_capit+s1.tva_pfin+)/1000;
 			v_tothta     :=0;
 			v_tottvaa    :=0;
 			if (v_anneereel is not null and v_periode is not null and v_train_fact is not null) then			

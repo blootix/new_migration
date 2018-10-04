@@ -120,6 +120,9 @@ v_g_meu_ten4 number := 12;
 v_g_meu_ten5 number := 13;
 v_g_meu_avis number := 52;
 v_g_mtc_id number := 1116540;
+v_g_vow_debtype     number:= 3134;---'FA' 
+v_g_vow_modefact    number:= 5560;---'MIG'
+v_g_vow_agrbilltype number:= 2563;---'FC' 
 
 -------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------
@@ -1212,38 +1215,37 @@ procedure MigrationHitoriquereleve
     p_spt_id       in number,
     p_meu_id       in number,
     p_age_id       in number,
-	p_prorata      in number,
-	p_message_temporaire in varchar2,
-	p_consommation in number,
-	p_trim         in number,
-	p_annee        in number,
-	p_avisforte    in number,
-	p_date_releve  in date,
-	p_date_controle in date,
-	p_index_controle in number,
-	p_anomalie      in varchar2,
-	p_releve       in number,
-	p_releve2      in number,
-	p_releve3        in number,
-	p_releve4        in number,
-	p_releve5        in number,
-	p_mois         in number,
+    p_prorata      in number,
+    p_message_temporaire in varchar2,
+    p_consommation in number,
+    p_trim         in number,
+    p_annee        in number,
+    p_avisforte    in number,
+    p_date_releve  in date,
+    p_date_controle in date,
+    p_index_controle in number,
+    p_anomalie     in varchar2,
+    p_releve       in number,
+    p_releve2      in number,
+    p_releve3      in number,
+    p_releve4      in number,
+    p_releve5      in number,
+    p_mois         in number,
     p_vow_readorig in number,
-    p_vow_readmeth in number
+    p_vow_readmeth in number,
+    p_mrd_id       out number
  )
   IS
-  	 
-	 
+  v_g_vow_comm1        number;	 	 
 	v_g_vow_comm2        number;
 	v_g_vow_comm3        number;
 	v_g_vow_readcode     number;
 	v_g_vow_readreason   number;
-	v_mrd_id           	 number;
 	v_mme_deducemanual   number := 0;
 	v_mrd_agrtype        number := 0;
 	v_mrd_locked         number := 0;
 	v_mrd_techtype       number := 0;
-    v_mrd_subread        number := 0;
+  v_mrd_subread        number := 0;
 	v_mrd_etatfact       number := 0; 
 	v_mrd_usecr          number := 1;
 	v_mrd_multicad       number;
@@ -1294,7 +1296,16 @@ BEGIN
 		else
 			v_g_vow_readreason:=4895;
 		end if;		 
-		
+		------------------------
+    p_pk_etape:='Récupération Anomalie niche';
+    select vow.vow_id
+    into   v_g_vow_comm1
+    from   genvoc     voc,
+         genvocword vow
+    where  voc.voc_id   = vow.voc_id
+    and    vow.vow_code = substr(p_anomalie,7,2)
+    and    voc.voc_code = 'VOW_COMM1';
+    --------------------------
 		p_pk_etape := 'Récupération Anomalie fuite';
 		select vow.vow_id
 		into   v_g_vow_comm2
@@ -1314,11 +1325,11 @@ BEGIN
 		and    voc.voc_code = 'VOW_COMM3';
 		
     p_pk_etape := 'Ajouter la releve'; 	
-		select seq_tecmtrread.nextval into v_mrd_id from dual;
+		select seq_tecmtrread.nextval into p_mrd_id from dual;
 		insert into tecmtrread(mrd_id,equ_id,mtc_id,mrd_dt,spt_id,vow_comm1,vow_comm2,vow_comm3,vow_readcode,
 							   vow_readorig,vow_readmeth,vow_readreason,mrd_comment,mrd_locked,mrd_msgbill,mrd_agrtype,mrd_techtype,
 							   mrd_subread,mrd_deduction_id,mrd_etatfact,age_id,mrd_usecr,mrd_year,mrd_multicad) 
-						values(v_mrd_id,p_equ_id,p_mtc_id,v_mrd_dt,p_spt_id,v_g_vow_comm1,v_g_vow_comm2,v_g_vow_comm3,v_g_vow_readcode,
+						values(p_mrd_id,p_equ_id,p_mtc_id,v_mrd_dt,p_spt_id,v_g_vow_comm1,v_g_vow_comm2,v_g_vow_comm3,v_g_vow_readcode,
 							   p_vow_readorig,p_vow_readmeth,v_g_vow_readreason,v_mrd_comment,v_mrd_locked,null,v_mrd_agrtype,v_mrd_techtype,
 							   v_mrd_subread,null,v_mrd_etatfact,p_age_id,v_mrd_usecr,v_mrd_year,v_mrd_multicad);
     
@@ -1326,7 +1337,7 @@ BEGIN
     begin 
       select seq_tecmtrmeasure.nextval into v_mme_id from dual;
       insert into tecmtrmeasure(mme_id,mrd_id,meu_id,mme_num,mme_value,mme_consum,mme_avgconsum,mme_deducemanual)
-                        values (v_mme_id,v_mrd_id,v_g_meu_eau,1,to_number(p_releve),nvl(to_number(trim(p_consommation)),0),0,v_mme_deducemanual);
+                        values (v_mme_id,p_mrd_id,v_g_meu_eau,1,to_number(p_releve),nvl(to_number(trim(p_consommation)),0),0,v_mme_deducemanual);
     exception when others then
       -------Exception : index releve non numérique
       null;
@@ -1336,35 +1347,35 @@ BEGIN
     if (to_number(replace(p_releve2,'.',0))>0) then
 			select seq_tecmtrmeasure.nextval into v_mme_id from dual;
 			insert into tecmtrmeasure(mme_id,mrd_id,meu_id,mme_num,mme_value,mme_consum,mme_avgconsum,mme_deducemanual)
-							  values (v_mme_id,v_mrd_id,v_g_meu_ten1,2,to_number(replace(p_releve2,'.',null)),to_number(replace(p_releve2,'.',null)),0,v_mme_deducemanual);
+							  values (v_mme_id,p_mrd_id,v_g_meu_ten1,2,to_number(replace(p_releve2,'.',null)),to_number(replace(p_releve2,'.',null)),0,v_mme_deducemanual);
 		end if;				  
 
     p_pk_etape := 'Ajouter index tentatif 2'; 
     if (to_number(replace(p_releve3,'.',0))>0) then
 			select seq_tecmtrmeasure.nextval into v_mme_id from dual;
 			insert into tecmtrmeasure(mme_id,mrd_id,meu_id,mme_num,mme_value,mme_consum,mme_avgconsum,mme_deducemanual)
-							  values (v_mme_id,v_mrd_id,v_g_meu_ten2,3,to_number(replace(p_releve3,'.',null)),to_number(replace(p_releve3,'.',null)),0,v_mme_deducemanual);
+							  values (v_mme_id,p_mrd_id,v_g_meu_ten2,3,to_number(replace(p_releve3,'.',null)),to_number(replace(p_releve3,'.',null)),0,v_mme_deducemanual);
 		end if;			
     	  
     p_pk_etape := 'Ajouter index tentatif 3'; 
     if (to_number(replace(p_releve4,'.',0))>0) then
 			select seq_tecmtrmeasure.nextval into v_mme_id from dual;
 			insert into tecmtrmeasure(mme_id,mrd_id,meu_id,mme_num,mme_value,mme_consum,mme_avgconsum,mme_deducemanual)
-							   values(v_mme_id,v_mrd_id,v_g_meu_ten3,4,to_number(replace(p_releve4,'.',null)),to_number(replace(p_releve4,'.',null)),0,v_mme_deducemanual);
+							   values(v_mme_id,p_mrd_id,v_g_meu_ten3,4,to_number(replace(p_releve4,'.',null)),to_number(replace(p_releve4,'.',null)),0,v_mme_deducemanual);
 		end if;			
     		   
     p_pk_etape := 'Ajouter index tentatif 4'; 
 		if (to_number(replace(p_releve5,'.',0))>0) then
 			select seq_tecmtrmeasure.nextval into v_mme_id from dual;
 			insert into tecmtrmeasure(mme_id,mrd_id,meu_id,mme_num,mme_value,mme_consum,mme_avgconsum,mme_deducemanual)
-							  values (v_mme_id,v_mrd_id,v_g_meu_ten4,5,to_number(replace(p_releve5,'.',null)),to_number(replace(p_releve5,'.',null)),0,v_mme_deducemanual);
+							  values (v_mme_id,p_mrd_id,v_g_meu_ten4,5,to_number(replace(p_releve5,'.',null)),to_number(replace(p_releve5,'.',null)),0,v_mme_deducemanual);
 		end if;					  
 
     p_pk_etape := 'Ajouter index tentatif 5'; 
 		/*if (nvl(to_number(decode(trim(s1.compteurt),'t','1','1','1','0')),0)>0) then
 			select seq_tecmtrmeasure.nextval into v_mme_id from dual;
 			insert into tecmtrmeasure(mme_id,mrd_id,meu_id,mme_num,mme_value,mme_consum,mme_avgconsum,mme_deducemanual)
-							   values(v_mme_id,v_mrd_id,v_g_meu_ten5,6,nvl(to_number(decode(trim(s1.compteurt),'t','1','1','1','0')),0),nvl(to_number(decode(trim(s1.compteurt),'t','1','1','1','0')),0),0,v_mme_deducemanual);
+							   values(v_mme_id,p_mrd_id,v_g_meu_ten5,6,nvl(to_number(decode(trim(s1.compteurt),'t','1','1','1','0')),0),nvl(to_number(decode(trim(s1.compteurt),'t','1','1','1','0')),0),0,v_mme_deducemanual);
 		end if;	 */
           
     p_pk_etape := 'Ajouter index avis forte conso';
@@ -1372,7 +1383,7 @@ BEGIN
 			if (to_number(trim(p_avisforte))>0) then
 				select seq_tecmtrmeasure.nextval into v_mme_id from dual;
 				insert into tecmtrmeasure(mme_id,mrd_id,meu_id,mme_num,mme_value,mme_consum,mme_avgconsum,mme_deducemanual)
-								   values(v_mme_id,v_mrd_id,v_g_meu_avis,7,to_number(trim(p_avisforte)),to_number(trim(p_avisforte)),0,v_mme_deducemanual);
+								   values(v_mme_id,p_mrd_id,v_g_meu_avis,7,to_number(trim(p_avisforte)),to_number(trim(p_avisforte)),0,v_mme_deducemanual);
 			end if;	
      exception when others then
 		     -------Exception : avisforte non numerique
@@ -1398,17 +1409,18 @@ procedure MigrationDernierreleve
     p_spt_id         in number,
     p_meu_id         in number,
     p_age_id         in number,
-	p_anneeT         in number,
-	p_prorataT       in number,
-	p_trimestreT     in number,
-	p_index_releve   in number,
-	p_date_releveT   in date,
-	p_consommationT  in number,
-	p_mois           in number,
+	  p_anneeT         in number,
+	  p_prorataT       in number,
+	  p_trimestreT     in number,
+	  p_index_releve   in number,
+	  p_date_releveT   in date,
+	  p_consommationT  in number,
+	  p_mois           in number,
     p_vow_comm1      in number,
     p_vow_readorig   in number,
     p_vow_readmeth   in number,
-    p_vow_readreason in number
+    p_vow_readreason in number,
+    p_mrd_id        out number
   )
   IS 
 	
@@ -1416,8 +1428,7 @@ procedure MigrationDernierreleve
 	v_g_vow_comm3        number;
 	v_nbr                number;
 	v_mrd_year           number; 
-	v_mrd_multicad       number;
-	v_mrd_id         	 number;
+	v_mrd_multicad       number; 
 	v_mrd_agrtype        number := 0;
 	v_mrd_locked         number := 0;
 	v_mrd_techtype       number := 0;
@@ -1451,16 +1462,16 @@ BEGIN
 	exception when others then
 	   v_mrd_dt:=v_dte_rl;
 	end;
-	select seq_tecmtrread.nextval into v_mrd_id from dual;
+	select seq_tecmtrread.nextval into p_mrd_id from dual;
 	insert into tecmtrread(mrd_id,equ_id,mtc_id,mrd_dt,spt_id,vow_comm1,vow_comm2,vow_comm3,vow_readcode,
 						   vow_readorig,vow_readmeth,vow_readreason,mrd_comment,mrd_locked,mrd_msgbill,mrd_agrtype,mrd_techtype,
 						   mrd_subread,mrd_deduction_id,mrd_etatfact,age_id,mrd_usecr,mrd_year,mrd_multicad) 
-					values(v_mrd_id,p_equ_id,p_mtc_id,v_mrd_dt,p_spt_id,p_vow_comm1,v_g_vow_comm2,v_g_vow_comm3,v_g_vow_readcode,
+					values(p_mrd_id,p_equ_id,p_mtc_id,v_mrd_dt,p_spt_id,p_vow_comm1,v_g_vow_comm2,v_g_vow_comm3,v_g_vow_readcode,
 						   p_vow_readorig,p_vow_readmeth,p_vow_readreason,v_mrd_comment,v_mrd_locked,null,v_mrd_agrtype,v_mrd_techtype,
 						   v_mrd_subread,null,v_mrd_etatfact,p_age_id,v_mrd_usecr,v_mrd_year,v_mrd_multicad);	
 	select seq_tecmtrmeasure.nextval into v_mme_id from dual;
 	insert into tecmtrmeasure(mme_id,mrd_id,meu_id,mme_num,mme_value,mme_consum,mme_avgconsum,mme_deducemanual)
-					   values(v_mme_id,v_mrd_id,p_meu_id,1,to_number(p_index_releve),nvl(to_number(trim(p_consommationT)),0),0,v_mme_deducemanual);					
+					   values(v_mme_id,p_mrd_id,p_meu_id,1,to_number(p_index_releve),nvl(to_number(trim(p_consommationT)),0),0,v_mme_deducemanual);					
 	commit;
 
 EXCEPTION WHEN OTHERS THEN
@@ -1474,25 +1485,29 @@ procedure MigrationHitoriquerelevegc
  (
     p_pk_etape       out varchar2,
     p_pk_exception   out varchar2,
-    p_district 		 in varchar2,
+    p_district 		   in varchar2,
     p_tourne         in varchar2,
-    p_ordre 		 in varchar2,
-	p_equ_id 		 in number,
-	p_mtc_id 		 in number,
-	p_spt_id 		 in number,
-	p_meu_id 		 in number,
-	p_age_id 		 in number,
-	p_nindex 		 in number,      
-	p_vow_readorig   in number,
-	p_vow_readmeth   in number,
-	p_vow_readreason in number
+    p_ordre 		     in varchar2,
+    p_refc01 		     in number,
+    p_refc02 		     in number,
+    p_prorata		     in number,
+    p_cons  		     in number,
+	  p_equ_id 		     in number,
+	  p_mtc_id 		     in number,
+	  p_spt_id 		     in number,
+	  p_meu_id 		     in number,
+    p_age_id 		     in number,
+    p_nindex 		     in number,  
+    p_vow_readorig   in number,
+    p_vow_readmeth   in number,
+    p_vow_readreason in number,
+    v_g_vow_comm1    in number
   )
   IS
 	
 	v_mrd_multicad       number;
 	v_mrd_year           number; 
 	v_mme_deducemanual   number;
-	v_g_vow_comm1        number;
 	v_g_vow_comm2        number;
 	v_g_vow_comm3        number;
 	v_g_vow_readcode     number;
@@ -1500,52 +1515,35 @@ procedure MigrationHitoriquerelevegc
 	v_mrd_agrtype        number := 0;
 	v_mrd_locked         number := 0;
 	v_mrd_techtype       number := 0;
-    v_mrd_subread        number := 0;
+  v_mrd_subread        number := 0;
 	v_mrd_etatfact       number := 0; 
 	v_mrd_usecr          number := 1;
 	v_mrd_comment        varchar2(100);
-	v_code_anomalie      varchar2(10);
 	v_mrd_dt             date;
 	v_mme_id             number;
 begin	
 	p_pk_etape:='Création historique réleve gros consomateur';
       
-		if trim(p_nindex) is null then
-			for s2 in c2('20'||trim(s1.refc02),s1.refc01)loop
-				v_code_anomalie := trim(s2.code_anomalie);
-			end loop ;
-		end if;
-		if (to_number(s1.refc01)='12') then
-			v_mrd_dt:='08/'||'01/'||'20'||to_char(to_number(trim(s1.refc02))+1);
+		if (to_number(p_refc01)='12') then
+			v_mrd_dt:='08/'||'01/'||'20'||to_char(to_number(trim(p_refc02))+1);
 		else
-			v_mrd_dt:='08/'||lpad(s1.refc01+1,2,'0')||'/20'||trim(s1.refc02);
+			v_mrd_dt:='08/'||lpad(p_refc01+1,2,'0')||'/20'||trim(p_refc02);
 		end if ;
-		v_mrd_year        :=to_number('20'||trim(s1.refc02));
-		v_mrd_multicad    :=to_number(s1.refc01);
-		v_mme_deducemanual:=nvl(to_number(trim(s1.prorata)),0)*-1;
-		
-		p_pk_etape := 'Récupération Raison de relève';
-		select vow.vow_id
-		into   v_g_vow_comm1
-		from   genvoc     voc,
-			   genvocword vow
-		where  voc.voc_id   = vow.voc_id
-		and    vow.vow_code = v_code_anomalie
-		and    voc.voc_code = 'VOW_COMM1';
-		  
+		v_mrd_year        :=to_number('20'||trim(p_refc02));
+		v_mrd_multicad    :=to_number(p_refc01);
+		v_mme_deducemanual:=nvl(to_number(trim(p_prorata)),0)*-1;
+			  
 		select seq_tecmtrread.nextval into v_mrd_id from dual;			
 		insert into tecmtrread(mrd_id,equ_id,mtc_id,mrd_dt,spt_id,vow_comm1,vow_comm2,vow_comm3,
 		                       vow_readcode,vow_readorig,vow_readmeth,vow_readreason,mrd_comment,mrd_locked,mrd_msgbill,mrd_agrtype,
-							   mrd_techtype,mrd_subread,mrd_deduction_id,mrd_etatfact,age_id,mrd_usecr,mrd_year,mrd_multicad) 
-						values(v_mrd_id,p_equ_id,p_mtc_id,v_mrd_dt,p_spt_id,v_g_vow_comm1,v_g_vow_comm2,v_g_vow_comm3,
-						       v_g_vow_readcode,p_vow_readorig, p_vow_readmeth,p_vow_readreason,v_mrd_comment,v_mrd_locked,null,v_mrd_agrtype,
-							   v_mrd_techtype,v_mrd_subread,null,v_mrd_etatfact,p_age_id,v_mrd_usecr,v_mrd_year,v_mrd_multicad);
-		
+							             mrd_techtype,mrd_subread,mrd_deduction_id,mrd_etatfact,age_id,mrd_usecr,mrd_year,mrd_multicad) 
+                    values(v_mrd_id,p_equ_id,p_mtc_id,v_mrd_dt,p_spt_id,v_g_vow_comm1,v_g_vow_comm2,v_g_vow_comm3,
+                           v_g_vow_readcode,p_vow_readorig, p_vow_readmeth,p_vow_readreason,v_mrd_comment,v_mrd_locked,null,v_mrd_agrtype,
+                           v_mrd_techtype,v_mrd_subread,null,v_mrd_etatfact,p_age_id,v_mrd_usecr,v_mrd_year,v_mrd_multicad);
 		select seq_tecmtrmeasure.nextval into v_mme_id from dual;
 		insert into tecmtrmeasure(mme_id,mrd_id,meu_id,mme_num,mme_value,mme_consum,mme_avgconsum,mme_deducemanual)
-						   values(v_mme_id,v_mrd_id,p_meu_id,1,to_number(s1.nindex),nvl(to_number(trim(s1.cons)),0),0,v_mme_deducemanual);
+						           values(v_mme_id,v_mrd_id,p_meu_id,1,to_number(p_nindex),nvl(to_number(trim(p_cons)),0),0,v_mme_deducemanual);
 		commit;
-	end loop;
 EXCEPTION WHEN OTHERS THEN
  v_g_err_code := SQLCODE;
  v_g_err_msg := SUBSTR(SQLERRM, 1, 200);
@@ -1553,91 +1551,963 @@ EXCEPTION WHEN OTHERS THEN
 END;
 --------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------
- procedure MigrationRelevegc
+procedure MigrationFacture_as400
  (
-    p_pk_etape       out varchar2,
-    p_pk_exception   out varchar2,
-    p_district       in varchar2,
-    p_tourne         in varchar2,
-    p_ordre          in varchar2,
-    p_equ_id         in number,
-    p_mtc_id 	     in number,
-    p_spt_id         in number,
-    p_meu_id         in number,
-    p_age_id         in number,
-	p_date_releve    in date ,
-	p_annee          in number,
-	p_mois           in number,
-	p_prorata        in number,
-	p_consommation   in number,
-	p_code_anomalie  in varchar2(10),
-	p_indexr         in number,
-    p_vow_comm1      in number,
-    p_vow_readorig   in number,
-    p_vow_readmeth   in number,
-    p_vow_readreason in number
-  )
-  is
-	    
-	v_mrd_year         number;
-	v_mrd_multicad     number;
-	v_mme_deducemanual number;
-	v_g_vow_comm2      number;
-	v_g_vow_comm3      number;
-	v_g_vow_readcode   number;
-	v_mrd_id           number;
-	v_mrd_agrtype      number := 0;
-	v_mrd_locked       number := 0;
-	v_mrd_techtype     number := 0;
-	v_mrd_subread      number := 0;
-	v_mrd_etatfact     number := 0; 
-	v_mrd_usecr        number := 1;
-	v_mrd_dt           date;
-	v_mrd_comment      varchar2(100);	   
-	v_vow_comm1        number;
-	v_mme_id           number;
-	
-begin
-	p_pk_etape:='Création derniere réleve gros consomateur';
-	for s1 in c1 loop
-	   	 
-		v_mrd_dt:=trim(p_date_releve);
-	    v_mrd_year:=to_number(trim(p_annee));
-		v_mrd_multicad:=to_number(p_mois);
-		if to_number(p_prorata)> 0 then
-		  v_mme_deducemanual := nvl(to_number(trim(p_consommation)),0)-p_prorata;
-		end if;
-		p_pk_etape := 'Récupération Raison de relève';
-		if (p_code_anomalie is not null ) then
-			select vow.vow_id
-			into   v_vow_comm1
-			from   genvoc     voc,
-				   genvocword vow
-			where  voc.voc_id   = vow.voc_id
-			and    vow.vow_code = p_code_anomalie
-			and    voc.voc_code = 'VOW_COMM1';
-		else
-			v_vow_comm1:=5741;
-		end if;
-			 				
-		select seq_tecmtrread.nextval into v_mrd_id from dual;			   
-		insert into tecmtrread(mrd_id,equ_id,mtc_id,mrd_dt,spt_id,vow_comm1,vow_comm2,vow_comm3,vow_readcode,vow_readorig,
-							   vow_readmeth,vow_readreason,mrd_comment,mrd_locked,mrd_msgbill,mrd_agrtype,mrd_techtype,
-							   mrd_subread,mrd_deduction_id,mrd_etatfact,age_id,mrd_usecr,mrd_year,mrd_multicad) 
-						values(v_mrd_id,p_equ_id,p_mtc_id,v_mrd_dt,p_spt_id,v_vow_comm1,v_g_vow_comm2,v_g_vow_comm3,v_g_vow_readcode,p_vow_readorig,
-							   p_vow_readmeth,p_vow_readreason,v_mrd_comment,v_mrd_locked,null,v_mrd_agrtype,v_mrd_techtype,v_mrd_subread,
-							   null,v_mrd_etatfact,p_age_id,v_mrd_usecr,v_mrd_year,v_mrd_multicad);
+    p_pk_etape     out varchar2,
+    p_pk_exception out varchar2,
+    v_deb_id       out number,
+    v_bil_id       out number,
+    p_district     in varchar2,
+    p_tourne       in varchar2,
+    p_ordre        in varchar2,
+    p_police       in varchar2,
+    p_spt_id       in number,
+    p_imp_id       in number,
+    p_sag_id       in number,
+    p_par_id       in number,
+    p_adr_id       in number,
+    p_org_id       in number,
+    p_refc01       in number,
+    p_refc03       in number,
+    p_refc04       in number,
+    p_refc02       in number,
+    p_tvacons      in number,
+    p_tva_ff       in number,
+    p_tvaferm      in number,
+    p_tva_preav    in number,
+    p_tvadeplac    in number,
+    p_tvadepose_dem in number,
+    p_tvadepose_def in number,
+    p_tva_capit     in number,
+    p_tva_pfin      in number,
+    p_fac_datecalcul in date,
+    p_fac_datelim    in date,
+    p_arriere      in number,
+    p_net          in number,
+    p_monttrim     in number, 
+    p_montt1       in number,
+    p_const1       in number,
+    p_tauxt1       in number,
+    p_montt2       in number,
+    p_const2       in number,
+    p_tauxt2       in number,
+    p_montt3       in number,
+    p_const3       in number,
+    p_tauxt3       in number,
+    p_mon1         in number,
+    p_volon1       in number,
+    p_tauon1       in number,
+    p_mon2         in number,
+    p_volon2       in number,
+    p_tauon2       in number,
+    p_mon3         in number,
+    p_volon3       in number,
+    p_tauon3       in number,
+    p_fixonas      in number,
+    p_fraisctr     in number,
+    p_fermeture    in number,
+    p_preavis      in number,
+    p_deplacement  in number,
+    p_depose_dem   in number,
+    p_depose_def   in number,
+    p_rbranche     in number,
+    p_rfacade      in number,
+    p_pfinancier   in number,
+    p_capit        in number,
+    p_inter        in number,
+    p_caron        in number,
+    p_arepor       in number,
+    p_narond       in number,
+    p_dt_abn       in date,
+    p_annee        in number,
+    p_periode      in number,
+    p_train_fact   in number,
+    p_vow_settlemode in number,
+    p_vow_acotp     in number,
+    p_vow_debtype   in number,
+    p_vow_modefact  in number,
+    p_vow_agrbilltype in number,
+    p_id_facture  in number,
+    p_tva         in number,
+    p_tothta      in number,
+    p_tottvaa     in number,
+    p_tothte      in number,
+    p_solde       in number,
+    p_deb_comment in varchar2
+) 
+  IS 
+  v_run_id           number;
+  v_aco_id           number;
+  v_sco_id           number;
+  v_ite_id           number;
+  v_tva_id           number;
+  v_pta_id           number; 
+  v_deb_amountinit   number(25,10);
+  v_deb_amount_cash  number(25,10);
+  v_bil_amountht     number(25,10);
+  v_bil_amounttva    number(25,10);
+  v_bil_amountttc    number(25,10);
+  v_bli_volumebase   number(25,10);
+  v_bli_volumefact   number(25,10);
+  v_bli_puht         number(25,10);
+  v_bli_mht          number(25,10);
+  v_bli_mttva        number(25,10);
+  v_bli_mttc         number(25,10);
+  v_vow_unit         number;
+  v_nbr              number;
+  v_psl_rank         number; 
+  v_val              number; 
+  v_ite_name         varchar2(100);
+ 
 
-		select seq_tecmtrmeasure.nextval into v_mme_id from dual;
-		insert into tecmtrmeasure(mme_id,mrd_id,meu_id,mme_num,mme_value,mme_consum,mme_avgconsum,mme_deducemanual)
-						   values(v_mme_id,v_mrd_id,p_meu_id,1,to_number(p_indexr),nvl(to_number(trim(p_consommation)),0),0,v_mme_deducemanual);
-		commit;
-	end loop;
-EXCEPTION WHEN OTHERS THEN
- v_g_err_code := SQLCODE;
- v_g_err_msg := SUBSTR(SQLERRM, 1, 200);
- p_pk_exception := v_g_err_code || ' : ' ||  v_g_err_msg;
-END;
+begin
+    select count(*) 
+    into v_nbr
+    from genbill b
+    where b.bil_code=p_id_facture;
+      
+    if v_nbr=0 then    
+      if (p_annee is not null and p_periode is not null and p_train_fact is not null) then      
+        begin
+          select t.run_id
+          into   v_run_id
+          from genrun t 
+          where t.run_exercice=p_annee
+          and   t.run_number  =p_periode;
+        exception when others then        
+          select seq_genrun.nextval into v_run_id from dual;        
+          insert into genrun(run_id,run_exercice,run_number,org_id,run_startdt,run_comment,run_name,run_dtcalc,run_enddt)
+                      values(v_run_id,p_annee,p_periode,p_org_id,p_fac_datecalcul,'Role migré','Role '||p_train_fact,p_fac_datecalcul,p_fac_datecalcul);
+        end;    
+      end if;                             
+      begin 
+        select aco.aco_id 
+        into v_aco_id
+        from genaccount aco ,agrsagaco sco
+        where aco.aco_id             = sco.aco_id
+        and nvl(aco.par_id,0)        = p_par_id
+        and nvl(aco.imp_id,0)        = p_imp_id
+        and nvl(sco.sag_id,0)        = p_sag_id;        
+      exception when others then 
+        select seq_genaccount.nextval into v_aco_id from dual;
+        insert into genaccount(aco_id,par_id,imp_id,vow_acotp,rec_id)
+                        values(v_aco_id,p_par_id,p_imp_id,p_vow_acotp,null);
+      end;        
+      begin 
+        select t.sco_id
+        into v_sco_id
+        from agrsagaco t
+        where t.aco_id=v_aco_id;
+      exception when others then
+        select seq_agrsagaco.nextval into v_sco_id from dual;
+        insert into agrsagaco(sco_id,sag_id,aco_id,sco_startdt)
+                       values(v_sco_id,p_sag_id,v_aco_id,p_dt_abn);
+      end;    
+     --for s2 in c2(v_id_facture) loop     
+       -- if  s2.nombre=0 then
+          v_deb_amountinit   := p_tothte+p_tva+p_tothta+p_tottvaa;
+          v_deb_amount_cash  := p_tothte+p_tva+p_tothta+p_tottvaa;
+          select seq_gendebt.nextval into v_deb_id from dual; 
+          insert into gendebt(deb_id,deb_refe,org_id,par_id,adr_id,deb_date,deb_duedt,deb_printdt,
+                              deb_amountinit,deb_amountremain,bap_id,vow_settlemode,aco_id,deb_norecovery,deb_credt,
+                              deb_updtby,deb_updtdt,deb_comment,deb_amount_cash,sag_id,vow_debtype,deb_prel)
+                      values (v_deb_id,p_id_facture,p_org_id,p_par_id,p_adr_id,p_fac_datecalcul,p_fac_datelim,p_fac_datecalcul,
+                              v_deb_amountinit,p_solde,null,p_vow_settlemode,v_aco_id,0,sysdate,
+                              null,null,p_deb_comment,v_deb_amount_cash,p_sag_id,p_vow_debtype,1);  
+          commit;
+       -- else
+       --------NB:partie impayee
+          /*v_deb_amountinit   := 0;
+          v_deb_amount_cash  :=(p_tothte+p_tva+p_tothta+p_tottvaa);
+          select seq_gendebt.nextval into v_deb_id from dual; 
+          insert into gendebt(deb_id,deb_refe,org_id,par_id,adr_id,deb_date,deb_duedt,deb_printdt,
+                              deb_amountinit,deb_amountremain,bap_id,vow_settlemode,aco_id,deb_norecovery,deb_credt,
+                              deb_updtby,deb_updtdt,deb_comment,deb_amount_cash,sag_id,vow_debtype,deb_prel)
+                      values (v_deb_id,p_id_facture,p_org_id,p_par_id,p_adr_id,p_fac_datecalcul,p_fac_datelim,p_fac_datecalcul,
+                              v_deb_amountinit,p_solde,null,p_vow_settlemode,v_aco_id,0,sysdate,
+                              null,null,p_deb_comment,v_deb_amount_cash,p_sag_id,p_vow_debtype,1);  
+          commit;*/
+       -- end if; 
+    --  end loop;
+      select seq_agrbill.nextval into v_bil_id from dual; 
+      v_bil_amountht      := p_tothte+p_tothta;
+      v_bil_amounttva     := p_tva+p_tottvaa;
+      v_bil_amountttc     := p_tothte+p_tva+p_tothta+p_tottvaa; 
+      insert into agrbill(bil_id,sag_id,vow_agrbilltype,vow_modefact)
+                   values(v_bil_id,p_sag_id,p_vow_agrbilltype,p_vow_modefact);
+      insert into genbill(bil_id,bil_code,bil_calcdt,bil_amountht,bil_amounttva,bil_amountttc,
+                          deb_id,par_id,bil_status,bil_amountttcdec,bil_debtdt,run_id)
+                   values(v_bil_id,p_id_facture,p_fac_datecalcul,v_bil_amountht,v_bil_amounttva,v_bil_amountttc,
+                          v_deb_id,p_par_id,1,null,p_fac_datecalcul,v_run_id); 
+      commit; 
+      v_val := 0;
+-------------------------------------------------------------------------------------------
+------------------------------CONSOMMATION SONEDE 1ERE TRANCHE-----------------------------
+-------------------------------------------------------------------------------------------        
+      if to_number(p_montt1)>0 then
+        v_val := v_val+1;
+        v_ite_name:='Consommation EAU';
+        v_ite_id  :=320;
+        v_vow_unit:=760;
+        if (p_annee>=2018)then
+          v_tva_id  :=26;
+        else
+          v_tva_id  :=24;
+        end if;
+        v_pta_id  :=2112;
+        v_psl_rank:=1;
+        v_bli_volumebase:= p_const1;
+        v_bli_volumefact:= p_const1;
+        v_bli_puht      := p_tauxt1/1000;
+        v_bli_mht       := p_montt1/1000;
+        v_bli_mttva     := p_tvacons/1000;
+        v_bli_mttc      :=(p_montt1+p_tvacons)/1000;
+        insert into genbilline(bil_id,bli_reversebli_id,bli_number,bli_reverseblinumber,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
+                               imp_id,bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
+                               bli_enddt,vow_unit,bli_nbunites,bli_detail,bli_cancel,imc_id,imp_analytique_id,bli_periodeinit,bli_periode,
+                               bli_reversedt,bli_credt,bli_updtdt,bli_updtby,meu_id,bli_name_a,bli_reverseblidec_id,bli_reverseblinumberdec,bli_reversedecdt)
+                        values(v_bil_id,null,v_val,null,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
+                               null,v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
+                               p_fac_datecalcul,v_vow_unit, null,0,0,null,null,null,null,
+                               null,sysdate,null,null,null,null,null,null,null);
+      end if;
+-------------------------------------------------------------------------------------------
+------------------------------CONSOMMATION SONEDE 2EME TRANCHE-----------------------------
+-------------------------------------------------------------------------------------------
+      if to_number(p_montt2)>0 then
+        v_val := v_val+1; 
+        v_ite_name:='Consommation EAU';
+        v_ite_id  :=320;
+        v_vow_unit:=760;
+        if (p_annee>=2018)then
+          v_tva_id  :=26;
+        else
+          v_tva_id  :=24;
+        end if;
+        v_pta_id  :=2112;
+        v_psl_rank:=1;
+        v_bli_volumebase:= p_const2;
+        v_bli_volumefact:= p_const2;
+        v_bli_puht      := p_tauxt2/1000;
+        v_bli_mht       := p_montt2/1000;
+        v_bli_mttva     := p_tvacons/1000;
+        v_bli_mttc      :=(p_montt2+p_tvacons)/1000;
+        insert into genbilline(bil_id,bli_reversebli_id,bli_number,bli_reverseblinumber,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
+                               imp_id,bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
+                               bli_enddt,vow_unit,bli_nbunites,bli_detail,bli_cancel,imc_id,imp_analytique_id,bli_periodeinit,bli_periode,
+                               bli_reversedt,bli_credt,bli_updtdt,bli_updtby,meu_id,bli_name_a,bli_reverseblidec_id,bli_reverseblinumberdec,bli_reversedecdt)
+                        values(v_bil_id,null,v_val,null,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
+                               null,v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
+                               p_fac_datecalcul,v_vow_unit,null,0,0,null,null,null,null,
+                               null,sysdate,null,null,null,null,null,null,null);
+        commit; 
+      end if;       
+-------------------------------------------------------------------------------------------
+------------------------------CONSOMMATION SONEDE 3EME TRANCHE-----------------------------
+-------------------------------------------------------------------------------------------       
+      if to_number(p_montt3)>0 then
+        v_val := v_val+1;
+        v_ite_name:='Consommation EAU';
+        v_ite_id  :=320;
+        v_vow_unit:=760;
+        if (p_annee>=2018)then
+          v_tva_id  :=26;
+        else
+          v_tva_id  :=24;
+        end if;
+        v_pta_id  :=2112;
+        v_psl_rank:=1;
+        v_bli_volumebase:= p_const3;
+        v_bli_volumefact:= p_const3;
+        v_bli_puht      := p_tauxt3/1000;
+        v_bli_mht       := p_montt3/1000;
+        v_bli_mttva     := p_tvacons/1000;
+        v_bli_mttc      := (p_montt3+p_tvacons)/1000;
+        insert into genbilline(bil_id,bli_reversebli_id,bli_number,bli_reverseblinumber,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
+                     imp_id,bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
+                     bli_enddt,vow_unit,bli_nbunites,bli_detail,bli_cancel,imc_id,imp_analytique_id,bli_periodeinit,bli_periode,
+                     bli_reversedt,bli_credt,bli_updtdt,bli_updtby,meu_id,bli_name_a,bli_reverseblidec_id,bli_reverseblinumberdec,bli_reversedecdt)
+                values(v_bil_id,null,v_val,null,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
+                     null,v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
+                     p_fac_datecalcul,v_vow_unit,null,0,0,null,null,null,null,
+                     null,sysdate,null,null,null,null,null,null,null);
+        commit;
+      end if;
+-------------------------------------------------------------------------------------------
+-----------------------------------REDEVANCE ONAS 1ERE TRANCHE-----------------------------
+-------------------------------------------------------------------------------------------         
+      if to_number(p_mon1)>0 then
+        v_val := v_val+1; 
+        v_ite_name:='Redevance variable pour usage domestique';
+        v_ite_id  :=350;
+        v_vow_unit:=760;
+        v_tva_id  :=25; 
+        v_pta_id  :=403;
+        v_psl_rank:=1;
+        v_bli_volumebase:= p_volon1;
+        v_bli_volumefact:= p_volon1;
+        v_bli_puht      := p_tauon1/1000;
+        v_bli_mht       := p_mon1/1000;
+        v_bli_mttva     := 0;
+        v_bli_mttc      := p_mon1/1000;
+        insert into genbilline(bil_id,bli_reversebli_id,bli_number,bli_reverseblinumber,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
+                     imp_id,bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
+                     bli_enddt,vow_unit,bli_nbunites,bli_detail,bli_cancel,imc_id,imp_analytique_id,bli_periodeinit,bli_periode,
+                     bli_reversedt,bli_credt,bli_updtdt,bli_updtby,meu_id,bli_name_a,bli_reverseblidec_id,bli_reverseblinumberdec,bli_reversedecdt)
+                values(v_bil_id,null,v_val,null,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
+                     null,v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
+                     p_fac_datecalcul,v_vow_unit,null,0,0,null,null,null,null,
+                     null,sysdate,null,null,null,null,null,null,null);
+        commit;
+      end if;
+-------------------------------------------------------------------------------------------
+-----------------------------------REDEVANCE ONAS 2EME TRANCHE-----------------------------
+------------------------------------------------------------------------------------------- 
+      if to_number(p_mon2)>0 then
+        v_val := v_val+1;
+        v_ite_name:='Redevance variable pour usage domestique';
+        v_ite_id  :=350;
+        v_vow_unit:=760;
+        v_tva_id  :=25; 
+        v_pta_id  :=403;
+        v_psl_rank:=1;
+        v_bli_volumebase:= p_volon2;
+        v_bli_volumefact:= p_volon2;
+        v_bli_puht      := p_tauon2/1000;
+        v_bli_mht       := p_mon2/1000;
+        v_bli_mttva     := 0;
+        v_bli_mttc      := p_mon2/1000;
+        insert into genbilline(bil_id,bli_reversebli_id,bli_number,bli_reverseblinumber,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
+                     imp_id,bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
+                     bli_enddt,vow_unit,bli_nbunites,bli_detail,bli_cancel,imc_id,imp_analytique_id,bli_periodeinit,bli_periode,
+                     bli_reversedt,bli_credt,bli_updtdt,bli_updtby,meu_id,bli_name_a,bli_reverseblidec_id,bli_reverseblinumberdec,bli_reversedecdt)
+                 values(v_bil_id,null,v_val,null,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
+                    null,v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
+                    p_fac_datecalcul,v_vow_unit,null,0,0,null,null,null,null,
+                    null,sysdate,null,null,null,null,null,null,null);
+        commit;
+      end if;
+-------------------------------------------------------------------------------------------
+-----------------------------------REDEVANCE ONAS 3EME TRANCHE-----------------------------
+-------------------------------------------------------------------------------------------         
+      if to_number(p_mon3)>0 then
+        v_val := v_val+1;
+        v_ite_name:='Redevance variable pour usage domestique';
+        v_ite_id  :=350;
+        v_vow_unit:=760;
+        v_tva_id  :=25; 
+        v_pta_id  :=403;
+        v_psl_rank:=1; 
+        v_bli_volumebase:= p_volon3;
+        v_bli_volumefact:= p_volon3;
+        v_bli_puht      := p_tauon3/1000;
+        v_bli_mht       := p_mon3/1000;
+        v_bli_mttva     := 0;
+        v_bli_mttc      := p_mon3/1000;
+        insert into genbilline(bil_id,bli_reversebli_id,bli_number,bli_reverseblinumber,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
+                     imp_id,bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
+                     bli_enddt,vow_unit,bli_nbunites,bli_detail,bli_cancel,imc_id,imp_analytique_id,bli_periodeinit,bli_periode,
+                     bli_reversedt,bli_credt,bli_updtdt,bli_updtby,meu_id,bli_name_a,bli_reverseblidec_id,bli_reverseblinumberdec,bli_reversedecdt)
+                values(v_bil_id,null,v_val,null,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
+                     null,v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
+                     p_fac_datecalcul,v_vow_unit,null,0,0,null,null,null,null,
+                     null,sysdate,null,null,null,null,null,null,null);
+        commit;
+      end if;
+-------------------------------------------------------------------------------------------
+-----------------------------------FRAIS FIXE ONAS-----------------------------------------
+-------------------------------------------------------------------------------------------   
+      if to_number(p_fixonas)>0 then
+        v_val := v_val+1;
+        v_ite_name:='Redevance fixe domestique ONAS';
+        v_ite_id  := 351;
+        v_vow_unit:= 760;
+        v_tva_id  := 25;
+        v_pta_id  := 409;
+        v_psl_rank:= 1;
+        v_bli_volumebase:= 1;
+        v_bli_volumefact:= 1;
+        v_bli_puht      := p_fixonas/1000;
+        v_bli_mht       := p_fixonas/1000;
+        v_bli_mttva     := 0;
+        v_bli_mttc      := p_fixonas/1000;         
+        insert into genbilline(bil_id,bli_reversebli_id,bli_number,bli_reverseblinumber,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
+                     imp_id,bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
+                     bli_enddt,vow_unit,bli_nbunites,bli_detail,bli_cancel,imc_id,imp_analytique_id,bli_periodeinit,bli_periode,
+                     bli_reversedt,bli_credt,bli_updtdt,bli_updtby,meu_id,bli_name_a,bli_reverseblidec_id,bli_reverseblinumberdec,bli_reversedecdt)
+                values(v_bil_id,null,v_val,null,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,null,
+                     v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
+                     p_fac_datecalcul,v_vow_unit,null,0,0,null,null,null,null,
+                     null,sysdate,null,null,null,null,null,null,null);
+        commit;
+      end if;   
+-------------------------------------------------------------------------------------------
+-----------------------------------FRAIS FIXE SONEDE--------------------------------------
+-------------------------------------------------------------------------------------------   
+        if to_number(p_fraisctr)>0 then
+        v_val := v_val+1;
+        V_ite_name:='Frais fixe';
+        v_ite_id  :=326;
+        v_vow_unit:=4104;
+        if (p_annee>=2018)then
+          v_tva_id  :=26;
+        else
+          v_tva_id  :=24;
+        end if;
+        v_pta_id  := 341;
+        v_psl_rank:= 1; 
+        v_bli_volumebase:= 1;
+        v_bli_volumefact:= 1;
+        v_bli_puht      := p_fraisctr/1000;
+        v_bli_mht       := p_fraisctr/1000;
+        v_bli_mttva     := p_tva_ff/1000;
+        v_bli_mttc      := (p_fraisctr/+p_tva_ff)/1000;         
+        insert into genbilline(bil_id,bli_reversebli_id,bli_number,bli_reverseblinumber,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
+                     imp_id,bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
+                     bli_enddt,vow_unit,bli_nbunites,bli_detail,bli_cancel,imc_id,imp_analytique_id,bli_periodeinit,bli_periode,
+                     bli_reversedt,bli_credt,bli_updtdt,bli_updtby,meu_id,bli_name_a,bli_reverseblidec_id,bli_reverseblinumberdec,bli_reversedecdt)
+                values(v_bil_id,null,v_val,null,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,null,
+                     v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
+                     p_fac_datecalcul,v_vow_unit,null,0,0,null,null,null,null,
+                     null,sysdate,null,null,null,null,null,null,null);
+        commit;
+      end if;     
+-------------------------------------------------------------------------------------------
+-----------------------------------Frais FERMETURE---------------------------------------
+------------------------------------------------------------------------------------------- 
+      if to_number(p_fermeture)>0 then
+        v_val := v_val+1; 
+        v_ite_name:='Frais de coupure d''eau suite à non paiement';
+        v_ite_id  :=335;
+        v_vow_unit:=4104; 
+        if (p_annee>=2018)then
+          v_tva_id  :=26;
+        else
+          v_tva_id  :=24;
+        end if; 
+        v_pta_id  := 365;
+        v_psl_rank:= 1;  
+        v_bli_volumebase:= 1;
+        v_bli_volumefact:= 1;
+        v_bli_puht      := p_fermeture/1000;
+        v_bli_mht       := p_fermeture/1000;
+        v_bli_mttva     := p_tvaferm/1000;
+        v_bli_mttc      := (p_fermeture+p_tvaferm)/1000;
+        insert into genbilline(bil_id,bli_reversebli_id,bli_number,bli_reverseblinumber,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
+                     imp_id,bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
+                     bli_enddt,vow_unit,bli_nbunites,bli_detail,bli_cancel,imc_id,imp_analytique_id,bli_periodeinit,bli_periode,
+                     bli_reversedt,bli_credt,bli_updtdt,bli_updtby,meu_id,bli_name_a,bli_reverseblidec_id,bli_reverseblinumberdec,bli_reversedecdt)
+                values(v_bil_id,null,v_val,null,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
+                     null,v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
+                     p_fac_datecalcul,v_vow_unit,null,0,0,null,null,null,null,
+                     null,sysdate,null,null,null,null,null,null,null);
+        commit;
+      end if;   
+-------------------------------------------------------------------------------------------
+-----------------------------------Frais PREAVIS-------------------------------------------
+------------------------------------------------------------------------------------------- 
+      if to_number(p_preavis)>0 then
+        v_val := v_val+1; 
+        v_ite_name:='Frais de preavis et de rappel de paiement';
+        v_ite_id  :=338;
+        v_vow_unit:=4104; 
+        if (p_annee>=2018)then
+          v_tva_id  :=26;
+        else
+          v_tva_id  :=24;
+        end if; 
+        v_pta_id  := 389;
+        v_psl_rank:= 1;  
+        v_bli_volumebase:= 1;
+        v_bli_volumefact:= 1;
+        v_bli_puht      := p_preavis/1000;
+        v_bli_mht       := p_preavis/1000;
+        v_bli_mttva     := p_tva_preav/1000;
+        v_bli_mttc      :=(p_preavis+p_tva_preav)/1000;
+        insert into genbilline(bil_id,bli_reversebli_id,bli_number,bli_reverseblinumber,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
+                     imp_id,bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
+                     bli_enddt,vow_unit,bli_nbunites,bli_detail,bli_cancel,imc_id,imp_analytique_id,bli_periodeinit,bli_periode,
+                     bli_reversedt,bli_credt,bli_updtdt,bli_updtby,meu_id,bli_name_a,bli_reverseblidec_id,bli_reverseblinumberdec,bli_reversedecdt)
+                values(v_bil_id,null,v_val,null,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
+                     null,v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
+                     p_fac_datecalcul,v_vow_unit,null,0,0,null,null,null,null,
+                     null,sysdate,null,null,null,null,null,null,null);
+        commit;
+      end if;     
+-------------------------------------------------------------------------------------------
+-----------------------------------Frais de déplacement---------------------------------------
+-------------------------------------------------------------------------------------------   
+      if to_number(p_deplacement)>0 then  
+        v_val := v_val+1; 
+        v_ite_name:='Frais de déplacement';
+        v_ite_id  :=1764;
+        v_vow_unit:=4104;
+        if (p_annee>=2018)then
+          v_tva_id  :=26;
+        else
+          v_tva_id  :=24;
+        end if;
+        v_pta_id  :=5624;
+        v_psl_rank:=1;
+        v_bli_volumebase:= 1;
+        v_bli_volumefact:= 1;
+        v_bli_puht      := p_deplacement/1000;
+        v_bli_mht       := p_deplacement/1000;
+        v_bli_mttva     := p_deplacement/1000;
+        v_bli_mttc      := (p_deplacement+p_tvadeplac)/1000;
+        insert into genbilline(bil_id,bli_reversebli_id,bli_number,bli_reverseblinumber,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
+                     imp_id,bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
+                     bli_enddt,vow_unit,bli_nbunites,bli_detail,bli_cancel,imc_id,imp_analytique_id,bli_periodeinit,bli_periode,
+                     bli_reversedt,bli_credt,bli_updtdt,bli_updtby,meu_id,bli_name_a,bli_reverseblidec_id,bli_reverseblinumberdec,bli_reversedecdt)
+                values(v_bil_id,null,v_val,null,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
+                     null,v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
+                     p_fac_datecalcul,v_vow_unit,null,0,0,null,null,null,null,
+                     null,sysdate,null,null,null,null,null,null,null);
+        commit;
+      end if;
+-------------------------------------------------------------------------------------------
+-----------------------------------Frais de dépose suite à la demande du client------------
+------------------------------------------------------------------------------------------- 
+      if to_number(p_depose_dem)>0 then  
+        v_val := v_val+1;
+        v_ite_name:='Frais de depose ou repose suite à la demande du client';
+        v_ite_id  :=355;
+        v_vow_unit:=1404;
+        if (p_annee>=2018)then
+          v_tva_id  :=26;
+        else
+          v_tva_id  :=24;
+        end if;
+        v_pta_id  :=414;
+        v_psl_rank:=1;
+        v_bli_volumebase:= 1;
+        v_bli_volumefact:= 1;
+        v_bli_puht      := p_depose_dem/1000;
+        v_bli_mht       := p_depose_dem/1000;
+        v_bli_mttva     := p_tvadepose_dem/1000;
+        v_bli_mttc      := (p_depose_dem +p_tvadepose_dem)/1000;
+        insert into genbilline(bil_id,bli_reversebli_id,bli_number,bli_reverseblinumber,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
+                     imp_id,bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
+                     bli_enddt,vow_unit,bli_nbunites,bli_detail,bli_cancel,imc_id,imp_analytique_id,bli_periodeinit,bli_periode,
+                     bli_reversedt,bli_credt,bli_updtdt,bli_updtby,meu_id,bli_name_a,bli_reverseblidec_id,bli_reverseblinumberdec,bli_reversedecdt)
+                values(v_bil_id,null,v_val,null,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
+                     null,v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
+                     p_fac_datecalcul,v_vow_unit,null,0,0,null,null,null,null,
+                     null,sysdate,null,null,null,null,null,null,null);
+        commit;
+      end if;
+-------------------------------------------------------------------------------------------
+-----------------------------------FRAIS DE DEPOSE SUITE AU NON PAIEMENT-------------------
+------------------------------------------------------------------------------------------- 
+      if to_number(p_depose_def)>0 then  
+        v_val := v_val+1; 
+        v_ite_name:='Frais de dépose ou repose compteur';
+        v_ite_id  :=336;
+        v_vow_unit:=4104;
+        if (p_annee>=2018)then
+          v_tva_id  :=26;
+        else
+          v_tva_id  :=24;
+        end if;
+        v_pta_id  :=377;
+        v_psl_rank:=1; 
+        v_bli_volumebase:= 1;
+        v_bli_volumefact:= 1;
+        v_bli_puht      := (p_depose_def/1000);
+        v_bli_mht       := (p_depose_def/1000);
+        v_bli_mttva     := (p_tvadepose_def/1000);
+        v_bli_mttc      := (p_depose_def+p_tvadepose_def)/1000;
+        insert into genbilline(bil_id,bli_reversebli_id,bli_number,bli_reverseblinumber,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
+                     imp_id,bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
+                     bli_enddt,vow_unit,bli_nbunites,bli_detail,bli_cancel,imc_id,imp_analytique_id,bli_periodeinit,bli_periode,
+                     bli_reversedt,bli_credt,bli_updtdt,bli_updtby,meu_id,bli_name_a,bli_reverseblidec_id,bli_reverseblinumberdec,bli_reversedecdt)
+                values(v_bil_id,null,v_val,null,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
+                     null,v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
+                     p_fac_datecalcul,v_vow_unit,null,0,0,null,null,null,null,
+                     null,sysdate,null,null,null,null,null,null,null);
+        commit;
+      end if; 
+-------------------------------------------------------------------------------------------
+-----------------------------------MONTANT REXTENSION-------------------------------------
+------------------------------------------------------------------------------------------- 
+      if (p_rbranche+p_rfacade)>0 then
+        v_val := v_val+1; 
+        v_ite_name:='Montant extention';  
+        v_ite_id  :=1979;
+        v_vow_unit:=4751;   
+        if(p_annee>=2018)then
+          v_tva_id  :=26;
+        else
+          v_tva_id  :=24;
+        end if;
+        v_pta_id  :=2310;
+        v_psl_rank:=1;
+        v_bli_volumebase:= 1;
+        v_bli_volumefact:= 1;
+        v_bli_puht      := (p_rbranche+p_rfacade)/1000;
+        v_bli_mht       := (p_rbranche+p_rfacade)/1000;
+        v_bli_mttva     :=  p_tva_capit/1000;
+        v_bli_mttc      := (p_rbranche+p_rfacade+p_tva_capit)/1000;
+        insert into genbilline(bil_id,bli_reversebli_id,bli_number,bli_reverseblinumber,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
+                     imp_id,bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
+                     bli_enddt,vow_unit,bli_nbunites,bli_detail,bli_cancel,imc_id,imp_analytique_id,bli_periodeinit,bli_periode,
+                     bli_reversedt,bli_credt,bli_updtdt,bli_updtby,meu_id,bli_name_a,bli_reverseblidec_id,bli_reverseblinumberdec,bli_reversedecdt)
+                values(v_bil_id,null,v_val,null,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
+                     null,v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
+                     p_fac_datecalcul,v_vow_unit,null,0,0,null,null,null,null,
+                     null,sysdate,null,null,null,null,null,null,null);
+        commit;
+      end if; 
+-------------------------------------------------------------------------------------------
+-----------------------------------PRODUIT FINANCIER-------------------------------------
+------------------------------------------------------------------------------------------- 
+      if p_pfinancier>0 then
+        v_val := v_val+1; 
+        v_ite_name:='Produit financier';  
+        v_ite_id  :=1982;
+        v_vow_unit:=4751;   
+        if(p_annee>=2018)then
+          v_tva_id  :=26;
+        else
+          v_tva_id  :=24;
+        end if;
+        v_pta_id  :=2306;
+        v_psl_rank:=1;
+        v_bli_volumebase:= 1;
+        v_bli_volumefact:= 1;
+        v_bli_puht      := p_pfinancier/1000;
+        v_bli_mht       := p_pfinancier/1000;
+        v_bli_mttva     := p_tva_pfin/1000;
+        v_bli_mttc      := (p_pfinancier+p_tva_pfin)/1000;
+        insert into genbilline(bil_id,bli_reversebli_id,bli_number,bli_reverseblinumber,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
+                     imp_id,bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
+                     bli_enddt,vow_unit,bli_nbunites,bli_detail,bli_cancel,imc_id,imp_analytique_id,bli_periodeinit,bli_periode,
+                     bli_reversedt,bli_credt,bli_updtdt,bli_updtby,meu_id,bli_name_a,bli_reverseblidec_id,bli_reverseblinumberdec,bli_reversedecdt)
+                values(v_bil_id,null,v_val,null,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
+                     null,v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
+                     p_fac_datecalcul,v_vow_unit,null,0,0,null,null,null,null,
+                     null,sysdate,null,null,null,null,null,null,null);
+        commit;
+      end if;     
+-------------------------------------------------------------------------------------------
+-----------------------------------MONTANT CAPITAL-----------------------------------------
+------------------------------------------------------------------------------------------- 
+      if p_capit >0 then
+        v_val := v_val+1; 
+        v_ite_name:='Montant capital ONAS';
+        v_ite_id  :=1981;
+        v_vow_unit:=4751; 
+        v_tva_id  :=25;
+        v_pta_id  :=2305;
+        v_psl_rank:=1;
+        v_bli_volumebase:= 1;
+        v_bli_volumefact:= 1;
+        v_bli_puht      := p_capit/1000;
+        v_bli_mht       := p_capit/1000;
+        v_bli_mttva     := 0;
+        v_bli_mttc      := p_capit/1000;
+          insert into genbilline(bil_id,bli_reversebli_id,bli_number,bli_reverseblinumber,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
+                     imp_id,bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
+                     bli_enddt,vow_unit,bli_nbunites,bli_detail,bli_cancel,imc_id,imp_analytique_id,bli_periodeinit,bli_periode,
+                     bli_reversedt,bli_credt,bli_updtdt,bli_updtby,meu_id,bli_name_a,bli_reverseblidec_id,bli_reverseblinumberdec,bli_reversedecdt)
+                  values(v_bil_id,null,v_val,null,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
+                     null,v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
+                     p_fac_datecalcul,v_vow_unit,null,0,0,null,null,null,null,
+                     null,sysdate,null,null,null,null,null,null,null);
+        commit;
+      end if; 
+-------------------------------------------------------------------------------------------
+-----------------------------------Montant Interet-----------------------------------------
+------------------------------------------------------------------------------------------- 
+      if p_inter>0 then
+        v_val := v_val+1;   
+        v_ite_name:='Montant interet ONAS';
+        v_ite_id  :=1978;
+        v_vow_unit:=4751;
+        v_tva_id  :=25;
+        v_pta_id  :=2302;
+        v_psl_rank:=1;
+        v_bli_volumebase:= 1;
+        v_bli_volumefact:= 1;
+        v_bli_puht      := p_inter/1000;
+        v_bli_mht       := p_inter/1000;
+        v_bli_mttva     := 0;
+        v_bli_mttc      := p_inter/1000;
+        insert into genbilline(bil_id,bli_reversebli_id,bli_number,bli_reverseblinumber,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
+                     imp_id,bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
+                     bli_enddt,vow_unit,bli_nbunites,bli_detail,bli_cancel,imc_id,imp_analytique_id,bli_periodeinit,bli_periode,
+                     bli_reversedt,bli_credt,bli_updtdt,bli_updtby,meu_id,bli_name_a,bli_reverseblidec_id,bli_reverseblinumberdec,bli_reversedecdt)
+                values(v_bil_id,null,v_val,null,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
+                     null,v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
+                     p_fac_datecalcul,v_vow_unit,null,0,0,null,null,null,null,
+                     null,sysdate,null,null,null,null,null,null,null);
+        commit;
+      end if;       
+-------------------------------------------------------------------------------------------
+-----------------------------------MONTANT REPORT------------------------------------------
+------------------------------------------------------------------------------------------- 
+      if p_arepor>0 then
+        v_val := v_val+1; 
+        v_ite_name:='Ancien report';
+        v_ite_id  :=1983;
+        v_vow_unit:=4751; 
+        v_tva_id  :=25;
+        v_pta_id  :=2307;
+        v_psl_rank:=1; 
+        v_bli_volumebase:= 1;
+        v_bli_volumefact:= 1; 
+        v_bli_puht      := p_caron*(p_arepor/1000); 
+        v_bli_mht       := p_caron*(p_arepor/1000);
+        v_bli_mttva     := 0;
+        v_bli_mttc      := p_caron*(p_arepor/1000);
+        insert into genbilline(bil_id,bli_reversebli_id,bli_number,bli_reverseblinumber,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
+                               imp_id,bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
+                               bli_enddt,vow_unit,bli_nbunites,bli_detail,bli_cancel,imc_id,imp_analytique_id,bli_periodeinit,bli_periode,
+                               bli_reversedt,bli_credt,bli_updtdt,bli_updtby,meu_id,bli_name_a,bli_reverseblidec_id,bli_reverseblinumberdec,bli_reversedecdt)
+                        values(v_bil_id,null,v_val,null,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
+                               null,v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
+                               p_fac_datecalcul,v_vow_unit,null,0,0,null,null,null,null,
+                               null,sysdate,null,null,null,null,null,null,null);       
+        commit;
+      end if; 
+-------------------------------------------------------------------------------------------
+-----------------------------------ARRONDISSEMENT------------------------------------------
+------------------------------------------------------------------------------------------- 
+      if to_number(p_narond)>0 then
+        v_val := v_val+1; 
+        V_ite_name:='Nouveau report';
+        v_ite_id  :=1980;
+        v_vow_unit:=4751;
+        v_tva_id  :=25;
+        v_pta_id  :=2304;
+        v_psl_rank:=1; 
+        v_bli_volumebase:= 1;
+        v_bli_volumefact:= 1;
+        v_bli_puht      := (p_caron*(p_narond/1000));
+        v_bli_mht       := (p_caron*(p_narond/1000));
+        v_bli_mttva     := 0;
+        v_bli_mttc      := (p_caron*(p_narond/1000));
+        insert into genbilline(bil_id,bli_reversebli_id,bli_number,bli_reverseblinumber,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
+                               imp_id,bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
+                               bli_enddt,vow_unit,bli_nbunites,bli_detail,bli_cancel,imc_id,imp_analytique_id,bli_periodeinit,bli_periode,
+                               bli_reversedt,bli_credt,bli_updtdt,bli_updtby,meu_id,bli_name_a,bli_reverseblidec_id,bli_reverseblinumberdec,bli_reversedecdt)
+                        values(v_bil_id,null,v_val,null,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
+                               null,v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
+                               p_fac_datecalcul,v_vow_unit,null,0,0,null,null,null,null,
+                               null,sysdate,null,null,null,null,null,null,null);  
+        commit;
+      end if;     
+    end if;
+end;  
+--------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------
+procedure MigrationFacture_version
+ (
+  p_pk_etape     out varchar2,
+  p_pk_exception out varchar2,
+  p_deb_id out number,
+  p_bil_id out number,
+  p_district     in varchar2,
+  p_tourne       in varchar2,
+  p_ordre        in varchar2,
+  p_spt_id       in number,
+  p_imp_id       in number,
+  p_sag_id       in number,
+  p_par_id       in number,
+  p_adr_id       in number,
+  p_org_id       in number,
+  p_periode      in number,
+  p_annee        in number,
+  p_deb_amountinit  in number,
+  p_deb_amountremain  in number,
+  p_bil_amountht in number,
+  p_bil_amounttva   in number,
+  p_bil_amountttc  in number,
+  p_version in number,
+  p_bil_calcdt   in date ,
+  p_dt_abn      in date,
+  p_etat in varchar2,
+  p_deb_comment in varchar2,
+  p_net_a_payer  in number,
+  p_vow_settlemode in number,
+  p_vow_acotp     in number,
+  p_vow_modefact  in number
+) 
+  IS 
+  cursor c2(v_bil_id number)
+  is 
+  select * 
+  from genbilline e  
+  where e.bil_id=v_bil_id;
+  
+/*  cursor c3 (v_fact varchar2)
+  is 
+  select count(*) nombre
+    from src_impayee t
+    where trim(t.net)<>trim(t.mtpaye)
+    and lpad(trim(t.district),2,'0')||
+      lpad(trim(t.tournee),3,'0')||
+      lpad(trim(t.ordre),3,'0')||
+      to_char(t.annee)||
+      lpad(trim(t.trimestre),2,'0')||'0'=v_fact;*/
+  
+  v_periode          number;
+  v_run_id           number;
+  v_aco_id           number;
+  v_sco_id           number;
+  v_nbr              number;
+  v_tothte           number(25,10);
+  v_tva              number(25,10);
+  v_tothta           number(25,10);
+  v_tottvaa          number(25,10);
+  v_solde            number(25,10);
+  v_deb_amountinit   number(25,10);
+  v_deb_amountremain number(25,10);
+  v_deb_amount_cash  number(25,10);
+  v_bil_amountht     number(25,10);
+  v_bil_amounttva    number(25,10);
+  v_bil_amountttc    number(25,10);
+  v_vow_debtype      number;
+  v_vow_agrbilltype  number;
+  v_id_facture       varchar2(50);
+  v_anneereel        varchar2(4);
+  v_deb_comment      varchar2(100);
+  v_train_fact       varchar2(200);
+  v_fac_datecalcul   date;
+begin
+      v_periode   := p_periode;
+      v_anneereel := p_annee;
+      v_fac_datecalcul := p_bil_calcdt + 5;
+      v_id_facture:= lpad(trim(p_district),2,'0')||
+                     lpad(trim(p_tourne),3,'0')||
+                     lpad(trim(p_ordre),3,'0')||
+                     to_char(v_anneereel)||
+                     lpad(trim(v_periode),2,'0')||
+                     trim(p_version);
+      v_train_fact:='ANNEE:'||trim(v_anneereel)||' MOIS:'||trim(v_periode);
+        
+    v_tothte   :=(p_net_a_payer/1000);
+    v_tva      :=0;
+    v_tothta   :=0;
+    v_tottvaa  :=0;
+    v_solde    :=(p_net_a_payer/1000); 
+    select count(*) into v_nbr from genbill b where b.bil_code=v_id_facture;
+    if v_nbr=0 then
+        if (v_anneereel is not null and v_periode is not null and v_train_fact is not null) then      
+        begin
+          select t.run_id
+          into v_run_id
+          from genrun t 
+          where t.run_exercice=v_anneereel
+          and run_number      =v_periode;
+        exception when others then        
+          select seq_genrun.nextval into v_run_id from dual;        
+            insert into genrun (run_id,run_exercice,run_number,org_id,run_startdt,run_comment,RUN_NAME,RUN_DTCALC,RUN_ENDDT)
+                  values (v_run_id,V_anneereel,V_periode,p_org_id,V_FAC_DATECALCUL,'Role migré','Role '||V_TRAIN_FACT,V_FAC_DATECALCUL,V_FAC_DATECALCUL);
+        end;    
+      end if ;
+      begin 
+        select aco.aco_id 
+        into v_aco_id
+        from genaccount aco ,agrsagaco sco
+        where aco.aco_id = sco.aco_id
+        and nvl(aco.par_id,0)        = p_par_id
+        and nvl(aco.imp_id,0)        = p_imp_id
+        and nvl(sco.sag_id,0)        = p_sag_id;        
+      exception when others then 
+        select seq_genaccount.nextval into v_aco_id from dual;
+        insert into genaccount(aco_id,par_id,imp_id,vow_acotp,rec_id)
+                values(v_aco_id,p_par_id,p_imp_id,p_vow_acotp,null);
+      end;        
+      begin 
+        select t.sco_id
+        into v_sco_id
+        from agrsagaco t
+        where t.aco_id=v_aco_id;
+      exception when others then
+        select seq_agrsagaco.nextval  into v_sco_id  from dual;
+        insert into agrsagaco(sco_id,sag_id,aco_id,sco_startdt)
+                 values(v_sco_id,p_sag_id,v_aco_id,p_dt_abn);
+      end;
+        if upper(trim(p_etat))='A' then 
+        select seq_gendebt.nextval into p_deb_id from dual; 
+        V_deb_amount_cash  := -(p_deb_amountinit) ;
+        v_deb_amountinit   := 0;
+        v_vow_debtype      := 3135;--'Av'
+        v_deb_amountremain := p_deb_amountremain;
+        v_deb_comment      := p_deb_comment;
+        insert into gendebt(deb_id,deb_refe,org_id,par_id,adr_id,deb_date,deb_duedt,deb_printdt,
+                            deb_amountinit,deb_amountremain,bap_id,vow_settlemode,aco_id,deb_norecovery,deb_credt,
+                            deb_updtby,deb_updtdt,deb_comment,deb_amount_cash,sag_id,vow_debtype,deb_prel)
+                     values(p_deb_id,v_id_facture,p_org_id,p_par_id,p_adr_id,v_fac_datecalcul,v_fac_datecalcul,v_fac_datecalcul,
+                            v_deb_amountinit,v_deb_amountremain,null,p_vow_settlemode,v_aco_id,0,sysdate,
+                            null,null,v_deb_comment,v_deb_amount_cash,p_sag_id,v_vow_debtype,1);  
+        commit;
+        select seq_agrbill.nextval into p_bil_id from dual;
+        v_vow_agrbilltype   :=  2565;--'FA'; 
+        v_bil_amountht      :=  -(p_bil_amountht);
+        v_bil_amounttva     :=  -(p_bil_amounttva);
+        v_bil_amountttc     :=  -(p_bil_amountttc);
+        insert into agrbill(bil_id,sag_id,vow_agrbilltype,vow_modefact)
+                    values (p_bil_id,p_sag_id,v_vow_agrbilltype,p_vow_modefact);
+        insert into genbill(bil_id,bil_code,bil_calcdt,bil_amountht,bil_amounttva,bil_amountttc,
+                            deb_id,par_id,bil_status,bil_amountttcdec,bil_debtdt,run_id)
+                     values(p_bil_id,v_id_facture,v_fac_datecalcul,v_bil_amountht,v_bil_amounttva,v_bil_amountttc,
+                            p_deb_id,p_par_id,1,null,v_fac_datecalcul,v_run_id); 
+        commit; 
+        for s2 in c2(s1.bil_id)loop
+
+          insert into genbilline(bil_id,bli_reversebli_id,bli_number,bli_reverseblinumber,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
+                                 imp_id,bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
+                                 bli_enddt,vow_unit,bli_nbunites,bli_detail,bli_cancel,imc_id,imp_analytique_id,bli_periodeinit,
+                                 bli_periode,bli_reversedt,bli_credt,bli_updtdt,bli_updtby,meu_id,bli_name_a,bli_reverseblidec_id,bli_reverseblinumberdec,bli_reversedecdt)
+                          values(v_bil_id,null,s2.bli_number,null,s2.bli_name,v_anneereel,s2.ite_id,s2.pta_id,s2.psl_rank,
+                                 null,s2.bli_volumebase,s2.bli_volumebase,s2.bli_puht,s2.tva_id,s2.bli_mht,s2.bli_mttva,s2.bli_mttc,v_fac_datecalcul,
+                                 v_fac_datecalcul,s2.vow_unit,null,0,0,null,null,null,
+                                 null,null,sysdate,null,null,null,null,null,null,null);
+        end loop;
+       
+      else 
+        v_deb_comment:= lpad(trim(s1.district),2,'0')||lpad(trim(s1.police),5,'0')||lpad(trim(s1.tournee),3,'0')||lpad(trim(s1.ordre),3,'0');
+        select seq_gendebt.nextval into v_deb_id from dual; 
+        for s3 in c3 loop
+            v_vow_debtype      := 3134;--'FA'
+          if (s3.nombre=0)  then  --- Facture Normal else Facture Avoire
+            v_deb_amountinit   := v_tothte+v_tva+v_tothta+v_tottvaa;
+            v_deb_amount_cash  := v_tothte+v_tva+v_tothta+v_tottvaa;
+            insert into gendebt(deb_id,deb_refe,org_id,par_id,adr_id,deb_date,deb_duedt,deb_printdt,
+                      deb_amountinit,deb_amountremain,bap_id,vow_settlemode,aco_id,deb_norecovery,deb_credt,
+                      deb_updtby,deb_updtdt,deb_comment,deb_amount_cash,sag_id,vow_debtype,deb_prel)
+                  values (v_deb_id,v_id_facture,p_org_id,p_par_id,p_adr_id,v_fac_datecalcul,v_fac_datecalcul,v_fac_datecalcul,
+                      v_deb_amountinit,v_solde,null,p_vow_settlemode,v_aco_id,v_deb_norecovery,sysdate,
+                      null,null,v_deb_comment,v_deb_amount_cash,p_sag_id,v_vow_debtype,1);  
+          else
+            V_deb_amount_cash  := (v_tothte+v_tva+v_tothta+v_tottvaa);
+            v_deb_amountinit   := 0;
+            insert into gendebt(deb_id,deb_refe,org_id,par_id,adr_id,deb_date,deb_duedt,deb_printdt,
+                      deb_amountinit,deb_amountremain,bap_id,vow_settlemode,aco_id,deb_norecovery,deb_credt,
+                      deb_updtby,deb_updtdt,deb_comment,deb_amount_cash,sag_id,vow_debtype,deb_prel)
+                  values (v_deb_id,v_id_facture,p_org_id,p_par_id,p_adr_id,v_fac_datecalcul,v_fac_datecalcul,v_fac_datecalcul,
+                      v_deb_amountinit,v_solde,null,p_vow_settlemode,v_aco_id,v_deb_norecovery,sysdate,
+                      null,null,v_deb_comment,v_deb_amount_cash,p_sag_id,v_vow_debtype,1);  
+          end if ; 
+        select seq_agrbill.nextval into v_bil_id from dual; 
+        v_bil_amountht      :=  v_tothte +v_tothta;
+        v_bil_amounttva     :=  v_tva+v_tottvaa;
+        v_bil_amountttc     :=  v_tothte +v_tva+v_tothta+v_tottvaa;
+        v_vow_agrbilltype   :=  pk_genvocword.getidbycode('VOW_AGRBILLTYPE',decode(s1.etat,'P','RF','O','FC','C','FHC','FC'),null) ;
+        insert into agrbill(bil_id,sag_id,vow_agrbilltype,vow_modefact)
+               values(v_bil_id,p_sag_id,v_vow_agrbilltype,p_vow_modefact);  
+        insert into genbill(bil_id,bil_code,bil_calcdt,bil_amountht,bil_amounttva,bil_amountttc,
+                  deb_id,par_id,bil_status,bil_amountttcdec,bil_debtdt,run_id)
+               values(v_bil_id,v_id_facture,v_fac_datecalcul,v_bil_amountht,v_bil_amounttva,v_bil_amountttc,
+                  v_deb_id,v_par_id,1,v_amountttcdec,v_fac_datecalcul,v_run_id); 
+        commit;
+       end loop;
+      end if;
+      end if;
+
+end; 
 --------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------
 
@@ -1666,15 +2536,15 @@ PROCEDURE MigrationQuotidien
     --Curseur des branchement actif
     cursor c2
     is
-     select lpad(trim(b.district),2,'0') district, lpad(trim(b.police),5,'0') police, lpad(trim(b.tourne),3,'0') tourne, lpad(trim(b.ordre),3,'0') ordre, b.adresse, b.date_creation,
+      select lpad(trim(b.district),2,'0') district, lpad(trim(b.police),5,'0') police, lpad(trim(b.tourne),3,'0') tourne, lpad(trim(b.ordre),3,'0') ordre, b.adresse, b.date_creation,
             lpad(trim(b.categorie_actuel),2,'0') categorie_actuel, upper(trim(b.client_actuel)) client_actuel, lpad(trim(b.code_marque),3,'0') code_marque, lpad(trim(b.compteur_actuel),11, '0') compteur_actuel, b.code_postal,
             trim(b.usage) usage, b.type_branchement, b.aspect_branchement, b.marche, trim(b.etat_branchement) etat_branchement,trim(b.banque) banque,trim(b.agence) agence,trim(b.num_compte) num_compte,
             trim(b.cle_rib) cle_rib,lpad(trim(b.tarif),2,'0') tarif, substr(b.onas,-1,1) tarif_onas,b.volume_puit_onas vol_puit,upper(trim(b.gros_consommateur)) mensu,
             lpad(trim(b.district),2,'0')||lpad(trim(b.categorie_actuel),2,'0')||trim(upper(b.client_actuel)) code_cli, b.rowid row_id, 
             upper(substr(a.tarif_onas,-1,1)) tarif_onas_a,a.codpoll codpoll_a,lpad(trim(a.tarif),2,'0') tarif_a,a.echt echt_a,a.echr echr_a,a.brt/1000 brt_a,a.echronas echronas_a,
             a.echtonas echtonas_a,a.capitonas/1000 capitonas_a,a.interonas/1000 interonas_a,a.arrond/1000 arrond_a,a.categ categ_a,trim(a.gros_consommateur) gros_consommateur_a,
-            c.par_id,
-	 from   test.branchement b
+            c.par_id
+	   from   test.branchement b
        left join test.src_abonnees a 
        on     lpad(trim(dist),2,'0') = lpad(trim(b.district),2,'0')
        and    lpad(trim(pol),5,'0') = lpad(trim(b.police),5,'0')
@@ -1686,96 +2556,182 @@ PROCEDURE MigrationQuotidien
        and    upper(trim(b.client_actuel)) = upper(trim(c.code))
       /*and    lpad(trim(b.district),2,'0')||lpad(trim(b.tourne),3,'0')
             ||lpad(trim(b.ordre),3,'0')||lpad(trim(b.police),5,'0') = '2500116485096'*/
-	  where  spt_id is null
-      and    lpad(trim(b.district),2,'0') = '25'
-			
+	   where  spt_id is null
+     and    lpad(trim(b.district),2,'0') = '25'	
      order by trim(b.etat_branchement);
-	 
 	 
 	--------------cureur historique fiche_releve
     cursor c3
     is
     select lpad(trim(b.district),2,'0') district, lpad(trim(b.police),5,'0') police, lpad(trim(b.tourne),3,'0') tourne, lpad(trim(b.ordre),3,'0') ordre,
-            r.annee,r.trim,r.releve,r.prorata,r.releve2,r.releve3,r.releve4,r.releve5,r.date_releve,
-		    r.compteurt,r.consommation,lpad(trim(r.anomalie),18,0)anomalie,r.avisforte,r.message_temporaire,
-		    r.date_controle,r.index_controle,p.m3 mois,
-			b.spt_id,b.mtc_id,b.equ_id,
-			decode(a.annee,0,a.indexa,indexr) index_releve,a.annee anneeT,a.prorata prorataT,a.trimestre trimestreT,
-			a.date_releve date_releveT,a.consommation consommationT,L.m3 moisT
-	from    test.src_fiche_releve r 	
-		left join   test.branchement b
-		on     lpad(trim(b.district),2,'0')=lpad(trim(r.district),2,'0')
-		and    lpad(trim(b.tourne),3,'0')  =lpad(trim(r.tourne),3,'0')
-		and    lpad(trim(b.ordre),3,'0')   =lpad(trim(r.tourne),3,'0') 
-		and    b.spt_id is not null
-	    and    b.mtc_id is not  null
-	    and    b.equ_id is not null
-		left join   test.tourne t
-		on     lpad(trim(t.district),2,'0')= lpad(trim(r.district),2,'0')
-		and    lpad(trim(t.code),3,'0')    = lpad(trim(r.tourne),3,'0')
-		left join test.param_tournee p
-		on    lpad(trim(t.district),2,'0')= lpad(trim(p.district),2,'0')
-		and   p.trim=r.trim
-		and   t.ntiers  =p.tier
-		and   t.nsixieme=p.six
-	where   r.mrd_id is null
-	and   lpad(trim(b.district),2,'0') = '25';
-	 
-	-----------cureur relevet
-	cursor c4 
-	is
-	 select lpad(trim(b.district),2,'0') district, lpad(trim(b.police),5,'0') police, lpad(trim(b.tourne),3,'0') tourne, lpad(trim(b.ordre),3,'0') ordre,
-            b.spt_id,b.mtc_id,b.equ_id,
-			decode(a.annee,0,a.indexa,indexr) index_releve,a.annee,a.prorata ,a.trimestre ,
-			a.date_releve ,a.consommation ,p.m3 moisT
-	from    test.relevet a 	
-		left join   test.branchement b
-		on     lpad(trim(b.district),2,'0')=lpad(trim(a.district),2,'0')
-		and    lpad(trim(b.tourne),3,'0')  =lpad(trim(a.tourne),3,'0')
-		and    lpad(trim(b.ordre),3,'0')   =lpad(trim(a.ordre),3,'0') 
-		and    lpad(trim(b.police) ,5,'0') = lpad(trim(a.police),5,'0')
-		and    b.spt_id is not null
-	    and    b.mtc_id is not  null
-	    and    b.equ_id is not null
-		left join   test.tourne t
-		on     lpad(trim(t.district),2,'0')= lpad(trim(a.district),2,'0')
-		and    lpad(trim(t.code),3,'0')    = lpad(trim(a.tourne),3,'0')
-		left join test.param_tournee p
-		on    lpad(trim(t.district),2,'0')= lpad(trim(p.district),2,'0')
-		and   p.trim    =a.trimestre
-		and   t.ntiers  =p.tier
-		and   t.nsixieme=p.six
-	where   r.mrd_id is null
-	and trim(a.annee)<>0
-	and   lpad(trim(b.district),2,'0') = '25';
-	-------------cureur releve_gc
-    cursor c5 
-	is
-	select lpad(trim(b.district),2,'0') district, lpad(trim(b.police),5,'0') police, lpad(trim(b.tourne),3,'0') tourne, lpad(trim(b.ordre),3,'0') ordre,
-           b.spt_id,b.mtc_id,b.equ_id,
-		   a.date_releve,a.annee,a.mois,a.prorata,a.consommation,a.indexr,t.code_anomalie
-	from test.relevegc a 
-	left join test.branchement b
-	on     lpad(trim(b.district),2,'0')=lpad(trim(a.district),2,'0')
-	and    lpad(trim(b.tourne),3,'0')  =lpad(trim(a.tourne),3,'0')
-	and    lpad(trim(b.ordre),3,'0')   =lpad(trim(a.ordre),3,'0') 
-	and    lpad(trim(b.police) ,5,'0') = lpad(trim(a.police),5,'0')
-	and    b.spt_id is not null
-	and    b.mtc_id is not  null
-	and    b.equ_id is not null
-	left join  test.listeanomalies_releve  t
-	where lpad(trim(t.district),2,'0') = lpad(trim(a.district),2,'0')
-	and   lpad(trim(t.tourne),3,'0')   = lpad(trim(a.tourne),3,'0')
-	and   lpad(trim(t.ordre),3,'0')    = lpad(trim(a.ordre),3,'0') 
-	and   trim(t.annee)                = trim(a.annee)
-	and   trim(t.trim)                 = trim(mois)
-	where trim(a.mois) is not null 
-	and  trim(a.annee)<>0
-	and mrd_id is null
-	----------------
+           r.annee,r.trim,r.releve,r.prorata,r.releve2,r.releve3,r.releve4,r.releve5,r.date_releve,
+           r.compteurt,r.consommation,lpad(trim(r.anomalie),18,0)anomalie,r.avisforte,r.message_temporaire,
+           r.date_controle,r.index_controle,p.m3 mois,b.spt_id,b.mtc_id,b.equ_id,
+           r.annee anneeT,r.prorata prorataT,r.trim trimestreT,r.date_releve date_releveT,r.consommation consommationT,r.rowid
+    from   test.src_fiche_releve r 	
+      left join   test.branchement b
+      on     lpad(trim(b.district),2,'0')=lpad(trim(r.district),2,'0')
+      and    lpad(trim(b.tourne),3,'0')  =lpad(trim(r.tourne),3,'0')
+      and    lpad(trim(b.ordre),3,'0')   =lpad(trim(r.tourne),3,'0') 
+      and    b.spt_id is not null
+      and    b.mtc_id is not  null
+      and    b.equ_id is not null
+      left join   test.tourne t
+      on     lpad(trim(t.district),2,'0')= lpad(trim(r.district),2,'0')
+      and    lpad(trim(t.code),3,'0')    = lpad(trim(r.tourne),3,'0')
+      left join test.param_tournee p
+      on    lpad(trim(p.district),2,'0')= lpad(trim(r.district),2,'0')
+      and   lpad(trim(p.district),2,'0')= lpad(trim(t.district),2,'0')
+      and   p.trim   = r.trim
+      and   p.tier   = t.ntiers 
+      and   p.six    = t.nsixieme
+    where  r.mrd_id is null
+    and   lpad(trim(b.district),2,'0') = '25';
  
+	-----------cureur relevet
+	   cursor c4 
+     is
+      select lpad(trim(b.district),2,'0') district, lpad(trim(b.police),5,'0') police, lpad(trim(b.tourne),3,'0') tourne, lpad(trim(b.ordre),3,'0') ordre,
+              b.spt_id,b.mtc_id,b.equ_id,
+              decode(a.annee,0,a.indexa,indexr) index_releve,a.annee,a.prorata ,a.trimestre ,
+              a.date_releve ,a.consommation,a.rowid ,p.m3 moisT
+      from    test.src_relevet a 	
+        left join   test.branchement b
+        on     lpad(trim(b.district),2,'0')= lpad(trim(a.district),2,'0')
+        and    lpad(trim(b.tourne),3,'0')  = lpad(trim(a.tourne),3,'0')
+        and    lpad(trim(b.ordre),3,'0')   = lpad(trim(a.ordre),3,'0') 
+        and    lpad(trim(b.police) ,5,'0') = lpad(trim(a.police),5,'0')
+        and    b.spt_id is not null
+        and    b.mtc_id is not  null
+        and    b.equ_id is not null
+        left join   test.tourne t
+        on     lpad(trim(t.district),2,'0')= lpad(trim(a.district),2,'0')
+        and    lpad(trim(t.code),3,'0')    = lpad(trim(a.tourne),3,'0')
+        left join test.param_tournee p
+        on    lpad(trim(p.district),2,'0')= lpad(trim(a.district),2,'0')
+        and   lpad(trim(p.district),2,'0')= lpad(trim(t.district),2,'0')
+        and   p.trim = a.trimestre
+        and   p.tier = t.ntiers  
+        and   p.six  = t.nsixieme
+      where   a.mrd_id is null
+      and trim(a.annee)<>0
+      and   lpad(trim(b.district),2,'0') = '25';
+
+---curseur facture_as400
+    cursor c6   
+    is 
+     select lpad(trim(f.dist),2,'0') district,lpad(trim(f.pol),5,'0') police,lpad(trim(f.tou),3,'0') tourne,lpad(trim(f.ord),3,'0') ordre,
+          f.rowid,decode(f.caron,'1',1,-1) caron,f.refc01,f.refc02,f.refc03,f.refc04,f.tvacons,f.tva_ff,f.tvaferm,f.tva_preav,
+          f.tvadeplac,f.tvadepose_dem,f.tvadepose_def,f.tva_capit,f.tva_pfin,f.arriere,
+          f.net,f.monttrim,f.montt1,f.const1,f.tauxt1,f.montt2,f.const2,f.tauxt2,f.montt3,f.const3,f.tauxt3,f.mon1,
+          f.volon1,f.tauon1,f.mon2,f.volon2,f.tauon2,f.mon3,f.volon3,f.tauon3,f.fixonas,f.fraisctr,f.fermeture,f.preavis,
+          f.deplacement,f.depose_dem,f.depose_def,f.rbranche,f.rfacade,f.pfinancier,f.capit,f.inter,f.arepor,
+          f.narond,b.spt_id,b.mtc_id,b.equ_id,b.sag_id,b.date_creation,p.trim,p.tier,p.six,c.par_id, l.code_anomalie, 
+          to_date(lpad(trim(r.datexp),8,'0'),'ddmmyyyy') fac_datecalcul_trim,
+          to_date(lpad(trim(r.datl),8,'0'),'ddmmyyyy')  fac_datelim_trim,
+          to_date(lpad(trim(d.datexp),8,'0'),'ddmmyyyy') fac_datecalcul_mens,
+          to_date(lpad(trim(d.datl),8,'0'),'ddmmyyyy')  fac_datelim_mens
+    from test.src_facture_as400 f
+      left join test.branchement b 
+      on  lpad(trim(b.district),2,'0')= lpad(trim(f.dist),2,'0')
+      and lpad(trim(b.tourne),3,'0')  = lpad(trim(f.tou),3,'0')   
+      and lpad(trim(b.ordre),3,'0')   = lpad(trim(f.ord),3,'0')   
+      and lpad(trim(b.police) ,5,'0') = lpad(trim(f.pol),3,'0')
+      and b.spt_id is not null
+      and b.equ_id is not null 
+      and b.mtc_id is not null
+      and b.sag_id is not null 
+      left join test.tourne t
+      on  lpad(trim(t.district),2,'0')= lpad(trim(f.dist),2,'0')
+      and lpad(trim(t.code),3,'0')    = lpad(trim(f.tou),3,'0')
+      left join test.param_tournee p
+      on  lpad(trim(p.district),2,'0')= lpad(trim(f.dist),2,'0')
+      and lpad(trim(p.district),2,'0')= lpad(trim(t.district),2,'0')
+      and   p.m1      = f.refc01
+      and   p.m2      = f.refc02
+      and   p.m3      = f.refc03
+      and   p.tier    = t.ntiers
+      and   p.six     = t.nsixieme 
+      left join  test.role_trim r
+      on    lpad(trim(r.distr),2,'0') = lpad(trim(f.dist),2,'0')
+      and   lpad(trim(r.tour),3,'0')  = lpad(trim(f.tou),3,'0')
+      and   lpad(trim(r.ordr),3,'0')  = lpad(trim(f.ord),3,'0')
+      and   lpad(trim(r.police),5,'0')= lpad(trim(f.pol),5,'0')
+      and   r.tier                    = to_number(t.ntiers)
+      and   r.trim                    = p.trim
+      and   r.six                     = to_number(t.nsixieme)        
+      and   r.annee                   = '20'||f.refc04
+      and   rownum = 1
+      left join  test.src_role d
+      on   lpad(trim(d.distr),2,'0') = lpad(trim(f.dist),2,'0')
+      and  lpad(trim(d.tour),3,'0')  = lpad(trim(f.tou),3,'0')
+      and  lpad(trim(d.ordr),3,'0')  = lpad(trim(f.ord),3,'0')
+      and  lpad(trim(d.police),5,'0')= lpad(trim(f.pol),5,'0')
+      and  d.trim                    = f.refc01      
+      and  d.annee                   = '20'||f.refc02
+      and  rownum = 1
+      left join test.client c
+      on    lpad(trim(b.district),2,'0') = lpad(trim(c.district),2,'0')
+      and   lpad(trim(b.categorie_actuel),2,'0') = lpad(trim(c.categorie),2,'0')
+      and   upper(trim(b.client_actuel)) = upper(trim(c.code))
+      left join test.listeanomalies_releve  l
+      on   lpad(trim(l.district),2,'0')= lpad(trim(f.dist),2,'0') 
+      and  lpad(trim(l.tourne),3,'0')  = lpad(trim(f.tou),3,'0')
+      and  lpad(trim(l.ordre),3,'0')   = lpad(trim(f.ord),3,'0')  
+      and  l.ANNEE                    = '20'||trim(f.refc02)
+			and  l.TRIM                     = f.refc01
+    where f.bil_id is null;
+---------------------
+--------curseur f_dist
+    cursor c7   
+    is 
+    select lpad(trim(f.district),2,'0') district,lpad(trim(f.tournee),3,'0') tourne,
+           lpad(trim(f.ordre),3,'0') ordre,lpad(trim(f.police),5,'0') police,lpad(trim(f.periode),2,'0') periode,
+           decode(trim(f.etat),'P','RF','O','FC','C','FHC','FC') etat,trim(f.annee) annee,f.net_a_payer,f.rowid,
+           b.spt_id,b.mtc_id,b.equ_id,b.sag_id,b.date_creation,c.par_id,t.ntiers,t.nsixieme
+    from test.facture f 
+      left join test.branchement b 
+      on   lpad(trim(b.district),2,'0')= lpad(trim(f.district),2,'0')
+      and  lpad(trim(b.tourne),3,'0')  = lpad(trim(f.tournee),3,'0')   
+      and  lpad(trim(b.ordre),3,'0')   = lpad(trim(f.ordre),3,'0') 
+      and  lpad(trim(b.police) ,5,'0') = lpad(trim(f.police),3,'0')
+      left join  test.tourne t
+      on   lpad(trim(t.district),2,'0') = lpad(trim(f.district),2,'0') 
+      and  lpad(trim(t.code),3,'0')     = lpad(trim(f.tournee),3,'0')
+      left join test.client c
+      on   lpad(trim(b.district),2,'0') = lpad(trim(c.district),2,'0')
+      and  lpad(trim(b.categorie_actuel),2,'0') = lpad(trim(c.categorie),2,'0')
+      and  upper(trim(b.client_actuel)) = upper(trim(c.code))
+    where  f.annee>='2015' 
+    and    f.bil_id is null;
 ------------------------	
-	 
+   cursor c8 
+   is     
+  select  g.bil_code,g.bil_calcdt,f.*,d.*,
+  b.spt_id,b.mtc_id,b.equ_id,b.sag_id,b.date_creation,c.par_id,t.ntiers,t.nsixieme
+  from facture f
+  left join test.branchement b 
+  on   lpad(trim(b.district),2,'0')= lpad(trim(f.district),2,'0')
+  and  lpad(trim(b.tourne),3,'0')  = lpad(trim(f.tournee),3,'0')   
+  and  lpad(trim(b.ordre),3,'0')   = lpad(trim(f.ordre),3,'0') 
+  and  lpad(trim(b.police),5,'0')  = lpad(trim(f.police),3,'0')
+  left join genbill g
+  on g.bil_code = (lpad(trim(f.district),2,'0')||
+                    lpad(trim(f.tournee),3,'0')||
+                    lpad(trim(f.ordre),3,'0')||
+                    to_char(f.annee)||
+                    lpad(trim(f.periode),2,'0')||'0')
+   left join gendebt d
+   on   g.deb_id=d.deb_id
+   left join  test.tourne t
+    on   lpad(trim(t.district),2,'0') = lpad(trim(f.district),2,'0') 
+    and  lpad(trim(t.code),3,'0')     = lpad(trim(f.tournee),3,'0')
+    left join test.client c
+    on   lpad(trim(b.district),2,'0') = lpad(trim(c.district),2,'0')
+    and  lpad(trim(b.categorie_actuel),2,'0') = lpad(trim(c.categorie),2,'0')
+    and  upper(trim(b.client_actuel)) = upper(trim(c.code))
+   where trim(f.etat) in ('A','P');
+----------- 
 	/* 
 	--Curseur releve precedente 
 	cursor c3(f_spt_id number)
@@ -1806,6 +2762,23 @@ PROCEDURE MigrationQuotidien
    v_adr_id number;
    v_mtc_id number;
    v_aac_id number;
+   v_mrd_id number;
+   v_bil_id number;
+   v_deb_id number;
+   v_annee number;
+   v_tva   number;
+   v_tothta  number;
+   v_tottvaa  number;
+   v_tothte  number;
+   v_solde number;
+   v_periode number;
+   v_vow_agrbilltype number;
+   v_date    date;
+   v_fac_datecalcul date;
+   v_fac_datelim   date;
+   v_id_facture varchar2(100);
+   v_train_fact varchar2(100);
+   v_deb_comment varchar2(100);
    p_pk_etape varchar2(400);
    p_pk_exception varchar2(400);
   BEGIN
@@ -1831,7 +2804,7 @@ PROCEDURE MigrationQuotidien
       commit;
     end loop; --Curseur client et adm
 
-    --Migration des branchement actif
+    --Migration des branchement
     for s2 in c2 loop
       --initialisation
       v_par_id := null;
@@ -1934,127 +2907,237 @@ PROCEDURE MigrationQuotidien
       if v_spt_id is not null then
         update test.branchement
         set    spt_id = v_spt_id,
-               sag_id = v_sag_id
-        where  rowid = s2.row_id;
-      end if;
-      commit;
-	  --------
-	  if v_equ_id is not null then
-        update test.branchement
-        set    equ_id = v_equ_id,
+               sag_id = v_sag_id,
+               equ_id = v_equ_id,
                mtc_id = v_mtc_id
         where  rowid = s2.row_id;
       end if;
       commit;
-	  
-	  end loop;  
-	  	  
+    end loop;   
 	  --Historique Releve
-	  for s3 in c3 loop
-	    
-		if s3.spt_id is null then
-			rollback;
-			EXCEPTION_releve(s3.district||s3.tourne||s3.ordre||s3.police,null,'Impossible de trouver le pdl','Selection du releve');
-			continue;
-		else
-			v_spt_id := s3.spt_id;
-		end if;
-		MigrationHitoriquereleve(p_pk_etape,p_pk_exception,s3.district,s3.tourne,s3.ordre,s3.equ_id,s3.mtc_id,v_spt_id,
-								v_g_meu_id,v_g_age_id,s3.prorata,s3.message_temporaire,s3.consommation,s3.trim,
-								s3.annee,s3.avisforte,s3.date_releve,s3.date_controle,s3.index_controle,s3.anomalie,s3.releve,
-								s3.releve2,s3.releve3,s3.releve4,s3.releve5,s3.mois,v_g_vow_readorig,v_g_vow_readmeth);
-		if p_pk_exception is not null then
-			rollback;
-			EXCEPTION_releve(s3.district||s3.tourne||s3.ordre||s3.police,null,p_pk_exception,p_pk_etape);
-			continue;
-        end if;					   
-		if v_mrd_id is not null then
-		update test.src_fiche_releve
-		set    mrd_id = v_mrd_id
-		where  rowid = s3.row_id;
-		end if;
-		commit;
-	  end loop;
-	  for s4 in c4 loop
-	    if s4.spt_id is null then
-			rollback;
-			EXCEPTION_releve(s4.district||s4.tourne||s4.ordre||s4.police,null,'Impossible de trouver le pdl','Selection du releve');
-			continue;
-		else
-			v_spt_id := s4.spt_id;
-		end if;
+    for s3 in c3 loop
+      v_mrd_id := null;
+      if s3.spt_id is null then
+        rollback;
+        EXCEPTION_releve(s3.district||s3.tourne||s3.ordre||s3.police,null,'Impossible de trouver le pdl','Selection du releve');
+        continue;
+      else
+        v_spt_id := s3.spt_id;
+      end if;
+      MigrationHitoriquereleve(p_pk_etape,p_pk_exception,s3.district,s3.tourne,s3.ordre,s3.equ_id,s3.mtc_id,v_spt_id,
+                               v_g_meu_id,v_g_age_id,s3.prorata,s3.message_temporaire,s3.consommation,s3.trim,
+                               s3.annee,s3.avisforte,s3.date_releve,s3.date_controle,s3.index_controle,s3.anomalie,s3.releve,
+                               s3.releve2,s3.releve3,s3.releve4,s3.releve5,s3.mois,v_g_vow_readorig,v_g_vow_readmeth,v_mrd_id);
+      if p_pk_exception is not null then
+        rollback;
+        EXCEPTION_releve(s3.district||s3.tourne||s3.ordre||s3.police,null,p_pk_exception,p_pk_etape);
+        continue;
+          end if;					   
+      if v_mrd_id is not null then
+        update test.src_fiche_releve
+        set    mrd_id = v_mrd_id
+        where  rowid = s3.rowid;
+      end if;
+      commit;
+    end loop;
+    /*
+    for s4 in c4 loop
+      v_mrd_id := null;
+      if s4.spt_id is null then
+      rollback;
+      EXCEPTION_releve(s4.district||s4.tourne||s4.ordre||s4.police,null,'Impossible de trouver le pdl','Selection du releve');
+      continue;
+    else
+      v_spt_id := s4.spt_id;
+    end if;
+  	  
+      MigrationDernierreleve(p_pk_etape,p_pk_exception,s4.district,s4.tourne,s4.ordre,v_equ_id,
+                             s4.mtc_id,v_spt_id,v_g_meu_id,v_g_age_id,s4.annee,s4.prorata,s4.trimestre,
+                             s4.index_releve,s4.date_releve,s4.consommation,s4.moisT,
+                             v_g_vow_comm1,v_g_vow_readorig,v_g_vow_readmeth,p_vow_readreason,mrd_id);
+  												   
+      if p_pk_exception is not null then
+        rollback;
+        EXCEPTION_releve(s4.district||s4.tourne||s4.ordre||s4.police,null,p_pk_exception,p_pk_etape);
+        continue;
+      end if;	
+      if v_mrd_id is not null then
+        update test.relevet
+        set    mrd_id= v_mrd_id
+        where  rowid = s4.rowid;
+      end if;
+      commit;  
+    end loop;
 	  
-		MigrationDernierreleve(p_pk_etape,p_pk_exception,s4.district,s4.tourne,s4.ordre,v_equ_id,
-	                           s4.mtc_id,v_spt_id,v_g_meu_id,v_g_age_id,s4.annee,s4.prorata,s4.trimestre,
-							   s4.index_releve,s4.date_releve,s4.consommation,s4.moisT
-							   v_g_vow_comm1,v_g_vow_readorig,v_g_vow_readmeth,p_vow_readreason);
-												   
-		if p_pk_exception is not null then
-			rollback;
-			EXCEPTION_releve(s4.district||s4.tourne||s4.ordre||s4.police,null,p_pk_exception,p_pk_etape);
-			continue;
-        end if;	
-		if v_mrd_id is not null then
-		update test.relevet
-		set    mrd_id= v_mrd_id
-		where  rowid = s4.row_id;
-		end if;
-		commit;  
-	  end loop;
-	   
-	  for s5 in c5 loop
-		MigrationRelevegc(p_pk_etape,p_pk_exception,s5.district,s5.tourne,s5.ordre,v_equ_id,
-						  v_mtc_id,v_spt_id,v_g_meu_id,v_g_age_id,s5.date_releve,s5.annee,s5.mois,s5.prorata,
-						  s5.consommation,s5.code_anomalie,s5.indexr,v_g_vow_readorig,v_g_vow_readmeth,p_vow_readreason);
-		 
-		if p_pk_exception is not null then
-			rollback;
-			EXCEPTION_releve(s4.district||s4.tourne||s4.ordre||s4.police,null,p_pk_exception,p_pk_etape);
-			continue;
-		end if;	
-		if v_mrd_id is not null then
-		update test.relever_gc
-		set    mrd_id= v_mrd_id
-		where  rowid = s5.row_id;
-		end if;
-		commit;  
-	  end loop;
-	   
-	 
-	 
-	  /*
-	 
-			 MigrationHitoriquerelevegc(p_pk_etape,p_pk_exception,s2.district,s2.tourne,s2.ordre,v_equ_id,
-	                             v_mtc_id,v_spt_id,v_g_meu_id,v_g_age_id,v_g_vow_readorig,v_g_vow_readmeth,p_vow_readreason);
-	 
-      				   
-	  
-	  
-								 
-      
-		p_pk_etape:='Mise A jour releve precedente MRD_PREVIOUS_ID';				 
-	    for s3 in c3(v_spt_id) loop
-		
-			UPDATE TECMTRREAD t 
-			set t.mrd_previous_id=s3.mrd_id
-			where t.mrd_id=(select mrd_id 
-							from TECMTRREAD 
-							where MRD_DT>s3.MRD_DT  
-							and spt_id= v_spt_id
-							and rownum=1
-							)
-			and t.spt_id=v_spt_id;
-		end loop;	
+   /*			      p_pk_etape:='Mise A jour releve precedente MRD_PREVIOUS_ID';	
+      for s3 in c3(v_spt_id) loop
+  		
+      UPDATE TECMTRREAD t 
+      set t.mrd_previous_id=s3.mrd_id
+      where t.mrd_id=(select mrd_id 
+              from TECMTRREAD 
+              where MRD_DT>s3.MRD_DT  
+              and spt_id= v_spt_id
+              and rownum=1
+              )
+      and t.spt_id=v_spt_id;
+    end loop;	
         p_pk_etape:='Création consommations de reférence'; 
-		delete from agravgconsum;
-		for s4 in c4(v_spt_id) loop
-			select seq_agravgconsum.nextval into v_aac_id from dual;
-			insert into agravgconsum(aac_id,sag_id,meu_id,aac_avgconsummrd,aac_avgconsumimp)
-							  values(v_aac_id,s4.sag_id,v_g_meu_id,s4.mme_consum,null);
-			commit;
-		end loop;*/
-    end loop; --Curseur des branchement
-  END;
+    delete from agravgconsum;
+    for s4 in c4(v_spt_id) loop
+      select seq_agravgconsum.nextval into v_aac_id from dual;
+      insert into agravgconsum(aac_id,sag_id,meu_id,aac_avgconsummrd,aac_avgconsumimp)
+                values(v_aac_id,s4.sag_id,v_g_meu_id,s4.mme_consum,null);
+      commit;
+    end loop;*/
+      
+    for s6 in c6 loop
+      v_bil_id := null;
+      v_deb_id := null;   
+      v_tothta     :=0;
+      v_tottvaa    :=0;
+      v_tva :=(s6.tvacons+s6.tva_ff+s6.tvaferm+s6.tva_preav+s6.tvadeplac+s6.tvadepose_dem+s6.tvadepose_def+s6.tva_capit+s6.tva_pfin)/1000;   
+      v_deb_comment :=s6.district||s6.police||s6.tourne||s6.ordre;  
+      if s6.refc04 is not null then 
+          if(to_number(s6.refc01)<to_number(s6.refc03) )then
+            v_annee := to_number('20'||s6.refc04);
+          else
+            v_annee := to_number('20'||to_char((to_number(s6.refc04)-1)));
+          end if;
+          v_periode := trim(s6.trim);
+          v_train_fact :='Annee:'||trim(v_annee)||' trim:'||trim(v_periode)||' tier:'||trim(s6.tier)||' six:'||trim(s6.six );
+          if s6.fac_datecalcul_trim is null then
+            select last_day(to_date('01'||lpad(s6.refc03,2,'0')||s6.refc04,'ddmmyy')) 
+            into v_fac_datecalcul
+            from dual;
+          else
+            v_fac_datecalcul:=s6.fac_datecalcul_trim;
+          end if;  
+          v_fac_datelim:=nvl(s6.fac_datelim_trim,v_fac_datecalcul+45); 
+          v_tothte     :=(s6.net-(v_tva+s6.arriere))/1000;
+          v_solde      :=(s6.net-s6.arriere)/1000;
+      else
+          select last_day(to_date('01'||lpad(s6.refc01,2,'0')||s6.refc02,'ddmmyy')) 
+          into v_date
+          from dual;
+          v_annee   := to_number(to_char(v_date,'yyyy'));
+          v_periode := trim(s6.refc01);
+          v_train_fact:='ANNEE:'||trim(v_annee)||' MOIS:'||trim(v_periode);
+          v_fac_datecalcul := nvl(s6.fac_datecalcul_mens,v_date);
+          v_fac_datelim    := nvl(s6.fac_datelim_mens,v_date);
+          v_tothte    := (s6.monttrim-v_tva)/1000;
+          v_solde     := s6.monttrim/1000; 
+      end if;   
+      v_id_facture := s6.district||s6.tourne||s6.ordre||to_char(v_annee)||lpad(trim(v_periode),2,'0')||'0';
+  
+      MigrationFacture_as400(p_pk_etape,p_pk_exception,v_deb_id,v_bil_id,s6.district,s6.tourne,s6.ordre,s6.police,s6.spt_id,v_g_imp_id,s6.sag_id,s6.par_id,       
+                            v_adr_id,v_org_id,s6.refc01,s6.refc03,s6.refc04,s6.refc02,s6.tvacons,s6.tva_ff,s6.tvaferm,s6.tva_preav,
+                            s6.tvadeplac,s6.tvadepose_dem,s6.tvadepose_def,s6.tva_capit,s6.tva_pfin,v_fac_datecalcul,v_fac_datelim,s6.arriere,
+                            s6.net,s6.monttrim,s6.montt1,s6.const1,s6.tauxt1,s6.montt2,s6.const2,s6.tauxt2,s6.montt3,s6.const3,s6.tauxt3,s6.mon1,
+                            s6.volon1,s6.tauon1,s6.mon2,s6.volon2,s6.tauon2,s6.mon3,s6.volon3,s6.tauon3,s6.fixonas,s6.fraisctr,s6.fermeture,s6.preavis,
+                            s6.deplacement,s6.depose_dem,s6.depose_def,s6.rbranche,s6.rfacade,s6.pfinancier,s6.capit,s6.inter,s6.caron,s6.arepor,
+                            s6.narond,s6.date_creation,v_annee,v_periode,v_train_fact,
+                            v_g_vow_settlemode_a,v_g_vow_acotp_id,v_g_vow_debtype,v_g_vow_modefact,v_g_vow_agrbilltype,
+                            v_id_facture,v_tva,v_tothta,v_tottvaa,v_tothte,v_solde,v_deb_comment);
+        
+      if p_pk_exception is not null then
+        rollback;
+        EXCEPTION_FACTURE(s6.district||s6.tourne||s6.ordre||s6.police,null,p_pk_exception,p_pk_etape);
+        continue;
+      end if;	
+      if v_bil_id is not null then
+      update test.src_facture_as400
+      set    bil_id= v_bil_id,
+             deb_id=v_deb_id
+      where  rowid = s6.rowid;
+      end if;
+      commit;  
+    end loop;
+    
+   /* for s7 in c7 loop
+      v_bil_id := null;
+      v_deb_id := null;
+      if trim(s7.nindex) is null then	 
+        select vow.vow_id
+        into   v_g_vow_comm1
+        from   genvoc     voc,
+         genvocword vow
+        where  voc.voc_id   = vow.voc_id
+        and    vow.vow_code = s7.code_anomalie
+        and    voc.voc_code = 'VOW_COMM1';  
+      end if; 
+      
+      MigrationHitoriquerelevegc(p_pk_etape,p_pk_exception,s7.district,s7.tourne,s7.ordre,s7.refc01,s7.refc02,s7.prorata,s7.cons,s7.equ_id,
+                                 s7.mtc_id,s7.spt_id,v_g_meu_id,v_g_age_id,s7.nindex,v_g_vow_readorig,v_g_vow_readmeth,v_g_vow_readreason,v_g_vow_comm1);
+                                 
+   
+                               
+       if p_pk_exception is not null then
+        rollback;
+        EXCEPTION_FACTURE(s7.district||s7.tourne||s7.ordre||s7.police,null,p_pk_exception,p_pk_etape);
+        continue;
+      end if;	
+      if v_mrd_id is not null then
+        update test.src_relevet
+        set    mrd_id= v_mrd_id
+        where  rowid = s7.rowid;
+      end if;
+      commit;
+   
+     
+    end loop;*/
+    for s7 in c7 loop
+     v_bil_id := null;
+     v_deb_id := null;
+     v_id_facture:= s7.district||s7.tourne||s7.ordre||s7.annee||s7.periode||'0';
+     v_train_fact :='Annee:'||trim(s7.annee)||' trim:'||trim(s7.periode)||' tier:'||trim(s7.ntiers)||' six:'||trim(s7.nsixieme);
+     begin
+      select last_day(to_date('01'||s7.periode||s7.annee,'dd/mm/yy'))
+      into v_fac_datecalcul
+      from dual;
+     exception  when others then
+       v_fac_datecalcul := '01/01/2016';
+     end; 
+     v_fac_datelim    := (v_fac_datecalcul+45);
+     v_tothte   :=(s7.net_a_payer/1000);
+     v_tva      :=0;
+     v_tothta   :=0;
+     v_tottvaa  :=0;
+     v_solde    :=(s7.net_a_payer/1000);   
+     v_deb_comment:=s7.district||s7.police||s7.tourne||s7.ordre;    
+     if(s7.etat='RF')then
+       v_vow_agrbilltype:=2566;
+     elsif(s7.etat='FC')then
+       v_vow_agrbilltype:=2563;
+     elsif(s7.etat='FHC')then
+       v_vow_agrbilltype:=2567;
+     else  
+       v_vow_agrbilltype:=2563;
+     end if;
+     MigrationFacture_as400(p_pk_etape,p_pk_exception,v_deb_id,v_bil_id,s7.district,s7.tourne,s7.ordre,s7.police,s7.spt_id,v_g_imp_id,s7.sag_id,s7.par_id,       
+                            v_adr_id,v_org_id,null,null,null,null,null,null,null,null,
+                            null,null,null,null,null,v_fac_datecalcul,v_fac_datelim,null,
+                            s7.net_a_payer,null,null,null,null,null,null,null,null,null,null,null,
+                            null,null,null,null,null,null,null,null,null,null,null,null,
+                            null,null,null,null,null,null,null,null,null,null,
+                            null,s7.date_creation,s7.annee,s7.periode,v_train_fact,
+                            v_g_vow_settlemode_a,v_g_vow_acotp_id,v_g_vow_debtype,v_g_vow_modefact,v_vow_agrbilltype,
+                            v_id_facture,v_tva,v_tothta,v_tottvaa,v_tothte,v_solde,v_deb_comment);
+   
+     if p_pk_exception is not null then
+        rollback;
+        EXCEPTION_FACTURE(s7.district||s7.tourne||s7.ordre||s7.police,null,p_pk_exception,p_pk_etape);
+        continue;
+     end if;	
+     if v_bil_id is not null then
+      update test.facture
+      set    bil_id= v_bil_id,
+             deb_id=v_deb_id
+      where  rowid = s7.rowid;
+     end if;
+     commit;                        
+   end loop;  
+END; 
 ---------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------
 PROCEDURE MigrationInstanceProcess
