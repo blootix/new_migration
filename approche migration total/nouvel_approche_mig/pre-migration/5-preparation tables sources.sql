@@ -69,7 +69,7 @@ select DISTR,TOUR,ORDR,POLICE,DATEXP,ANNEE,MOIS TRIM,null TIER,SIX,NET,DATL,CODR
 from role_gc ;
 
 ---creation fiche_releve
-create table src_fiche_releve
+create table src_fiche_releve as
 select r.* from fiche_releve r
 where trim(r.annee)>=2015;
 ---creation releveT
@@ -81,3 +81,10 @@ union
  select DISTRICT,TOURNE,ORDRE,POLICE,ANNEE,MOIS TRIMESTRE,INDEXR,INDEXA,PRORATA,CPT_TOURNE,ETAT,
 CODEFERMETURE,CODEOUVERTURE,CODERESILIATION,ANOMALIE_NICHE,ANOMALIE_COMPTEUR,ANOMALIE_FUITE,CONSOMMATION,DATE_RELEVE,'MENS' type
  from relevegc
+ 
+--Creation table tournee
+create table src_tourne as
+select distinct district, code,ntiers,nsixieme
+from tourne;
+
+1102857561
