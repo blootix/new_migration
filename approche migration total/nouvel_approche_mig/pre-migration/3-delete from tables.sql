@@ -54,10 +54,30 @@
                         );  
     commit;
     
-    delete from  GENADRESS where adr_id <>0;
+    delete from  GENADRESS where adr_id not in(select adr_id from GENPARTY where par_id in(select org_id from genorganization 
+																						  union  all
+																						  select 1 from dual 
+																						  union all
+																						  select par.par_id
+																						  from  genparty par,
+																							  genrefext rex, 
+																							  genrefextdft ref,
+																							  genvocword vow
+																						  where par.par_id = rex.rex_idorig 
+																						  and   ref.ref_id = rex.rex_id
+																						  and   ref.ref_table = 'GENPARTY'
+																						  and   ref.ref_column = 'PAR_REFE'
+																						  and   ref.vow_soft = vow.vow_id 
+																						  and   vow.vow_code in ('RHUI','REXP')
+																						  union all
+																						  select par_id
+																						  from   genparty
+																						  where  par_refe like 'DISTRICT%'
+																						  )
+                                                  );
     commit;
   
-    delete from genstreet where str_id <>0;
+    delete from genstreet where str_id not in (select str_id from genadress);
     commit;
     
     delete from  PAYCASHDESKSESSION WHERE CSS_ID not in (select css_id from paycashdesk where cah_code = '01');--  CAISSE
