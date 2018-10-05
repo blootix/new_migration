@@ -1,5 +1,16 @@
 
 --Dans la base source
+--Creation clients
+create table src_clients as
+(
+select lpad(trim(district),2,'0') district, lpad(trim(categorie),2,'0') categorie, trim(upper(code)) code, tel, autre_tel, fax, nom, adresse, to_number(code_postal) code_postal,
+       lpad(trim(district),2,'0')||lpad(trim(categorie),2,'0')||trim(upper(code)) code_cli
+       from   client c
+	   where c.lpad(trim(categorie),2,'0') <> '02'
+union all
+       
+from   abn_gccat1
+);
 --Creation abonnees
 create table src_abonnees as
 (

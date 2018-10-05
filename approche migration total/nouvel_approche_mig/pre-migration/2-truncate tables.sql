@@ -304,6 +304,8 @@
     commit;
     truncate table WFFVALIDARCH;
     commit;
+	truncate table WFHPROCESS;
+    commit;
     truncate table WFLOTDEDEPENDANCE;
     commit;
     truncate table WFMOTIF;
