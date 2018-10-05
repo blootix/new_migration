@@ -70,7 +70,7 @@ mtson,mtimpson,mtimponas,categorie,gros_consommateur,mtimp mtimpaye, null tiers
 from impgc_sic
 where trim(net)<>trim(mtpaye);
 ----creation role
-create table src_role
+create table src_role as
 select  DISTR,TOUR,ORDR,POLICE,DATEXP,ANNEE,TRIM,TIER,SIX,NET,DATL,CODR,ANCREP,NOUREP,TCONS,CPREAV,CFER,COB,CAY,
       CONAS,TARIFS,NAPPR,CBRCH,CCTR,BRANCH,PARTCO,EXTENS,FACADE,PFINA,ECHRES,ECGRO,CATEG,QPOLL
 from role_trim 
@@ -97,5 +97,3 @@ CODEFERMETURE,CODEOUVERTURE,CODERESILIATION,ANOMALIE_NICHE,ANOMALIE_COMPTEUR,ANO
 create table src_tourne as
 select distinct district, code,ntiers,nsixieme
 from tourne;
-
-1102857561
