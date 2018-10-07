@@ -5,6 +5,11 @@ PROCEDURE MigrationQuotidien
   (
     p_param in number default 0
   );
+  
+PROCEDURE MigrationTousClients
+  (
+    p_param in number default 0
+  );
 
 PROCEDURE MigrationHistoriqueReleveTrim
   (
@@ -214,8 +219,8 @@ PROCEDURE MigrationAdresse
     p_pk_etape out varchar2,
     p_pk_exception out varchar2,
     p_adr_id out number,
-    p_adresse in varchar2,
-    p_code_postal in number
+    p_adresse in out varchar2,
+    p_code_postal in out varchar2
   )
   IS
     v_twn_id number;
@@ -223,19 +228,26 @@ PROCEDURE MigrationAdresse
     v_str_id number;
 
   BEGIN
+    if p_adresse is null then
+      p_adresse:= '-';
+    end if;
+    
+    if p_code_postal is null then
+      p_code_postal := '0000';
+    end if;
     --Ville existante?
     p_pk_etape := 'Recherche/Creation ville';
     select max(twn_id)
     into   v_twn_id
     from   gentown
-    where  twn_code = p_code_postal;
+    where  twn_zipcode = p_code_postal;
 
     --Creation ville sil nexiste pas
     if(v_twn_id is null)then
        select max(p.libelle)
        into   v_ville_name
        from   r_cpostal p
-       where  to_char(p.kcpost) = p_code_postal;
+       where  lpad(to_char(p.kcpost),4,'0') = p_code_postal;
 
        select seq_gentown.nextval into v_twn_id from dual;
        insert into gentown(twn_id, twn_code, twn_name, twn_namek,twn_namer, twn_zipcode, coy_id, twn_served, twn_updtby)
@@ -271,10 +283,8 @@ PROCEDURE MigrationClient
     p_pk_etape out varchar2,
     p_pk_exception out varchar2,
     p_par_id out number,
-    p_district in varchar2,
-    p_code in varchar2,
-    p_adresse in varchar2,
-    p_code_postal in number,
+    p_adresse in out  varchar2,
+    p_code_postal in out number,
     p_code_cli in varchar2,
     p_categorie in varchar,
     p_nom in varchar2,
@@ -284,47 +294,26 @@ PROCEDURE MigrationClient
   )
   IS
     v_code_postal number;
-    v_adresse varchar2(4000);
     v_vow_typsag number;
-    v_code_cli varchar2(100);
     v_adr_id number;
-
   BEGIN
     p_pk_etape := 'Client existant';
     select max(par_id)
     into   p_par_id
     from   genparty
-    where  par_refe = v_code_cli;
+    where  par_refe = p_code_cli;
 
     if p_par_id is not null then
-      p_pk_exception := 'Client :'||v_code_cli||' existe deja';
+      p_pk_exception := 'Client :'||p_code_cli||' existe deja';
       return;
     end if;
-    p_pk_etape := 'Recherche de l''adresse du client';
-    --recuperer adresse branchement si adresse client est null
-    if(p_adresse is null)then
-       select max(a.code_postal), max(a.adresse)
-       into   v_code_postal, v_adresse
-       from test.branchement a
-       where trim(a.categorie_actuel) = p_categorie
-       and trim(a.client_actuel) = p_code
-       and a.district = p_district
-       and a.adresse is not null;
-    else
-      v_code_postal := p_code_postal;
-      v_adresse := p_adresse;
+    
+    p_pk_etape := 'creation adresse client';
+    MigrationAdresse(p_pk_etape,p_pk_exception,v_adr_id,p_adresse,p_code_postal);
+    if p_pk_exception is not null then
+      return;
     end if;
 
-    if(v_adresse is null or v_code_postal is null)then
-      p_pk_exception := 'Probleme de recuperation de l''adresse ou le code postal du client '  || p_code_cli;
-      return;
-    else
-      p_pk_etape := 'creation adresse client';
-      MigrationAdresse(p_pk_etape,p_pk_exception,v_adr_id,v_adresse,v_code_postal);
-      if p_pk_exception is not null then
-        return;
-      end if;
-    end if;
 
     p_pk_etape := 'Selection de la cartégorie client';
     select vow_id
@@ -360,8 +349,8 @@ PROCEDURE MigrationSitePdl
     p_rou_id out number,
     p_adr_id out number,
     p_par_id in number,
-    p_adresse in varchar2,
-    p_code_postal in number,
+    p_adresse in out varchar2,
+    p_code_postal in out number,
     p_district in varchar2,
     p_tourne in varchar2,
     p_ordre in varchar2,
@@ -423,8 +412,9 @@ PROCEDURE MigrationSitePdl
       EXCEPTION WHEN OTHERS THEN
         select t.ntiers,t.nsixieme
         into   v_tiers,v_sixieme
-        from   test.tourne t
-        where  lpad(trim(t.code),3,'0') = p_tourne;
+        from   test.src_tourne t
+        where  lpad(trim(t.code),3,'0') = p_tourne
+        and    lpad(trim(t.district),2,'0') = p_district;
         select seq_tecroute.nextval into p_rou_id from dual;
         insert into tecroute(rou_id,rou_sect,rou_code,rou_name,rou_updtby)
                 values(p_rou_id,p_dvt_id,p_district||'-'||p_tourne,p_tourne,v_g_age_id);
@@ -734,7 +724,7 @@ PROCEDURE MigrationCompteurEncours
     cursor c1
     is
       select lpad(trim(r.codemarque),3,'0') code_marque ,lpad(trim(r.ncompteur),11,'0') compteur_actuel
-      from   test.fiche_releve r
+      from   test.src_fiche_releve r
       where  lpad(trim(r.district),2,'0') = p_district
       and    lpad(trim(r.tourne),3,'0') = p_tourne
       and    lpad(trim(r.ordre),3,'0') = p_ordre
@@ -757,19 +747,27 @@ PROCEDURE MigrationCompteurEncours
   BEGIN
     if p_compteur_actuel is null then
       p_pk_etape := 'Recuperation du num compteur depuis la fiche releve';
-      for s1 in c1 loop
-        p_code_marque := s1.code_marque;
-        p_compteur_actuel := s1.compteur_actuel;
-        exit;
-      end loop;
+      begin
+        for s1 in c1 loop
+          p_code_marque := s1.code_marque;
+          p_compteur_actuel := s1.compteur_actuel;
+          exit;
+        end loop;
+      exception when others then
+        null;
+      end;
 
       p_pk_etape := 'Recuperation du num compteur depuis la gestion de compteur';
       if p_compteur_actuel is null then
-        for s2 in c2 loop
-          p_code_marque := s2.code_marque;
-          p_compteur_actuel := s2.compteur_actuel;
-          exit;
-        end loop;
+        begin
+          for s2 in c2 loop
+            p_code_marque := s2.code_marque;
+            p_compteur_actuel := s2.compteur_actuel;
+            exit;
+          end loop;
+        exception when others then
+          null;
+        end;
       end if;
     end if;
 	
@@ -797,6 +795,8 @@ PROCEDURE MigrationAbonnement
     p_pk_etape out varchar2,
     p_pk_exception out varchar2,
     p_sag_id out number,
+    p_aco_id out number,
+    p_adr_fs_id in out number,
     p_district in varchar2,
     p_tourne in varchar2,
     p_ordre in varchar2,
@@ -842,14 +842,12 @@ PROCEDURE MigrationAbonnement
     v_cot_id number;
     v_adr_fs varchar2(4000);
     v_code_p_fs varchar2(4000);
-    v_adr_fs_id number;
     v_paa_id number;
     v_pay_id number;
     v_rec_id number;
     v_dlp_id number;
     v_vow_frqfact number;
     v_sco_id number;
-    v_aco_id number;
     v_stl_id number;
     v_vow_settlemode number;
     v_bap_id number;
@@ -864,37 +862,9 @@ PROCEDURE MigrationAbonnement
     v_asu_id2 number;
     v_asu_id3 number;
     v_asu_id4 number;
+    v_gros_conso varchar2(4);
     
   BEGIN
-    /*p_pk_etape := 'Recuperation info depuis abonnees';
-    begin
-      select upper(substr(tarif_onas,-1,1)),codpoll,lpad(trim(tarif),2,'0'),echt,echr,brt/1000,echronas,
-             echtonas,capitonas/1000,interonas/1000,arrond/1000,categ,trim(gros_consommateur)
-      into   v_tarif_onas,v_codpoll,v_tarif,v_echt,v_echr,v_brt,v_echronas,
-             v_echtonas,v_capitonas,v_interonas,v_arrond,v_categ,v_gros_consom
-      from   test.src_abonnees
-      where  lpad(trim(dist),2,'0') = p_district
-      and    lpad(trim(pol),5,'0') = p_police
-      and    lpad(trim(tou),3,'0') = p_tourne
-      and    lpad(trim(ord),3,'0') = p_ordre;
-    exception when no_data_found then
-      p_pk_etape := 'Recuperation info depuis branchement en cas inexistante dans abonnees';
-      v_tarif_onas := p_tarif_onas;
-      v_codpoll := null;
-      v_tarif := p_tarif;
-      v_echt := null;
-      v_echr := null;
-      v_brt := null;
-      v_echronas := null;
-      v_echtonas := null;
-      v_capitonas := null;
-      v_interonas := null;
-      v_arrond := null;
-      v_categ := to_number(p_categorie);
-      v_gros_consom := 'N';
-      --gerer une exception pour dir qu'il n'ya pas d'info dans abonnees ou double
-    end;*/
-    
     p_pk_etape := 'Creation Contrat';
     v_cag_refe := p_district||'0'||p_police;
     begin
@@ -979,17 +949,17 @@ PROCEDURE MigrationAbonnement
     and    lpad(trim(ord),3,'0') = p_ordre;
 
     if v_adr_fs is not null and v_code_p_fs is not null then
-      MigrationAdresse(p_pk_etape,p_pk_exception,v_adr_fs_id,v_adr_fs,v_code_p_fs);
+      MigrationAdresse(p_pk_etape,p_pk_exception,p_adr_fs_id,v_adr_fs,v_code_p_fs);
       if p_pk_exception is not null then
         return;
       end if;
     else
-      v_adr_fs_id := p_adr_id;
+      p_adr_fs_id := p_adr_id;
     end if;
 
     select seq_genpartyparty.nextval into v_paa_id from dual;
     insert into genpartyparty(paa_id,par_parent_id,vow_partytp,paa_startdt,paa_enddt,paa_updtby,adr_id)
-                       values(v_paa_id,p_par_id,v_g_vow_partytp_a,p_date_creation,p_date_resil,v_g_age_id,v_adr_fs_id);
+                       values(v_paa_id,p_par_id,v_g_vow_partytp_a,p_date_creation,p_date_resil,v_g_age_id,p_adr_fs_id);
 
     p_pk_etape := 'Creation payeur';
     select seq_agrcustagrcontact.nextval into v_cot_id from dual;
@@ -1016,14 +986,14 @@ PROCEDURE MigrationAbonnement
     end if;
     
     p_pk_etape := 'Creation du compte client';
-    select seq_genaccount.nextval into v_aco_id from dual;
+    select seq_genaccount.nextval into p_aco_id from dual;
     insert into genaccount(aco_id,par_id,imp_id,rec_id,vow_acotp,aco_status,aco_updtby)
-                    values(v_aco_id,p_par_id,v_g_imp_id,v_rec_id,v_g_vow_acotp_id,1,v_g_age_id);
+                    values(p_aco_id,p_par_id,v_g_imp_id,v_rec_id,v_g_vow_acotp_id,1,v_g_age_id);
     
     p_pk_etape := 'Affectation du compte client au contrat';
     select seq_agrsagaco.nextval into v_sco_id from dual;
     insert into agrsagaco(sco_id,sco_startdt,sco_enddt,sag_id,aco_id,sco_updtby)
-                   values(v_sco_id,p_date_creation,p_date_resil,p_sag_id,v_aco_id,v_g_age_id);
+                   values(v_sco_id,p_date_creation,p_date_resil,p_sag_id,p_aco_id,v_g_age_id);
     
     p_pk_etape := 'Creation du planning';
     insert into agrplanningagr(sag_id,vow_frqfact,agp_factday,agp_nextfactdt,vow_modefactnext,agp_updtby)
@@ -1195,10 +1165,20 @@ PROCEDURE MigrationAbonnement
     select seq_agrsubscription.nextval into v_asu_id from dual;
     insert into agrsubscription(asu_id,asu_num,hsf_id,sag_id,ofr_id,sut_id,asu_startdt,asu_enddt,asu_updtby)
                          values(v_asu_id,v_asu_num,v_hsf_id,p_sag_id,v_ofr_id,v_g_sut_gros_cons,p_date_creation,p_date_resil,v_g_age_id);
+    v_gros_conso := null;
+    if p_categorie in ('01','03') and p_gros_consom = 'O' then
+      v_gros_conso := 'OUI';
+    else
+      if p_gros_consom_a = 'O' then
+        v_gros_conso := 'OUI';
+      else
+        v_gros_conso := 'NON';
+      end if;
+    end if;
       
     select seq_agrsubscriptionvalue.nextval into v_suv_id from dual;
     insert into agrsubscriptionvalue(suv_id,asu_id,suv_value,suv_updtby)
-                              values(v_suv_id,v_asu_id,decode(p_gros_consom_a,'O','OUI','NON'),v_g_age_id);                  
+                              values(v_suv_id,v_asu_id,decode(v_gros_conso,null,'NON',v_gros_conso),v_g_age_id);                  
   EXCEPTION WHEN OTHERS THEN
    v_g_err_code := SQLCODE;
    v_g_err_msg := SUBSTR(SQLERRM, 1, 200);
@@ -2160,6 +2140,49 @@ PROCEDURE MigrationHistoriqueReleveTrim
       null;
     end loop;
   END;
+
+
+---------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------  
+PROCEDURE MigrationTousClients
+  (
+    p_param in number default 0
+  )
+  IS
+   --Curseur des client et des adm
+    cursor c1
+    is
+      select district,categorie, code, tel, autre_tel, fax, substr(nom,1,50) nom, adresse, code_postal,
+             code_cli, rowid
+      from   test.src_clients
+      where  par_id is null;
+      
+    v_par_id number;
+    p_pk_etape     varchar2(400);
+    p_pk_exception varchar2(400);
+  BEGIN
+    --Securite
+    if p_param <> 3 then
+      return;
+    end if;
+
+    --Curseur des client et adm
+    for s1 in c1 loop
+      v_par_id := null;
+      MigrationClient(p_pk_etape,p_pk_exception,v_par_id,s1.adresse,s1.code_postal,s1.code_cli,s1.categorie,s1.nom,s1.tel,s1.autre_tel,s1.fax);
+      if p_pk_exception is not null then
+        rollback;
+        EXCEPTION_CLIENT(s1.code_cli,null,p_pk_exception,p_pk_etape);
+        continue;
+      end if;
+      if v_par_id is not null then
+        update test.src_clients 
+        set    par_id = v_par_id
+        where  rowid = s1.rowid;
+      end if;
+      commit;
+    end loop; --Curseur client et adm
+  END;
 ----------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------
 PROCEDURE MigrationQuotidien
@@ -2169,269 +2192,31 @@ PROCEDURE MigrationQuotidien
 
   )
   IS
-    --Curseur des client et des adm
-    cursor c1
-    is
-      select lpad(trim(district),2,'0') district, lpad(trim(categorie),2,'0') categorie, trim(upper(code)) code, tel, autre_tel, fax, nom, adresse, to_number(code_postal) code_postal,
-             lpad(trim(district),2,'0')||lpad(trim(categorie),2,'0')||trim(upper(code)) code_cli, rowid
-      from   test.client
-      where  par_id is null
-      and    lpad(trim(district),2,'0') = '25'
-      /*and    lpad(trim(categorie),2,'0') = '01'
-      and    trim(upper(code)) = '85096'*/
-      /*union
-      select lpad(to_number((district),2,'0') district, null categorie, code, null tel, null autre_tel, null fax, desig nom, adresse, to_number(code_postal) code_postal,
-             lpad(to_number(district),2,'0')||'04'||lpad(trim(s1.code),4,'0') code_cli
-      from   tes.adm*/;
-
-    --Curseur des branchement actif
     cursor c2
     is
-      select lpad(trim(b.district),2,'0') district, lpad(trim(b.police),5,'0') police, lpad(trim(b.tourne),3,'0') tourne, lpad(trim(b.ordre),3,'0') ordre, b.adresse, b.date_creation,
-            lpad(trim(b.categorie_actuel),2,'0') categorie_actuel, upper(trim(b.client_actuel)) client_actuel, lpad(trim(b.code_marque),3,'0') code_marque, lpad(trim(b.compteur_actuel),11, '0') compteur_actuel, b.code_postal,
+      select lpad(trim(b.district),2,'0') district, lpad(trim(b.police),5,'0') police, lpad(trim(b.tourne),3,'0') tourne, lpad(trim(b.ordre),3,'0') ordre, trim(b.adresse) adresse, b.date_creation,
+            lpad(trim(b.categorie_actuel),2,'0') categorie_actuel, upper(trim(b.client_actuel)) client_actuel, lpad(trim(b.code_marque),3,'0') code_marque, 
+            lpad(trim(b.compteur_actuel),11, '0') compteur_actuel, lpad(trim(b.code_postal),4,'0') code_postal,
             trim(b.usage) usage, b.type_branchement, b.aspect_branchement, b.marche, trim(b.etat_branchement) etat_branchement,trim(b.banque) banque,trim(b.agence) agence,trim(b.num_compte) num_compte,
             trim(b.cle_rib) cle_rib,lpad(trim(b.tarif),2,'0') tarif, substr(b.onas,-1,1) tarif_onas,b.volume_puit_onas vol_puit,upper(trim(b.gros_consommateur)) mensu,
             lpad(trim(b.district),2,'0')||lpad(trim(b.categorie_actuel),2,'0')||trim(upper(b.client_actuel)) code_cli, b.rowid row_id, 
             upper(substr(a.tarif_onas,-1,1)) tarif_onas_a,a.codpoll codpoll_a,lpad(trim(a.tarif),2,'0') tarif_a,a.echt echt_a,a.echr echr_a,a.brt/1000 brt_a,a.echronas echronas_a,
             a.echtonas echtonas_a,a.capitonas/1000 capitonas_a,a.interonas/1000 interonas_a,a.arrond/1000 arrond_a,a.categ categ_a,trim(a.gros_consommateur) gros_consommateur_a,
+            decode(lpad(trim(b.categorie_actuel),2,'0') ,'02',lpad(trim(b.client_actuel),4,'0'),lpad(trim(b.district),2,'0')||lpad(trim(b.categorie_actuel),2,'0')||upper(trim(b.client_actuel))) code_cli_bis,
             c.par_id
-	   from   test.branchement b
+	    from   test.branchement b
        left join test.src_abonnees a 
        on     lpad(trim(dist),2,'0') = lpad(trim(b.district),2,'0')
        and    lpad(trim(pol),5,'0') = lpad(trim(b.police),5,'0')
        and    lpad(trim(tou),3,'0') = lpad(trim(b.tourne),3,'0')
        and    lpad(trim(ord),3,'0') = lpad(trim(b.ordre),3,'0')
-       left join test.client c
-       on     lpad(trim(b.district),2,'0') = lpad(trim(c.district),2,'0')
-       and    lpad(trim(b.categorie_actuel),2,'0') = lpad(trim(c.categorie),2,'0')
-       and    upper(trim(b.client_actuel)) = upper(trim(c.code))
-      /*and    lpad(trim(b.district),2,'0')||lpad(trim(b.tourne),3,'0')
-            ||lpad(trim(b.ordre),3,'0')||lpad(trim(b.police),5,'0') = '2500116485096'*/
+       left join test.src_clients c
+       on     c.code_cli = decode(lpad(trim(b.categorie_actuel),2,'0') ,'02',lpad(trim(b.client_actuel),4,'0'),
+                                      lpad(trim(b.district),2,'0')||lpad(trim(b.categorie_actuel),2,'0')||upper(trim(b.client_actuel)))
 	   where  spt_id is null
-     and    lpad(trim(b.district),2,'0') = '25'	
+     /*and    lpad(trim(b.district),2,'0')||lpad(trim(b.tourne),3,'0')||
+            lpad(trim(b.ordre),3,'0')||lpad(trim(b.police),5,'0')='4875478624150'*/
      order by trim(b.etat_branchement);
-	 
-	--------------cureur historique fiche_releve
-    cursor c3
-    is
-    select lpad(trim(r.district),2,'0') district, lpad(trim(r.tourne),3,'0') tourne, lpad(trim(r.ordre),3,'0') ordre,
-       r.annee,r.trim,r.releve,r.prorata,r.releve2,r.releve3,r.releve4,r.releve5,r.date_releve,
-       r.compteurt,r.consommation,lpad(trim(r.anomalie),18,0)anomalie,r.avisforte,r.message_temporaire,
-       r.date_controle,r.index_controle,p.m3 mois,
-       b.spt_id,b.equ_id,b.mtc_id, r.rowid row_id 
-    from   test.src_fiche_releve r   
-      inner join   test.branchement b
-      on     lpad(trim(b.district),2,'0')=lpad(trim(r.district),2,'0')
-      and    lpad(trim(b.tourne),3,'0')  =lpad(trim(r.tourne),3,'0')
-      and    lpad(trim(b.ordre),3,'0')   =lpad(trim(r.ordre),3,'0') 
-      and    upper(trim(b.gros_consommateur)) = 'N'
-      and    b.spt_id is not null
-      and    b.mtc_id is not null
-      and    b.equ_id is not null
-      inner join  test.src_tourne t
-      on     lpad(trim(t.district),2,'0')= lpad(trim(b.district),2,'0')
-      and    lpad(trim(t.code),3,'0')    = lpad(trim(b.tourne),3,'0')
-      left join test.param_tournee p
-      on    lpad(trim(t.district),2,'0')= lpad(trim(p.district),2,'0')
-      and   p.trim=nvl(trim(r.trim),-1)
-      and   t.ntiers  =p.tier
-      and   t.nsixieme=p.six
-    where   r.mrd_id is null
-    and     trim(r.trim)is not null
-    and   lpad(trim(b.district),2,'0') = '25';
-	 
-	-----------cureur relevet
-	   cursor c4 
-     is
-      select lpad(trim(b.district),2,'0') district, lpad(trim(b.police),5,'0') police, lpad(trim(b.tourne),3,'0') tourne, lpad(trim(b.ordre),3,'0') ordre,
-              b.spt_id,b.mtc_id,b.equ_id,
-              decode(a.annee,0,a.indexa,indexr) index_releve,a.annee,a.prorata ,a.trimestre ,
-              a.date_releve ,a.consommation,a.rowid ,p.m3 moisT
-      from    test.src_relevet a 	
-        left join   test.branchement b
-        on     lpad(trim(b.district),2,'0')= lpad(trim(a.district),2,'0')
-        and    lpad(trim(b.tourne),3,'0')  = lpad(trim(a.tourne),3,'0')
-        and    lpad(trim(b.ordre),3,'0')   = lpad(trim(a.ordre),3,'0') 
-        and    lpad(trim(b.police) ,5,'0') = lpad(trim(a.police),5,'0')
-        and    b.spt_id is not null
-        and    b.mtc_id is not  null
-        and    b.equ_id is not null
-        left join   test.tourne t
-        on     lpad(trim(t.district),2,'0')= lpad(trim(a.district),2,'0')
-        and    lpad(trim(t.code),3,'0')    = lpad(trim(a.tourne),3,'0')
-        left join test.param_tournee p
-        on    lpad(trim(p.district),2,'0')= lpad(trim(a.district),2,'0')
-        and   lpad(trim(p.district),2,'0')= lpad(trim(t.district),2,'0')
-        and   p.trim = a.trimestre
-        and   p.tier = t.ntiers  
-        and   p.six  = t.nsixieme
-      where   a.mrd_id is null
-      and trim(a.annee)<>0
-      and   lpad(trim(b.district),2,'0') = '25';
-
----curseur f_trim
-    cursor c6   
-    is 
-    select f.rowid,decode(f.caron,'1',1,-1) caron,f.refc01,f.refc02,f.refc03,f.refc04,f.tvacons,f.tva_ff,f.tvaferm,f.tva_preav,
-          f.tvadeplac,f.tvadepose_dem,f.tvadepose_def,f.tva_capit,f.tva_pfin,f.arriere,
-          f.net,f.monttrim,f.montt1,f.const1,f.tauxt1,f.montt2,f.const2,f.tauxt2,f.montt3,f.const3,f.tauxt3,f.mon1,
-          f.volon1,f.tauon1,f.mon2,f.volon2,f.tauon2,f.mon3,f.volon3,f.tauon3,f.fixonas,f.fraisctr,f.fermeture,f.preavis,
-          f.deplacement,f.depose_dem,f.depose_def,f.rbranche,f.rfacade,f.pfinancier,f.capit,f.inter,f.arepor,
-          f.narond,lpad(trim(b.district),2,'0') district,lpad(trim(b.police),5,'0') police,lpad(trim(b.tourne),3,'0') tourne, 
-          lpad(trim(b.ordre),3,'0') ordre,b.spt_id,b.mtc_id,b.equ_id,b.sag_id,b.date_creation,p.trim,p.tier,p.six,c.par_id, 
-          to_date(lpad(trim(r.datexp),8,'0'),'ddmmyyyy') fac_datecalcul_trim,
-          to_date(lpad(trim(r.datl),8,'0'),'ddmmyyyy')  fac_datelim_trim
-    from test.src_facture_as400 f
-      left join test.branchement b 
-      on  lpad(trim(b.district),2,'0')= lpad(trim(f.dist),2,'0')
-      and lpad(trim(b.tourne),3,'0')  = lpad(trim(f.tou),3,'0')   
-      and lpad(trim(b.ordre),3,'0')   = lpad(trim(f.ord),3,'0')   
-      and lpad(trim(b.police) ,5,'0') = lpad(trim(f.pol),3,'0')
-      and b.spt_id is not null
-      and b.equ_id is not null 
-      and b.mtc_id is not null
-      and b.sag_id is not null 
-      left join test.tourne t
-      on  lpad(trim(t.district),2,'0')= lpad(trim(f.dist),2,'0')
-      and lpad(trim(t.code),3,'0')    = lpad(trim(f.tou),3,'0')
-      left join test.param_tournee p
-      on  lpad(trim(p.district),2,'0')= lpad(trim(f.dist),2,'0')
-      and lpad(trim(p.district),2,'0')= lpad(trim(t.district),2,'0')
-      and   p.m1      = f.refc01
-      and   p.m2      = f.refc02
-      and   p.m3      = f.refc03
-      and   p.tier    = t.ntiers
-      and   p.six     = t.nsixieme 
-      left join  test.src_role r
-      on    lpad(trim(r.distr),2,'0') = lpad(trim(f.dist),2,'0')
-      and   lpad(trim(r.tour),3,'0')  = lpad(trim(f.tou),3,'0')
-      and   lpad(trim(r.ordr),3,'0')  = lpad(trim(f.ord),3,'0')
-      and   lpad(trim(r.police),5,'0')= lpad(trim(f.pol),5,'0')
-      and   r.tier                    = to_number(t.ntiers)
-      and   r.trim                    = p.trim
-      and   r.six                     = to_number(t.nsixieme)        
-      and   r.annee                   = '20'||f.refc04
-      and   rownum = 1
-      left join test.client c
-       on     lpad(trim(b.district),2,'0') = lpad(trim(c.district),2,'0')
-       and    lpad(trim(b.categorie_actuel),2,'0') = lpad(trim(c.categorie),2,'0')
-       and    upper(trim(b.client_actuel)) = upper(trim(c.code))
-    where f.type ='TRIM'
-    and  f.bil_id is null;
----------------------
-  ----curseur f_gc
-    cursor c7  
-    is 
-    select f.rowid,decode(f.caron,'1',1,-1) caron,f.refc01,f.refc02,f.refc03,f.refc04,f.tvacons,f.tva_ff,f.tvaferm,f.tva_preav,
-          f.tvadeplac,f.tvadepose_dem,f.tvadepose_def,f.tva_capit,f.tva_pfin,f.arriere,
-          f.net,f.monttrim,f.montt1,f.const1,f.tauxt1,f.montt2,f.const2,f.tauxt2,f.montt3,f.const3,f.tauxt3,f.mon1,
-          f.volon1,f.tauon1,f.mon2,f.volon2,f.tauon2,f.mon3,f.volon3,f.tauon3,f.fixonas,f.fraisctr,f.fermeture,f.preavis,
-          f.deplacement,f.depose_dem,f.depose_def,f.rbranche,f.rfacade,f.pfinancier,f.capit,f.inter,f.arepor,f.nindex,f.prorata,f.cons,
-          f.narond,lpad(trim(b.district),2,'0') district,lpad(trim(b.police),5,'0') police,lpad(trim(b.tourne),3,'0') tourne,
-          lpad(trim(b.ordre),3,'0') ordre,b.spt_id,b.mtc_id,b.equ_id,b.sag_id,b.date_creation,c.par_id,l.code_anomalie, 
-          to_date(lpad(trim(r.datexp),8,'0'),'ddmmyyyy') fac_datecalcul,
-          to_date(lpad(trim(r.datl),8,'0'),'ddmmyyyy')  fac_datelim
-    from test.src_facture_as400 f
-      left join test.branchement b 
-      on   lpad(trim(b.district),2,'0')=lpad(trim(f.dist),2,'0')
-      and  lpad(trim(b.tourne),3,'0') =lpad(trim(f.tou),3,'0')   
-      and  lpad(trim(b.ordre),3,'0')  =lpad(trim(f.ord),3,'0')   
-      and  lpad(trim(b.police) ,5,'0')=lpad(trim(f.pol),3,'0')
-      left join  test.src_role r
-      on   lpad(trim(r.distr),2,'0') = lpad(trim(f.dist),2,'0')
-      and  lpad(trim(r.tour),3,'0')  = lpad(trim(f.tou),3,'0')
-      and  lpad(trim(r.ordr),3,'0')  = lpad(trim(f.ord),3,'0')
-      and  lpad(trim(r.police),5,'0')= lpad(trim(f.pol),5,'0')
-      and  r.trim                    = refc01      
-      and  r.annee                   = '20'||f.refc02
-      and  rownum = 1
-      left join test.client c
-      on    lpad(trim(b.district),2,'0') = lpad(trim(c.district),2,'0')
-      and   lpad(trim(b.categorie_actuel),2,'0') = lpad(trim(c.categorie),2,'0')
-      and   upper(trim(b.client_actuel)) = upper(trim(c.code))
-      left join test.listeanomalies_releve  l
-      on   lpad(trim(l.district),2,'0')= lpad(trim(f.dist),2,'0') 
-      and  lpad(trim(l.tourne),3,'0')  = lpad(trim(f.tou),3,'0')
-      and  lpad(trim(l.ordre),3,'0')   = lpad(trim(f.ord),3,'0')  
-      and  l.ANNEE                     = '20'||trim(f.refc02)
-	  and  l.TRIM                      = f.refc01
-    where f.bil_id is null;
----------------------
---------curseur f_dist
-    /*cursor c7   
-    is 
-    select f.rowid,lpad(trim(f.periode),2,'0') periode,decode(f.etat,'P','RF','O','FC','C','FHC','FC') etat,f.annee,f.net_a_payer,
-           lpad(trim(b.district),2,'0') district,lpad(trim(b.police),5,'0') police,lpad(trim(b.tourne),3,'0') tourne,
-           lpad(trim(b.ordre),3,'0') ordre,b.spt_id,b.mtc_id,b.equ_id,b.sag_id,b.date_creation,c.par_id,t.ntiers,t.nsixieme
-    from test.facture f 
-      left join test.branchement b 
-      on   lpad(trim(b.district),2,'0')= lpad(trim(f.district),2,'0')
-      and  lpad(trim(b.tourne),3,'0')  = lpad(trim(f.tournee),3,'0')   
-      and  lpad(trim(b.ordre),3,'0')   = lpad(trim(f.ordre),3,'0') 
-      and  lpad(trim(b.police) ,5,'0') = lpad(trim(f.police),3,'0')
-	  and b.spt_id is not null
-      and b.equ_id is not null 
-      and b.mtc_id is not null
-      and b.sag_id is not null 
-      left join  test.tourne t
-      on   lpad(trim(t.district),2,'0') = lpad(trim(f.district),2,'0') 
-      and  lpad(trim(t.code),3,'0')     = lpad(trim(f.tournee),3,'0')
-      left join test.client c
-      on   lpad(trim(b.district),2,'0') = lpad(trim(c.district),2,'0')
-      and  lpad(trim(b.categorie_actuel),2,'0') = lpad(trim(c.categorie),2,'0')
-      and  upper(trim(b.client_actuel)) = upper(trim(c.code))
-    where  f.annee>='2015' 
-    and    f.bil_id is null;
-------------------------
-------curseur facture_version	
-  cursor c8 
-  is     
-  select g.bil_code,g.bil_calcdt,f.*,d.*,decode(f.etat,'P','RF','O','FC','C','FHC','FC') etat,
-         b.spt_id,b.mtc_id,b.equ_id,b.sag_id,b.date_creation,c.par_id,t.ntiers,t.nsixieme
-  from test.facture f
-  left join test.branchement b 
-  on   lpad(trim(b.district),2,'0')= lpad(trim(f.district),2,'0')
-  and  lpad(trim(b.tourne),3,'0')  = lpad(trim(f.tournee),3,'0')   
-  and  lpad(trim(b.ordre),3,'0')   = lpad(trim(f.ordre),3,'0') 
-  and  lpad(trim(b.police),5,'0')  = lpad(trim(f.police),3,'0')
-  and b.spt_id is not null
-  and b.equ_id is not null 
-  and b.mtc_id is not null
-  and b.sag_id is not null 
-  left join genbill g
-  on g.bil_code = (lpad(trim(f.district),2,'0')||
-                    lpad(trim(f.tournee),3,'0')||
-                    lpad(trim(f.ordre),3,'0')||
-                    to_char(f.annee)||
-                    lpad(trim(f.periode),2,'0')||'0')
-   left join gendebt d
-   on   g.deb_id=d.deb_id
-   left join  test.tourne t
-    on   lpad(trim(t.district),2,'0') = lpad(trim(f.district),2,'0') 
-    and  lpad(trim(t.code),3,'0')     = lpad(trim(f.tournee),3,'0')
-    left join test.client c
-    on   lpad(trim(b.district),2,'0') = lpad(trim(c.district),2,'0')
-    and  lpad(trim(b.categorie_actuel),2,'0') = lpad(trim(c.categorie),2,'0')
-    and  upper(trim(b.client_actuel)) = upper(trim(c.code))
-   where trim(f.etat) in ('A','P');
------------ 
-	/* 
-	--Curseur releve precedente 
-	cursor c3(f_spt_id number)
-	is
-    select t.*
-    from TECMTRREAD t
-    where t.spt_id=f_spt_id
-    order by t.MRD_DT;
-	---cursor consommations de reférence 
-	CURSOR c4 (f_spt_id number)
-	is 
-	select avg(m.mme_consum) mme_consum,a.sag_id,a.spt_id 
-	from TECMTRREAD t,AGRSERVICEAGR a,tecmtrmeasure m
-	where t.mrd_id=m.mrd_id
-	and   t.spt_id=a.spt_id
-	and   t.spt_id=f_spt_id
-	group by a.sag_id,a.spt_id;*/
 
    v_par_id number;
    v_date_resil date;
@@ -2443,7 +2228,9 @@ PROCEDURE MigrationQuotidien
    v_sag_id number;
    v_org_id number;
    v_adr_id number;
+   v_adr_fs_id number;
    v_mtc_id number;
+   v_aco_id number;
    v_aac_id number;
    v_mrd_id number;
    v_bil_id number;
@@ -2465,30 +2252,16 @@ PROCEDURE MigrationQuotidien
    p_pk_etape     varchar2(400);
    p_pk_exception varchar2(400);
   BEGIN
+    
     --Securite
     if p_param <> 3 then
       return;
     end if;
-
-    --Curseur des client et adm
-    for s1 in c1 loop
-      v_par_id := null;
-      MigrationClient(p_pk_etape,p_pk_exception,v_par_id,s1.district,s1.code,s1.adresse,s1.code_postal,s1.code_cli,s1.categorie,s1.nom,s1.tel,s1.autre_tel,s1.fax);
-      if p_pk_exception is not null then
-        rollback;
-        EXCEPTION_CLIENT(s1.code_cli,null,p_pk_exception,p_pk_etape);
-        continue;
-      end if;
-      if v_par_id is not null then
-        update test.client 
-        set    par_id = v_par_id
-        where  rowid = s1.rowid;
-      end if;
-      commit;
-    end loop; --Curseur client et adm
-
+    
+    
     --Migration des branchement
     for s2 in c2 loop
+      --insert into mig_trace values(s2.district||s2.tourne||s2.ordre||s2.police,'Initialisation',systimestamp);
       --initialisation
       v_par_id := null;
       v_date_resil := null;
@@ -2502,13 +2275,18 @@ PROCEDURE MigrationQuotidien
       v_adr_id := null;
       v_mtc_id := null;
       v_aac_id := null;
+      v_aco_id := null;
       p_pk_etape := null;
       p_pk_exception := null;
       --Selection du client abonne
       if s2.par_id is null then
-        rollback;
-        EXCEPTION_PDL(s2.district||s2.tourne||s2.ordre||s2.police,null,'Impossible de trouver le client','Selection du client abonne');
-        continue;
+        MigrationClient(p_pk_etape,p_pk_exception,v_par_id,s2.adresse,s2.code_postal,
+                        s2.code_cli_bis,s2.categorie_actuel,s2.code_cli_bis,null,null,null);
+        if v_par_id is null then
+          rollback;
+          EXCEPTION_PDL(s2.district||s2.tourne||s2.ordre||s2.police,null,'Client/PDL : '||p_pk_exception,p_pk_etape);
+          continue;
+        end if;
       else
         v_par_id := s2.par_id;
       end if;
@@ -2553,7 +2331,7 @@ PROCEDURE MigrationQuotidien
         end if;*/
         v_date_resil := trunc(sysdate);
       end if;
-
+      
       --Creation du site/pdl
       MigrationSitePdl(p_pk_etape,p_pk_exception,v_pre_id,v_spt_id,v_rou_id,v_adr_id,v_par_id,s2.adresse,s2.code_postal,
                        s2.district,s2.tourne,s2.ordre,s2.police,s2.date_creation,v_date_resil,
@@ -2564,6 +2342,7 @@ PROCEDURE MigrationQuotidien
         EXCEPTION_PDL(s2.district||s2.tourne||s2.ordre||s2.police,null,p_pk_exception,p_pk_etape);
         continue;
       end if;
+      --insert into mig_trace values(s2.district||s2.tourne||s2.ordre||s2.police,'Creation PDL',systimestamp);
 
       --Compteur
       MigrationCompteurEncours(p_pk_etape,p_pk_exception,v_equ_id,v_mtc_id,s2.compteur_actuel,s2.code_marque,v_spt_id,
@@ -2573,9 +2352,10 @@ PROCEDURE MigrationQuotidien
         EXCEPTION_PDL(s2.district||s2.tourne||s2.ordre||s2.police,null,p_pk_exception,p_pk_etape);
         continue;
       end if;
+      --insert into mig_trace values(s2.district||s2.tourne||s2.ordre||s2.police,'Creation Pose compteur',systimestamp);
       
       --Contrat
-      MigrationAbonnement(p_pk_etape,p_pk_exception,v_sag_id,s2.district,s2.tourne,s2.ordre,s2.police,s2.date_creation,v_date_resil,
+      MigrationAbonnement(p_pk_etape,p_pk_exception,v_sag_id,v_aco_id,v_adr_fs_id,s2.district,s2.tourne,s2.ordre,s2.police,s2.date_creation,v_date_resil,
                           s2.mensu,s2.categorie_actuel,s2.banque,s2.agence,s2.num_compte,s2.cle_rib,s2.usage,s2.tarif,s2.tarif_onas,
                           s2.vol_puit,nvl(s2.tarif_onas_a,s2.tarif_onas),s2.codpoll_a,nvl(s2.tarif_a,s2.tarif),s2.echt_a,s2.echr_a,
                           s2.brt_a,s2.echronas_a,s2.echtonas_a,s2.capitonas_a,s2.interonas_a,s2.arrond_a,s2.categ_a,nvl(s2.gros_consommateur_a,'N'),
@@ -2586,16 +2366,22 @@ PROCEDURE MigrationQuotidien
         EXCEPTION_CONTRAT(s2.district||s2.tourne||s2.ordre||s2.police,null,p_pk_exception,p_pk_etape);
         continue;
       end if;
+      --insert into mig_trace values(s2.district||s2.tourne||s2.ordre||s2.police,'Creation contrat',systimestamp);
       
       if v_spt_id is not null then
         update test.branchement
         set    spt_id = v_spt_id,
                sag_id = v_sag_id,
                equ_id = v_equ_id,
-               mtc_id = v_mtc_id
+               mtc_id = v_mtc_id,
+               par_id = s2.par_id,
+               aco_id = v_aco_id,
+               adr_id = v_adr_fs_id
         where  rowid = s2.row_id;
       end if;
+      --insert into mig_trace values(s2.district||s2.tourne||s2.ordre||s2.police,'Fin',systimestamp);
       commit;
+      
     end loop;   /*
 	  --Historique Releve
     for s3 in c3 loop
@@ -3330,8 +3116,7 @@ PROCEDURE MigrationDossierEnCours
             v_adresse := '-';
           end;  
           
-          MigrationClient(p_pk_etape,p_pk_exception,v_par_id,lpad(trim(s1.district),2,'0'),trim(upper(s1.CLIENT)),
-                          v_adresse,v_cd_ps,v_par_refe,v_categ,v_par_name,v_par_telw,v_par_telm,null);
+          MigrationClient(p_pk_etape,p_pk_exception,v_par_id,v_adresse,v_cd_ps,v_par_refe,v_categ,v_par_name,v_par_telw,v_par_telm,null);
         end if;
         
         --Creation de l'adresse du site
