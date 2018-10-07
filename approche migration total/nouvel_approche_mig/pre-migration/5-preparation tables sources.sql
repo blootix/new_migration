@@ -63,12 +63,12 @@ from fich24_gc ;
 ---creation facture impayee
 create table src_impayee
 as 
-select district,police,tournee,ordre,adm,consfac,consred,tarifonas,mtonas,net,mtpaye,datepaye,codpaye,annee,trimestre,
+select district,police,tournee,ordre,adm,consfac,consred,tarifonas,mtonas,net,mtpaye,datepaye,codpaye,annee,trimestre periode,
 mtson,mtimpson,mtimponas,categorie,gros_consommateur,mtimpaye,tiers
 from imp_sic
 where trim(net)<>trim(mtpaye)
 union 
-select district,police,tournee,ordre,adm,consfac,consred,tarifonas,mtonas,net,mtpaye,datepaye,codpaye,annee,mois trimestre,
+select district,police,tournee,ordre,adm,consfac,consred,tarifonas,mtonas,net,mtpaye,datepaye,codpaye,annee,mois periode,
 mtson,mtimpson,mtimponas,categorie,gros_consommateur,mtimp mtimpaye, null tiers
 from impgc_sic
 where trim(net)<>trim(mtpaye);
