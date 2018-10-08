@@ -3,13 +3,16 @@
 --Creation clients
 create table src_clients as
 (
-select lpad(trim(district),2,'0') district, lpad(trim(categorie),2,'0') categorie, trim(upper(code)) code, tel, autre_tel, fax, nom, adresse, to_number(code_postal) code_postal,
+select lpad(trim(district),2,'0') district, lpad(trim(categorie),2,'0') categorie, trim(upper(code)) code,
+       tel, autre_tel, fax, nom, nvl(trim(adresse),'-') adresse, lpad(trim(code_postal),4,'0') code_postal,
        lpad(trim(district),2,'0')||lpad(trim(categorie),2,'0')||trim(upper(code)) code_cli
        from   client c
-	   where c.lpad(trim(categorie),2,'0') <> '02'
+where  lpad(trim(categorie),2,'0') <> '02'
 union all
-       
-from   abn_gccat1
+select null district,'02' categorie, lpad(trim(adm.coadm),4,'0') code,
+       null tel, null autre_tel, null fax, nvl(trim(adm.libel),'-') nom, nvl(trim(adm.admadr),'-') adresse, null code_postal,
+       lpad(trim(adm.coadm),4,'0') code_cli
+from   repertoire_adm adm
 );
 --Creation abonnees
 create table src_abonnees as

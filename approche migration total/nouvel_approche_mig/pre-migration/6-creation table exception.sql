@@ -9,7 +9,7 @@ alter table genstreet modify str_name varchar2(400);
 alter table genstreet modify str_namek varchar2(400);
 alter table genstreet modify str_namer varchar2(400);
 
-alter table client add par_id number(10);
+alter table src_clients add par_id number(10);
 alter table branchement add spt_id number(10);
 alter table branchement add sag_id number(10);
 alter table branchement add mtc_id number(10);

@@ -24,7 +24,7 @@ declare
            test.demande_ds dmd
      where  lpad(to_number(fdb.pol),5,'0') = lpad(to_number(rgl.police),5,'0')
      and    lpad(to_number(fdb.dist),2,'0') = lpad(to_number(rgl.district),2,'0')
-     and    trim(to_char(rgl.date_prise_charge,'ddmmyyyy')) = trim(fdb.datpc)
+     --and    trim(to_char(rgl.date_prise_charge,'ddmmyyyy')) = trim(fdb.datpc)
      and    rgl.annee_ds = dvi.annee_ds
      and    rgl.district = dvi.district
      and    rgl.code_localite_ds = dvi.code_localite_ds
