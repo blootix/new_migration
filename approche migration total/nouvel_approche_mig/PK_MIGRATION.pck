@@ -1756,7 +1756,7 @@ procedure MigrationFacture
                              p_fac_datecalcul,v_vow_unit,v_g_age_id,v_g_meu_id);
     end if; 
     p_pk_etape := 'Article montant extension';
-    if (p_extention)>0 then
+    if to_number(p_extention)>0 then
       v_bli_num := v_bli_num+1; 
       v_ite_name:='Montant extention';  
       v_ite_id  :=1979;
@@ -1782,7 +1782,7 @@ procedure MigrationFacture
                              p_fac_datecalcul,v_vow_unit,v_g_age_id,v_g_meu_id);
     end if; 
     p_pk_etape := 'Article produit financier';
-    if p_pfinancier>0 then
+    if to_number(p_pfinancier)>0 then
       v_bli_num := v_bli_num+1; 
       v_ite_name:='Produit financier';  
       v_ite_id  :=1982;
@@ -1808,7 +1808,7 @@ procedure MigrationFacture
                              p_fac_datecalcul,v_vow_unit,v_g_age_id,v_g_meu_id);
     end if;
     p_pk_etape := 'Article montant capital';     
-    if p_capit >0 then
+    if to_number(p_capit)>0 then
       v_bli_num := v_bli_num+1; 
       v_ite_name:='Montant capital ONAS';
       v_ite_id  :=1981;
@@ -3003,7 +3003,7 @@ PROCEDURE MigrationFactureAS400
             f.tvadeplac,f.tvadepose_dem,f.tvadepose_def,f.tva_capit,f.tva_pfin,f.arriere,(f.rbranche+f.rfacade) extention,
             f.net,f.monttrim,nvl(nvl(f.montt1,f.montt2),f.montt3) montt ,nvl(nvl(const1,const2),const3)const,nvl(nvl(f.tauxt1,f.tauxt2),f.tauxt3) taux,f.mon1,
             f.volon1,f.tauon1,f.mon2,f.volon2,f.tauon2,f.mon3,f.volon3,f.tauon3,f.fixonas,f.fraisctr,f.fermeture,f.preavis,
-            f.deplacement,f.depose_dem,f.depose_def,f.rbranche,f.rfacade,f.pfinancier,f.capit,f.inter,f.arepor,
+            f.deplacement,f.depose_dem,f.depose_def,f.rbranche,f.rfacade,f.pfinancier,f.capit,f.inter,f.arepor,f.nindex,f.cons,f.prorata,
             f.narond,lpad(trim(b.district),2,'0') district,lpad(trim(b.police),5,'0') police,lpad(trim(b.tourne),3,'0') tourne, 
             lpad(trim(b.ordre),3,'0') ordre,b.spt_id,b.mtc_id,b.equ_id,b.sag_id,b.par_id,b.aco_id,b.adr_id,b.date_creation,p.trim,p.tier,p.six, 
             to_date(lpad(trim(r.datexp),8,'0'),'ddmmyyyy') fac_datecalcul_trim,
@@ -3058,11 +3058,15 @@ PROCEDURE MigrationFactureAS400
    v_aco_id number;
    v_bil_id number;
    v_deb_id number;
-   v_annee  number;
-   v_tva    number;
-   v_tothta number;
+   v_mrd_id number;
+   v_index   number;
+   v_cons_releve    number;
+   v_prorata number;
+   v_annee   number;
+   v_tva     number;
+   v_tothta  number;
    v_tottvaa number;
-   v_tothte number;
+   v_tothte  number;
    v_periode number;
    v_tot_ttc number(25,10);
    v_tot_ht  number(25,10);
@@ -3079,6 +3083,7 @@ PROCEDURE MigrationFactureAS400
     for s1 in c1 loop
       v_bil_id  := null;
       v_deb_id  := null;
+      v_mrd_id  := null;
       v_org_id  := null;
       v_adr_id  := null;
       v_run_id  := null;
@@ -3092,6 +3097,9 @@ PROCEDURE MigrationFactureAS400
       v_tot_ttc := null;
       v_tot_ht  := null;
       v_tot_tva := null;
+      v_index   := null;
+      v_cons_releve    := null;
+      v_prorata := null;
       v_vow_agrbilltype  := null;
       v_date    := null;
       v_fac_datecalcul:= null;
@@ -3133,9 +3141,9 @@ PROCEDURE MigrationFactureAS400
           v_periode := lpad(trim(s1.refc01),2,'0');
           v_fac_datecalcul := nvl(s1.fac_datecalcul_mens,v_date);
           v_fac_datelim    := nvl(s1.fac_datelim_mens,v_date);
-          v_tothte    := (s1.monttrim-v_tva)/1000;
-          --v_solde     := s1.monttrim/1000; 
-      end if;  
+          v_tothte         := (s1.monttrim-v_tva)/1000;
+          --v_solde     := s1.monttrim/1000;
+      end if;   
       v_tot_ttc    := v_tothte+v_tva+v_tothta+v_tottvaa;
       v_tot_ht     := v_tothte+v_tothta;
       v_tot_tva    := v_tva+v_tottvaa;
@@ -3246,7 +3254,7 @@ PROCEDURE MigrationFactureDist
      v_tva      :=0;
      v_tothta   :=0;
      v_tottvaa  :=0;
-     v_tot_ttc  := v_tothte+v_tva+v_tothta+v_tottvaa;
+     v_tot_ttc  :=v_tothte+v_tva+v_tothta+v_tottvaa;
      v_tot_ht   :=v_tothte+v_tothta;
      v_tot_tva  :=v_tva+v_tottvaa;
      --v_solde    :=(s1.net_a_payer/1000);   
@@ -3526,5 +3534,4 @@ PROCEDURE MigrationFactureImpayee
     end loop;
   END;        
 end PK_MIGRATION;
-
 /
