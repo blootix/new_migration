@@ -59,6 +59,10 @@ tvacons,preavis,tva_preav,codctr,cods,cleref,monttrim,clemt,restpc,cbo,eto,ero,c
 tauon1,mon1,volon2,tauon2,mon2,refc01,refc02,refc03,refc04,volon3,tauon3,mon3,caron,arepor,narond,volon4,tauon4,mttonas,fermeture,tvaferm,
 deplacement,tvadeplac,depose_dem,tvadepose_dem,depose_def,tvadepose_def, null net, null arriere ,'MENS' type
 from fich24_gc ;
+----creation des facture
+create table src_facture as
+select * from facture f
+where to_number(f.annee) >=2015;
 
 ---creation facture impayee
 create table src_impayee
