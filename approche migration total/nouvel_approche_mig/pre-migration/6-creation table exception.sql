@@ -27,6 +27,8 @@ alter table facture add bil_id number(10);
 alter table facture add deb_id number(10);
 alter table src_impayee  add bil_id number(10);
 alter table src_impayee  add deb_id number(10);
+alter table anomalie  add deb_id number(10);
+alter table anomalie_travaux  add deb_id number(10);
 
 
 update client set par_id = null where par_id is not null;
