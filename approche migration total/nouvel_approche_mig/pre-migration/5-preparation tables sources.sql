@@ -45,39 +45,22 @@ select r.*, 'MNS' frq
 from   rib_gr r;
 
 ---creation facture_as400
-/*create table  src_facture_as400  as
-select dist,pol,tou,ord,cfac,z1,nomadr,usag,codonas,mtonas,fraisctr,tva_ff,fraisbrt,ctarif,tauxt1,tauxt2,tauxt3,nbreapp,partcon,codbrt, 
-echtot,echrest,rbranche,rfacade,tva_capit,pfinancier,tva_pfin,aindex,nindex,cons,prorata,const1,montt1,const2,montt2,const3,montt3,z3,mtctot,
-tvacons,preavis,tva_preav,codctr,cods,cleref,monttrim,clemt,restpc,cbo,eto,ero,capit,inter,codeso,echtos,codptt,reston,fixonas,z5,qonas,volon1,
-tauon1,mon1,volon2,tauon2,mon2,refc01,refc02,refc03,refc04,volon3,tauon3,mon3,caron,arepor,narond,volon4,tauon4,mttonas,fermeture,tvaferm,
-deplacement,tvadeplac,depose_dem,tvadepose_dem,depose_def,tvadepose_def,net,arriere ,'TRIM' type
-from facture_as400 
+create table  src_facture_as400  as
+select dist,pol,tou,ord,caron,refc01,refc02,refc03,refc04,tvacons,tva_ff,tvaferm,tva_preav,
+       tvadeplac,tvadepose_dem,tvadepose_def,tva_capit,tva_pfin,arriere,rbranche,rfacade,
+       net,monttrim,montt1,montt2,montt3 ,const1,const2,const3,tauxt1,tauxt2,tauxt3 ,mon1,
+       volon1,tauon1,mon2,volon2,tauon2,mon3,volon3,tauon3,fixonas,fraisctr,fermeture,preavis,
+       deplacement,depose_dem,depose_def,pfinancier,capit,inter,arepor,nindex,cons,prorata,
+       narond,annee,trimestre periode ,tiers,six,to_char(annee)||to_char(trimestre)||to_char(tiers)||to_char(six) cle_role,'TRIM' type
+from FICH24_TRIM  f
 union
-select  dist,pol,tou,ord,cfac,z1,nomadr,usag,codonas,mtonas,fraisctr,tva_ff,fraisbrt,ctarif,tauxt1,tauxt2,tauxt3,nbreapp,partcon,codbrt, 
-echtot,echrest,rbranche,rfacade,tva_capit,pfinancier,tva_pfin,aindex,nindex,cons,prorata,const1,montt1,const2,montt2,const3,montt3,z3,mtctot,
-tvacons,preavis,tva_preav,codctr,cods,cleref,monttrim,clemt,restpc,cbo,eto,ero,capit,inter,codeso,echtos,codptt,reston,fixonas,z5,qonas,volon1,
-tauon1,mon1,volon2,tauon2,mon2,refc01,refc02,refc03,refc04,volon3,tauon3,mon3,caron,arepor,narond,volon4,tauon4,mttonas,fermeture,tvaferm,
-deplacement,tvadeplac,depose_dem,tvadepose_dem,depose_def,tvadepose_def, null net, null arriere ,'MENS' type
-from fich24_gc ;*/
-
- create table  src_facture_as400  as
-select dist,pol,tou,ord,cfac,z1,nomadr,usag,codonas,mtonas,fraisctr,tva_ff,fraisbrt,ctarif,tauxt1,tauxt2,tauxt3,nbreapp,partcon,codbrt, 
-echtot,echrest,rbranche,rfacade,tva_capit,pfinancier,tva_pfin,aindex,nindex,cons,prorata,const1,montt1,const2,montt2,const3,montt3,z3,mtctot,
-tvacons,preavis,tva_preav,codctr,cods,cleref,monttrim,clemt,restpc,cbo,eto,ero,capit,inter,codeso,echtos,codptt,reston,fixonas,z5,qonas,volon1,
-tauon1,mon1,volon2,tauon2,mon2,refc01,refc02,refc03,refc04,volon3,tauon3,mon3,caron,arepor,narond,volon4,tauon4,mttonas,fermeture,tvaferm,
-deplacement,tvadeplac,depose_dem,tvadepose_dem,depose_def,tvadepose_def,net,arriere,annee,trimestre,tiers,six,
-to_char(annee)||to_char(trimestre)||to_char(tiers)||to_char(six) cle_role,'TRIM' type
-from FICH24_TRIM 
-union
-select  dist,pol,tou,ord,cfac,z1,nomadr,usag,codonas,mtonas,fraisctr,tva_ff,fraisbrt,ctarif,tauxt1,tauxt2,tauxt3,nbreapp,partcon,codbrt, 
-echtot,echrest,rbranche,rfacade,tva_capit,pfinancier,tva_pfin,aindex,nindex,cons,prorata,const1,montt1,const2,montt2,const3,montt3,z3,mtctot,
-tvacons,preavis,tva_preav,codctr,cods,cleref,monttrim,clemt,restpc,cbo,eto,ero,capit,inter,codeso,echtos,codptt,reston,fixonas,z5,qonas,volon1,
-tauon1,mon1,volon2,tauon2,mon2,refc01,refc02,refc03,refc04,volon3,tauon3,mon3,caron,arepor,narond,volon4,tauon4,mttonas,fermeture,tvaferm,
-deplacement,tvadeplac,depose_dem,tvadepose_dem,depose_def,tvadepose_def,null net, null arriere,annee,trimestre,tiers,six,to_number('20'||refc02)||to_number(refc01) cle_role,'MENS' type
-from fich24_gc;
-
-
-
+select dist,pol,tou,ord,caron,refc01,refc02,refc03,refc04,tvacons,tva_ff,tvaferm,tva_preav,
+       tvadeplac,tvadepose_dem,tvadepose_def,tva_capit,tva_pfin, 0 arriere,rbranche,rfacade,
+       monttrim net,monttrim,montt1,montt2,montt3 ,const1,const2,const3,tauxt1,tauxt2,tauxt3 ,mon1,
+       volon1,tauon1,mon2,volon2,tauon2,mon3,volon3,tauon3,fixonas,fraisctr,fermeture,preavis,
+       deplacement,depose_dem,depose_def,pfinancier,capit,inter,arepor,nindex,cons,prorata,
+       narond,refc02 annee,refc01 periode,tiers,six,to_char('20'||refc02)||to_char(refc01) cle_role,'MENS' type
+from fich24_gc  f
 
 ----creation des facture
 create table src_facture as
