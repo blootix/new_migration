@@ -16,6 +16,11 @@ PROCEDURE MigrationHistoriqueReleveTrim
   (
     p_param in number default 0
   );
+  
+PROCEDURE MigrationReleveT
+  (
+    p_param in number default 0
+  );
  
 PROCEDURE MigrationFactureAS400
   (
@@ -230,6 +235,22 @@ PROCEDURE EXCEPTION_FACTURE
   PRAGMA AUTONOMOUS_TRANSACTION;
  BEGIN
     insert into prob_mig_facture(obj_refe,code_except,message_except,pk_etape,date_except)
+                         values(p_obj_refe,p_code_except,p_message_except,p_pk_etape,sysdate);
+    commit;
+ END;
+-------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------
+PROCEDURE EXCEPTION_RELEVET
+  (
+    p_obj_refe in varchar2,
+    p_code_except in varchar2,
+    p_message_except in varchar2,
+    p_pk_etape in varchar2
+  )
+ IS
+  PRAGMA AUTONOMOUS_TRANSACTION;
+ BEGIN
+    insert into prob_mig_relevet(obj_refe,code_except,message_except,pk_etape,date_except)
                          values(p_obj_refe,p_code_except,p_message_except,p_pk_etape,sysdate);
     commit;
  END;
@@ -451,8 +472,8 @@ PROCEDURE MigrationSitePdl
                     values(p_pre_id,v_code_br,p_adr_id,v_g_vow_premisetp,v_g_age_id);
 
     select seq_tecservicepoint.nextval into p_spt_id from dual;
-    insert into tecservicepoint(spt_id,spt_refe,pre_id,rou_id,fld_id,adr_id,spt_updtby,ctt_id)
-                           values(p_spt_id,v_code_br,p_pre_id,p_rou_id,v_g_fld_id,p_adr_id,v_g_age_id,v_g_ctt_id);
+    insert into tecservicepoint(spt_id,spt_refe,pre_id,rou_id,spt_routeorder,fld_id,adr_id,spt_updtby,ctt_id)
+                           values(p_spt_id,v_code_br,p_pre_id,p_rou_id,to_number(p_ordre),v_g_fld_id,p_adr_id,v_g_age_id,v_g_ctt_id);
     
     p_pk_etape := 'Creation du proprietaire site/pdl';
     select seq_tecpresptcontact.nextval into v_psc_id from dual;
@@ -1228,6 +1249,7 @@ procedure MigrationReleve
     p_anomalien    in varchar2,
     p_anomaliec    in varchar2,
     p_message_temporaire in varchar2,
+    p_message_temporaire_a in varchar2,
     p_vow_readreason  in number,
     p_mrd_usecr in number,
     p_equ_id       in number,
@@ -1293,10 +1315,10 @@ procedure MigrationReleve
    select seq_tecmtrread.nextval into p_mrd_id from dual;
     insert into tecmtrread(mrd_id,equ_id,mtc_id,mrd_dt,spt_id,vow_comm1,vow_comm2,vow_comm3,
                  vow_readorig,vow_readmeth,vow_readreason,mrd_comment,mrd_agrtype,mrd_techtype,
-                 mrd_etatfact,age_id,mrd_usecr,mrd_year,mrd_multicad) 
+                 mrd_etatfact,age_id,mrd_usecr,mrd_year,mrd_multicad,mrd_comment_a) 
             values(p_mrd_id,p_equ_id,p_mtc_id,p_date_releve,p_spt_id,v_vow_comm1,v_vow_comm2,v_vow_comm3,
                  v_g_vow_readorig,v_g_vow_readmeth,p_vow_readreason,p_message_temporaire,v_g_mrd_agrtype,v_g_mrd_techtype,
-                 v_g_mrd_etatfact,p_age_id,p_mrd_usecr,p_annee,p_periode);
+                 v_g_mrd_etatfact,p_age_id,p_mrd_usecr,p_annee,p_periode,p_message_temporaire_a);
     
     p_pk_etape := 'Ajouter index eau'; 
     v_mme_num := 1;
@@ -1305,7 +1327,7 @@ procedure MigrationReleve
                         values (v_mme_id,p_mrd_id,v_g_meu_eau,v_mme_num,to_number(p_index),nvl(to_number(trim(p_consommation)),0),0,v_mme_deducemanual);    
 
     p_pk_etape := 'Ajouter index tentatif 1 et 2'; 
-    if (to_number(replace(p_tentatif2,'.',0))>0) then
+    if (nvl(p_tentatif2,0)>0) then
       v_mme_num := v_mme_num + 1;
       select seq_tecmtrmeasure.nextval into v_mme_id from dual;
       insert into tecmtrmeasure(mme_id,mrd_id,meu_id,mme_num,mme_value,mme_consum,mme_avgconsum,mme_deducemanual)
@@ -1317,7 +1339,7 @@ procedure MigrationReleve
     end if;         
 
     p_pk_etape := 'Ajouter index tentatif 3'; 
-    if (to_number(replace(p_tentatif3,'.',0))>0) then
+    if (nvl(p_tentatif3,0)>0) then
       v_mme_num := v_mme_num + 1;
       select seq_tecmtrmeasure.nextval into v_mme_id from dual;
       insert into tecmtrmeasure(mme_id,mrd_id,meu_id,mme_num,mme_value,mme_consum,mme_avgconsum,mme_deducemanual)
@@ -1325,7 +1347,7 @@ procedure MigrationReleve
     end if;     
         
     p_pk_etape := 'Ajouter index tentatif 4'; 
-    if (to_number(replace(p_tentatif4,'.',0))>0) then
+    if (nvl(p_tentatif4,0)>0) then
       v_mme_num := v_mme_num + 1;
       select seq_tecmtrmeasure.nextval into v_mme_id from dual;
       insert into tecmtrmeasure(mme_id,mrd_id,meu_id,mme_num,mme_value,mme_consum,mme_avgconsum,mme_deducemanual)
@@ -1333,7 +1355,7 @@ procedure MigrationReleve
     end if;     
            
     p_pk_etape := 'Ajouter index tentatif 5'; 
-    if (to_number(replace(p_tentatif5,'.',0))>0) then
+    if (nvl(p_tentatif5,0)>0) then
       v_mme_num := v_mme_num + 1;
       select seq_tecmtrmeasure.nextval into v_mme_id from dual;
       insert into tecmtrmeasure(mme_id,mrd_id,meu_id,mme_num,mme_value,mme_consum,mme_avgconsum,mme_deducemanual)
@@ -1341,7 +1363,7 @@ procedure MigrationReleve
     end if;           
           
     p_pk_etape := 'Ajouter index avis forte conso';
-    if (to_number(trim(p_avisforte))>0) then
+    if (nvl(p_avisforte,0)>0) then
       v_mme_num := v_mme_num + 1;
       select seq_tecmtrmeasure.nextval into v_mme_id from dual;
       insert into tecmtrmeasure(mme_id,mrd_id,meu_id,mme_num,mme_value,mme_consum,mme_avgconsum,mme_deducemanual)
@@ -2224,7 +2246,7 @@ PROCEDURE MigrationHistoriqueReleveTrim
         MigrationReleve(p_pk_etape,p_pk_exception,v_mrd_id,s1.annee,s1.trim,v_index,v_conso,v_prorata,v_avis_f,
                         v_tentatif2,v_tentatif3,v_tentatif4,v_tentatif5,v_compteur_t,v_date_rel, 
                         substr(s1.anomalie,13,2),substr(s1.anomalie,7,2),substr(s1.anomalie,1,2),
-                        trim(s1.message_temporaire),v_g_vow_readreason_t,1,s1.equ_id,s1.mtc_id,s1.spt_id,
+                        trim(s1.message_temporaire),null,v_g_vow_readreason_t,1,s1.equ_id,s1.mtc_id,s1.spt_id,
                         v_g_age_id);
                         
         if p_pk_exception is not null then
@@ -2246,7 +2268,114 @@ PROCEDURE MigrationHistoriqueReleveTrim
       end;
     end loop;
   END;
-
+--------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------
+PROCEDURE MigrationReleveT
+  (
+    p_param in number default 0
+  )
+  IS
+    cursor c1
+    is
+      select lpad(trim(r.district),2,'0') district, lpad(trim(r.tourne),3,'0') tourne, lpad(trim(r.ordre),3,'0') ordre, lpad(trim(r.police),5,'0') police,
+             to_number(r.annee) annee, to_number(r.trimestre) trimestre, r.indexr,r.consommation,
+             r.prorata,r.cpt_tourne,r.anomalie_niche,r.anomalie_compteur,r.anomalie_fuite,r.date_releve,
+             b.spt_id,b.mtc_id,b.equ_id, r.rowid row_id
+      from   test.relevet r,  --3054157
+             test.branchement b
+      where  to_number(r.annee)>0
+      and    to_number(r.trimestre)>0 --459984
+      and    r.mrd_id is null
+      and    lpad(trim(r.district),2,'0') = lpad(trim(b.district),2,'0')
+      and    lpad(trim(r.tourne),3,'0') = lpad(trim(b.tourne),3,'0')
+      and    lpad(trim(r.ordre),3,'0') = lpad(trim(b.ordre),3,'0')
+      and    lpad(trim(r.police),5,'0') = lpad(trim(b.police),5,'0') --459922
+      and    not exists(select 1
+                        from   tecservicepoint spt,
+                               tecmtrread mrd
+                        where  spt.spt_refe = lpad(trim(r.district),2,'0')||lpad(trim(r.tourne),3,'0')
+                                              ||lpad(trim(r.ordre),3,'0')||lpad(trim(r.police),5,'0')
+                        and    spt.spt_id = mrd.spt_id
+                        and    mrd.mrd_year = to_number(r.annee)
+                        and    mrd.mrd_multicad = to_number(r.trimestre)  --653
+                        );
+   
+    v_date_rel date;
+    v_mois3 number;
+    v_mrd_id number;
+    v_index number;
+    v_conso number;
+    v_prorata number;
+    v_compteur_t number;
+    p_pk_etape     varchar2(400);
+    p_pk_exception varchar2(400);
+  BEGIN
+    --Securite
+    if p_param <> 3 then
+      return;
+    end if;
+    
+    for s1 in c1 loop
+      begin
+        p_pk_etape := 'Initialisation param releve';
+        v_date_rel := null;
+        v_mrd_id := null;
+        v_index := null;
+        v_conso := null;
+        v_prorata := null;
+        v_compteur_t := null;
+        p_pk_exception := null;
+        begin
+          p_pk_etape := 'Recupere date depuis releveT';
+          v_date_rel  :=to_date(s1.date_releve);
+        exception when others then
+          p_pk_etape := 'Calcul date depuis mois 3';
+          select decode(s1.trimestre,1,3,2,6,3,9,12) into v_mois3 from dual;
+          if (v_mois3=12) then
+            v_date_rel :=to_date('08/'||'01'||'/'||to_char(s1.annee+1),'dd/mm/yyyy');
+          else
+            v_date_rel:=to_date('08/'||lpad(to_char(v_mois3+1),2,'0')||'/'||to_char(s1.annee),'dd/mm/yyyy');
+          end if; 
+        end;
+        
+        p_pk_etape := 'Recuperer index';
+        v_index := to_number(trim(s1.indexr));
+        p_pk_etape := 'Recuperer conso';
+        v_conso := to_number(trim(s1.consommation));
+        p_pk_etape := 'Recuperer prorata';
+        v_prorata := to_number(trim(s1.prorata));      
+        p_pk_etape := 'Recuperer compteur T';
+        begin
+          select decode(nvl(trim(s1.cpt_tourne),'0'),'0',0,1) into v_compteur_t from dual;
+        exception when others then
+          v_compteur_t := 0;
+        end;
+        
+        MigrationReleve(p_pk_etape,p_pk_exception,v_mrd_id,s1.annee,s1.trimestre,v_index,v_conso,v_prorata,null,
+                        null,null,null,null,v_compteur_t,v_date_rel, 
+                        trim(s1.anomalie_fuite),trim(s1.anomalie_niche),trim(s1.anomalie_compteur),
+                        null,'RELEVET',v_g_vow_readreason_t,1,s1.equ_id,s1.mtc_id,s1.spt_id,
+                        v_g_age_id);
+        
+        if p_pk_exception is not null then
+          rollback;
+          EXCEPTION_RELEVET(s1.district||s1.tourne||s1.ordre||s1.police||'-'||s1.annee||'-'||s1.trimestre,null,p_pk_exception,p_pk_etape);
+          continue;
+        end if;
+        if v_mrd_id is not null then
+          update test.relevet
+          set    mrd_id = v_mrd_id
+          where  rowid = s1.row_id;
+        end if;
+        commit;       
+      exception when others then
+        rollback;
+        p_pk_exception := SQLCODE || ' : ' ||  SUBSTR(SQLERRM, 1, 200);
+        EXCEPTION_RELEVET(s1.district||s1.tourne||s1.ordre||s1.police||'-'||s1.annee||'-'||s1.trimestre,null,p_pk_exception,p_pk_etape);
+        continue;
+      end;
+    end loop;
+  END;
 
 ---------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------  
@@ -3172,7 +3301,7 @@ PROCEDURE MigrationFactureAS400
           v_prorata    :=to_number(s1.prorata);
           MigrationReleve(p_pk_etape,p_pk_exception,v_mrd_id,v_annee,v_periode,v_index,v_cons_releve,v_prorata,
                           null,null,null,null,null,null,v_fac_datecalcul,
-                          null,null,null,null,v_g_vow_readreason_t,1,
+                          null,null,null,null,'RELEVE_AS400_GC',v_g_vow_readreason_t,1,
                           s1.equ_id,s1.mtc_id,s1.spt_id,v_g_age_id); 
                                      
           if p_pk_exception is not null then

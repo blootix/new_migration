@@ -3,7 +3,7 @@ create table prob_mig_pdl(obj_refe varchar2(400),code_except varchar2(400),messa
 create table prob_mig_contrat(obj_refe varchar2(400),code_except varchar2(400),message_except varchar2(400),pk_etape varchar2(400),date_except date);
 create table prob_mig_releve(obj_refe varchar2(400),code_except varchar2(400),message_except varchar2(400),pk_etape varchar2(400),date_except date);
 create table prob_mig_facture(obj_refe varchar2(400),code_except varchar2(400),message_except varchar2(400),pk_etape varchar2(400),date_except date);
-
+create table prob_mig_relevet(obj_refe varchar2(400),code_except varchar2(400),message_except varchar2(400),pk_etape varchar2(400),date_except date);
 
 alter table genstreet modify str_name varchar2(400);
 alter table genstreet modify str_namek varchar2(400);
@@ -20,7 +20,7 @@ alter table branchement add aco_id number(10);
 
 
 alter table src_fiche_releve add mrd_id number(10);
-alter table src_relevet add mrd_id number(10);
+alter table relevet add mrd_id number(10);
 alter table src_facture_as400 add bil_id number(10);
 alter table src_facture_as400 add deb_id number(10);
 alter table src_facture_as400 add mrd_id number(10);
