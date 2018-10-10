@@ -80,17 +80,16 @@ mtson,mtimpson,mtimponas,categorie,gros_consommateur,mtimp mtimpaye, null tiers
 from impgc_sic
 where trim(net)<>trim(mtpaye);
 ----creation role 
-create table src_role as
-select   distinct to_char(distr) DISTR,police,tour,ordr,annee,trim,tier,six,datexp,datl,
-        to_char(annee)||to_char(trim)||to_char(tier)||to_char(six) cle_role , 'TRIM' type
+create  table src_role as
+select  distinct lpad(to_char(trim(distr)),2,'0') DISTR,lpad(to_char(police),5,'0') police,lpad(to_char(tour),3,'0') tour,lpad(to_char(ordr),3,'0') ordr,
+        to_number(annee) annee,to_number(trim) trim,to_number(tier) tier ,to_number(six) six,to_char(datexp) datexp,to_char(datl) datl,
+        to_number(annee)||to_number(trim)||to_number(tier)||to_number(six) cle_role ,'TRIM' type
 from role_trim 
 union 
-select distinct DISTR,POLICE,TOUR,ORDR,ANNEE,MOIS TRIM, null tier,SIX,DATEXP,DATL,to_char(annee)||to_char(mois) cle_role,'MENS' type
+select distinct lpad(to_char(trim(distr)),2,'0') DISTR,lpad(to_char(police),5,'0') police,lpad(to_char(tour),3,'0') tour,lpad(to_char(ordr),3,'0') ordr,
+       to_number(annee) annee,to_number(MOIS) TRIM, null tier,to_number(six) six,to_char(datexp) datexp,to_char(datl) datl,
+       to_number(annee)||to_number(mois) cle_role,'MENS' type
 from role_gc ;
-
-
-
-
 
 ---creation fiche_releve
 create table src_fiche_releve as

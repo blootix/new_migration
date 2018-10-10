@@ -38,6 +38,6 @@ update branchement set sag_id = null, spt_id = null where spt_id is not null;
 update src_fiche_releve set mrd_id = null;
 update src_relevet set mrd_id = null;
 update src_facture_as400 set bil_id = null,deb_id=null;
-update src_facture_as400 set mrd_i=null;
+update src_facture_as400 set mrd_id=null;
 update src_facture set bil_id = null,deb_id=null;
 update src_impayee set bil_id=null,deb_id=null;
