@@ -2116,6 +2116,7 @@ PROCEDURE MigrationHistoriqueReleveTrim
       and     trim(r.trim)is not null
       and     to_number(r.annee)<=2018;
       
+      
       v_date_rel date;
       v_mois3 number;
       v_mrd_id number;
@@ -2160,9 +2161,9 @@ PROCEDURE MigrationHistoriqueReleveTrim
           p_pk_etape := 'Calcul date depuis mois 3';
           select decode(s1.trim,1,3,2,6,3,9,12) into v_mois3 from dual;
           if (v_mois3=12) then
-            v_date_rel :=to_date('08/'||'01'||'/'||s1.annee+1,'dd/mm/yyyy');
+            v_date_rel :=to_date('08/'||'01'||'/'||to_char(s1.annee+1),'dd/mm/yyyy');
           else
-            v_date_rel:=to_date('08/'||lpad(v_mois3+1,2,'0')||'/'||s1.annee,'dd/mm/yyyy');
+            v_date_rel:=to_date('08/'||lpad(to_char(v_mois3+1),2,'0')||'/'||to_char(s1.annee),'dd/mm/yyyy');
           end if; 
         end;
         
@@ -2172,16 +2173,48 @@ PROCEDURE MigrationHistoriqueReleveTrim
         end if;
         
         begin
-          p_pk_etape := 'Initialisation pour creation releve';
+          p_pk_etape := 'Recuperer index';
           v_index := to_number(trim(s1.releve));
+          p_pk_etape := 'Recuperer conso';
           v_conso := to_number(trim(s1.consommation));
+          p_pk_etape := 'Recuperer prorata';
           v_prorata := to_number(trim(s1.prorata));
-          v_avis_f := to_number(trim(s1.avisforte));
-          v_tentatif2 := to_number(trim(s1.releve2));
-          v_tentatif3 := to_number(trim(s1.releve3));
-          v_tentatif4 := to_number(trim(s1.releve4));
-          v_tentatif5 := to_number(trim(s1.releve5));
-          select decode(to_char(nvl(trim(s1.compteurt),0)),'0',0,1) into v_compteur_t from dual;
+          p_pk_etape := 'Recuperer avis';
+          begin
+            v_avis_f := to_number(trim(s1.avisforte));
+          exception when others then
+            v_avis_f := -99999;
+          end;
+          p_pk_etape := 'Recuperer tentatif2';
+          begin
+            v_tentatif2 := to_number(trim(s1.releve2));
+          exception when others then
+            v_tentatif2 := -99999;
+          end;
+          p_pk_etape := 'Recuperer tentatif3';
+          begin
+            v_tentatif3 := to_number(trim(s1.releve3));
+          exception when others then
+            v_tentatif3 := -99999;
+          end;
+          p_pk_etape := 'Recuperer tentatif4';
+          begin
+            v_tentatif4 := to_number(trim(s1.releve4));
+          exception when others then
+            v_tentatif4 := -99999;
+          end;
+          p_pk_etape := 'Recuperer tentatif5';
+          begin
+            v_tentatif5 := to_number(trim(s1.releve5));
+          exception when others then
+            v_tentatif5 := -99999;
+          end;
+          p_pk_etape := 'Recuperer compteur T';
+          begin
+            select decode(to_char(nvl(trim(s1.compteurt),0)),'0',0,1) into v_compteur_t from dual;
+          exception when others then
+            v_compteur_t := 0;
+          end;
         exception when others then
           p_pk_exception := SQLCODE || ' : ' ||  SUBSTR(SQLERRM, 1, 200);
           EXCEPTION_RELEVE(s1.district||s1.tourne||s1.ordre||'-'||s1.annee||'-'||s1.trim,null,p_pk_exception,p_pk_etape);
