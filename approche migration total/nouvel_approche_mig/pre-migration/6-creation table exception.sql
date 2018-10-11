@@ -17,6 +17,7 @@ alter table branchement add equ_id number(10);
 alter table branchement add adr_id number(10);
 alter table branchement add par_id number(10);
 alter table branchement add aco_id number(10);
+alter table branchement add org_id number(10);
 
 
 alter table src_fiche_releve add mrd_id number(10);

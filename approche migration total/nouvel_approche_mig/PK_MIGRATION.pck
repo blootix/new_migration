@@ -1392,9 +1392,8 @@ procedure MigrationFacture
     p_pk_exception out varchar2,
     p_bil_id       out number,
     p_deb_id       out number,
-    p_periode      in number,
     p_annee        in number,
-    p_ref_facture  in number,
+    p_ref_facture  in varchar2,
     p_tot_ttc      in number,
     p_tot_ht       in number,
     p_tot_tva      in number,
@@ -1440,8 +1439,6 @@ procedure MigrationFacture
     p_reprise_O    in number,
     p_bil_bil_id   in number,
     p_bil_cancel_id in number,
-    p_spt_id       in number,
-    p_imp_id       in number,
     p_sag_id       in number,
     p_par_id       in number,
     p_adr_id       in number,
@@ -1454,19 +1451,7 @@ procedure MigrationFacture
     p_aco_id         in number
   ) 
   IS 
-    v_ite_id           number;
     v_tva_id           number;
-    v_pta_id           number;
-    v_bli_volumebase   number(25,10);
-    v_bli_volumefact   number(25,10);
-    v_bli_puht         number(25,10);
-    v_bli_mht          number(25,10);
-    v_bli_mttva        number(25,10);
-    v_bli_mttc         number(25,10);
-    v_vow_unit         number;
-    v_psl_rank         number; 
-    v_ite_name         varchar2(100);
-    v_bli_num          number;
   begin                              
     p_pk_etape := 'Creation gendebt';
     select seq_gendebt.nextval into p_deb_id from dual; 
@@ -1483,468 +1468,109 @@ procedure MigrationFacture
                  values(p_bil_id,p_sag_id,p_vow_agrbilltype,p_vow_modefact);
     
     p_pk_etape := 'Creation genbill';
-    insert into genbill(bil_id,bil_code,bil_calcdt,bil_amountht,bil_amounttva,bil_amountttc,
+    insert into genbill(bil_id,bil_code,bil_calcdt,bil_amountht,bil_amounttva,bil_amountttc,bil_status,
                         deb_id,par_id,bil_debtdt,run_id,bil_updtby,bil_bil_id,bil_cancel_id)
-                 values(p_bil_id,p_ref_facture,p_fac_datecalcul,p_tot_ht,p_tot_tva,p_tot_ttc,
+                 values(p_bil_id,p_ref_facture,p_fac_datecalcul,p_tot_ht,p_tot_tva,p_tot_ttc,1,
                         p_deb_id,p_par_id,p_fac_datecalcul,p_run_id,v_g_age_id,p_bil_bil_id,p_bil_cancel_id); 
-    v_bli_num:=0;     
+
+    if (p_annee>=2018)then
+        v_tva_id  :=26;
+      else
+        v_tva_id  :=24;
+      end if;
+    
     p_pk_etape := 'Creation genbilline';
-    p_pk_etape := 'Article Consommation EAU ';
-    if to_number(p_mntconso)>0 then
-      v_bli_num := v_bli_num+1;
-      v_ite_name:='Consommation EAU';
-      v_ite_id  :=320;
-      v_vow_unit:=760;
-      if (p_annee>=2018)then
-        v_tva_id  :=26;
-      else
-        v_tva_id  :=24;
-      end if;
-      v_pta_id  :=2112;
-      v_psl_rank:=1;
-      v_bli_volumebase:= p_qteconso;
-      v_bli_volumefact:= p_qteconso;
-      v_bli_puht      := p_prixconso/1000;
-      v_bli_mht       := p_mntconso/1000;
-      v_bli_mttva     := p_tvacons/1000;
-      v_bli_mttc      :=(p_prixconso+p_tvacons)/1000;
-      insert into genbilline(bil_id,bli_number,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
-                             bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
-                             bli_enddt,vow_unit,bli_updtby,meu_id)
-                      values(p_bil_id,v_bli_num,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
-                             v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
-                             p_fac_datecalcul,v_vow_unit,v_g_age_id,v_g_meu_id);
-    end if;
-    p_pk_etape := 'Article REDEVANCE ONAS 1ERE TRANCHE';        
-    if to_number(p_mntonas1)>0 then
-      v_bli_num := v_bli_num+1; 
-      v_ite_name:='Redevance variable pour usage domestique';
-      v_ite_id  :=350;
-      v_vow_unit:=760;
-      v_tva_id  :=25; 
-      v_pta_id  :=403;
-      v_psl_rank:=1;
-      v_bli_volumebase:= p_volonas1;
-      v_bli_volumefact:= p_volonas1;
-      v_bli_puht      := p_prixonas1/1000;
-      v_bli_mht       := p_mntonas1/1000;
-      v_bli_mttva     := 0;
-      v_bli_mttc      := p_mntonas1/1000;
-      insert into genbilline(bil_id,bli_number,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
-                             bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
-                             bli_enddt,vow_unit,bli_updtby,meu_id)
-                      values(p_bil_id,v_bli_num,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
-                             v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
-                             p_fac_datecalcul,v_vow_unit,v_g_age_id,v_g_meu_id);
-    end if;
-    p_pk_etape := 'Article REDEVANCE ONAS 2EME TRANCHE'; 
-    if to_number(p_mntonas2)>0 then
-      v_bli_num := v_bli_num+1;
-      v_ite_name:='Redevance variable pour usage domestique';
-      v_ite_id  :=350;
-      v_vow_unit:=760;
-      v_tva_id  :=25; 
-      v_pta_id  :=403;
-      v_psl_rank:=1;
-      v_bli_volumebase:= p_volonas2;
-      v_bli_volumefact:= p_volonas2;
-      v_bli_puht      := p_prixonas2/1000;
-      v_bli_mht       := p_mntonas2/1000;
-      v_bli_mttva     := 0;
-      v_bli_mttc      := p_mntonas2/1000;
-      insert into genbilline(bil_id,bli_number,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
-                             bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
-                             bli_enddt,vow_unit,bli_updtby,meu_id)
-                      values(p_bil_id,v_bli_num,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
-                             v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
-                             p_fac_datecalcul,v_vow_unit,v_g_age_id,v_g_meu_id);
-    end if;
-    p_pk_etape := 'Article REDEVANCE ONAS 3EME TRANCHE';        
-    if to_number(p_mntonas3)>0 then
-      v_bli_num := v_bli_num+1;
-      v_ite_name:='Redevance variable pour usage domestique';
-      v_ite_id  :=350;
-      v_vow_unit:=760;
-      v_tva_id  :=25; 
-      v_pta_id  :=403;
-      v_psl_rank:=1; 
-      v_bli_volumebase:= p_volonas3;
-      v_bli_volumefact:= p_volonas3;
-      v_bli_puht      := p_prixonas3/1000;
-      v_bli_mht       := p_mntonas3/1000;
-      v_bli_mttva     := 0;
-      v_bli_mttc      := p_mntonas3/1000;
-      insert into genbilline(bil_id,bli_number,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
-                             bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
-                             bli_enddt,vow_unit,bli_updtby,meu_id)
-                      values(p_bil_id,v_bli_num,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
-                             v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
-                             p_fac_datecalcul,v_vow_unit,v_g_age_id,v_g_meu_id);
-    end if;
-    p_pk_etape := 'Article FRAIS FIXE ONAS';  
-    if to_number(p_fixonas)>0 then
-      v_bli_num := v_bli_num+1;
-      v_ite_name:='Redevance fixe domestique ONAS';
-      v_ite_id  := 351;
-      v_vow_unit:= 760;
-      v_tva_id  := 25;
-      v_pta_id  := 409;
-      v_psl_rank:= 1;
-      v_bli_volumebase:= 1;
-      v_bli_volumefact:= 1;
-      v_bli_puht      := p_fixonas/1000;
-      v_bli_mht       := p_fixonas/1000;
-      v_bli_mttva     := 0;
-      v_bli_mttc      := p_fixonas/1000;         
-      insert into genbilline(bil_id,bli_number,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
-                             bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
-                             bli_enddt,vow_unit,bli_updtby,meu_id)
-                      values(p_bil_id,v_bli_num,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
-                             v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
-                             p_fac_datecalcul,v_vow_unit,v_g_age_id,v_g_meu_id);
-    end if;      
-    p_pk_etape := 'Article FRAIS FIXE SONEDE';    
-    if to_number(p_fraisctr)>0 then
-      v_bli_num := v_bli_num+1;
-      V_ite_name:='Frais fixe';
-      v_ite_id  :=326;
-      v_vow_unit:=4104;
-      if (p_annee>=2018)then
-        v_tva_id  :=26;
-      else
-        v_tva_id  :=24;
-      end if;
-      v_pta_id  := 341;
-      v_psl_rank:= 1; 
-      v_bli_volumebase:= 1;
-      v_bli_volumefact:= 1;
-      v_bli_puht      := p_fraisctr/1000;
-      v_bli_mht       := p_fraisctr/1000;
-      v_bli_mttva     := p_tva_ff/1000;
-      v_bli_mttc      := (p_fraisctr/+p_tva_ff)/1000;         
-      insert into genbilline(bil_id,bli_number,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
-                             bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
-                             bli_enddt,vow_unit,bli_updtby,meu_id)
-                      values(p_bil_id,v_bli_num,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
-                             v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
-                             p_fac_datecalcul,v_vow_unit,v_g_age_id,v_g_meu_id);
-    end if;     
-    p_pk_etape := 'Article Frais FERMETURE'; 
-    if to_number(p_fermeture)>0 then
-      v_bli_num := v_bli_num+1; 
-      v_ite_name:='Frais de coupure d''eau suite à non paiement';
-      v_ite_id  :=335;
-      v_vow_unit:=4104; 
-      if (p_annee>=2018)then
-        v_tva_id  :=26;
-      else
-        v_tva_id  :=24;
-      end if; 
-      v_pta_id  := 365;
-      v_psl_rank:= 1;  
-      v_bli_volumebase:= 1;
-      v_bli_volumefact:= 1;
-      v_bli_puht      := p_fermeture/1000;
-      v_bli_mht       := p_fermeture/1000;
-      v_bli_mttva     := p_tvaferm/1000;
-      v_bli_mttc      := (p_fermeture+p_tvaferm)/1000;
-      insert into genbilline(bil_id,bli_number,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
-                             bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
-                             bli_enddt,vow_unit,bli_updtby,meu_id)
-                      values(p_bil_id,v_bli_num,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
-                             v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
-                             p_fac_datecalcul,v_vow_unit,v_g_age_id,v_g_meu_id);
-    end if;   
-    p_pk_etape := 'Article Frais PREAVIS'; 
-    if to_number(p_preavis)>0 then
-      v_bli_num := v_bli_num+1; 
-      v_ite_name:='Frais de preavis et de rappel de paiement';
-      v_ite_id  :=338;
-      v_vow_unit:=4104; 
-      if (p_annee>=2018)then
-        v_tva_id  :=26;
-      else
-        v_tva_id  :=24;
-      end if; 
-      v_pta_id  := 389;
-      v_psl_rank:= 1;  
-      v_bli_volumebase:= 1;
-      v_bli_volumefact:= 1;
-      v_bli_puht      := p_preavis/1000;
-      v_bli_mht       := p_preavis/1000;
-      v_bli_mttva     := p_tva_preav/1000;
-      v_bli_mttc      :=(p_preavis+p_tva_preav)/1000;
-      insert into genbilline(bil_id,bli_number,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
-                             bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
-                             bli_enddt,vow_unit,bli_updtby,meu_id)
-                      values(p_bil_id,v_bli_num,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
-                             v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
-                             p_fac_datecalcul,v_vow_unit,v_g_age_id,v_g_meu_id);
-    end if;     
-    p_pk_etape := 'Article Frais de déplacement'; 
-    if to_number(p_deplacement)>0 then  
-      v_bli_num := v_bli_num+1; 
-      v_ite_name:='Frais de déplacement';
-      v_ite_id  :=1764;
-      v_vow_unit:=4104;
-      if (p_annee>=2018)then
-        v_tva_id  :=26;
-      else
-        v_tva_id  :=24;
-      end if;
-      v_pta_id  :=5624;
-      v_psl_rank:=1;
-      v_bli_volumebase:= 1;
-      v_bli_volumefact:= 1;
-      v_bli_puht      := p_deplacement/1000;
-      v_bli_mht       := p_deplacement/1000;
-      v_bli_mttva     := p_deplacement/1000;
-      v_bli_mttc      := (p_deplacement+p_tvadeplac)/1000;
-      insert into genbilline(bil_id,bli_number,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
-                             bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
-                             bli_enddt,vow_unit,bli_updtby,meu_id)
-                      values(p_bil_id,v_bli_num,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
-                             v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
-                             p_fac_datecalcul,v_vow_unit,v_g_age_id,v_g_meu_id);
-    end if;
-    p_pk_etape := 'Article Frais de dépose suite à la demande du client'; 
-    if to_number(p_depose_dem)>0 then  
-      v_bli_num := v_bli_num+1;
-      v_ite_name:='Frais de depose ou repose suite à la demande du client';
-      v_ite_id  :=355;
-      v_vow_unit:=1404;
-      if (p_annee>=2018)then
-        v_tva_id  :=26;
-      else
-        v_tva_id  :=24;
-      end if;
-      v_pta_id  :=414;
-      v_psl_rank:=1;
-      v_bli_volumebase:= 1;
-      v_bli_volumefact:= 1;
-      v_bli_puht      := p_depose_dem/1000;
-      v_bli_mht       := p_depose_dem/1000;
-      v_bli_mttva     := p_tvadepose_dem/1000;
-      v_bli_mttc      := (p_depose_dem +p_tvadepose_dem)/1000;
-      insert into genbilline(bil_id,bli_number,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
-                             bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
-                             bli_enddt,vow_unit,bli_updtby,meu_id)
-                      values(p_bil_id,v_bli_num,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
-                             v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
-                             p_fac_datecalcul,v_vow_unit,v_g_age_id,v_g_meu_id);
-    end if;
-    p_pk_etape := 'Article frais de depose suite au non paiement';
-    if to_number(p_depose_def)>0 then  
-      v_bli_num := v_bli_num+1; 
-      v_ite_name:='Frais de dépose ou repose compteur';
-      v_ite_id  :=336;
-      v_vow_unit:=4104;
-      if (p_annee>=2018)then
-        v_tva_id  :=26;
-      else
-        v_tva_id  :=24;
-      end if;
-      v_pta_id  :=377;
-      v_psl_rank:=1; 
-      v_bli_volumebase:= 1;
-      v_bli_volumefact:= 1;
-      v_bli_puht      := (p_depose_def/1000);
-      v_bli_mht       := (p_depose_def/1000);
-      v_bli_mttva     := (p_tvadepose_def/1000);
-      v_bli_mttc      := (p_depose_def+p_tvadepose_def)/1000;
-      insert into genbilline(bil_id,bli_number,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
-                             bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
-                             bli_enddt,vow_unit,bli_updtby,meu_id)
-                      values(p_bil_id,v_bli_num,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
-                             v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
-                             p_fac_datecalcul,v_vow_unit,v_g_age_id,v_g_meu_id);
-    end if; 
-    p_pk_etape := 'Article montant extension';
-    if to_number(p_extention)>0 then
-      v_bli_num := v_bli_num+1; 
-      v_ite_name:='Montant extention';  
-      v_ite_id  :=1979;
-      v_vow_unit:=4751;   
-      if(p_annee>=2018)then
-        v_tva_id  :=26;
-      else
-        v_tva_id  :=24;
-      end if;
-      v_pta_id  :=2310;
-      v_psl_rank:=1;
-      v_bli_volumebase:= 1;
-      v_bli_volumefact:= 1;
-      v_bli_puht      := (p_extention)/1000;
-      v_bli_mht       := (p_extention)/1000;
-      v_bli_mttva     :=  p_tva_capit/1000;
-      v_bli_mttc      := (p_extention+p_tva_capit)/1000;
-      insert into genbilline(bil_id,bli_number,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
-                             bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
-                             bli_enddt,vow_unit,bli_updtby,meu_id)
-                      values(p_bil_id,v_bli_num,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
-                             v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
-                             p_fac_datecalcul,v_vow_unit,v_g_age_id,v_g_meu_id);
-    end if; 
-    p_pk_etape := 'Article produit financier';
-    if to_number(p_pfinancier)>0 then
-      v_bli_num := v_bli_num+1; 
-      v_ite_name:='Produit financier';  
-      v_ite_id  :=1982;
-      v_vow_unit:=4751;   
-      if(p_annee>=2018)then
-        v_tva_id  :=26;
-      else
-        v_tva_id  :=24;
-      end if;
-      v_pta_id  :=2306;
-      v_psl_rank:=1;
-      v_bli_volumebase:= 1;
-      v_bli_volumefact:= 1;
-      v_bli_puht      := p_pfinancier/1000;
-      v_bli_mht       := p_pfinancier/1000;
-      v_bli_mttva     := p_tva_pfin/1000;
-      v_bli_mttc      := (p_pfinancier+p_tva_pfin)/1000;
-      insert into genbilline(bil_id,bli_number,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
-                             bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
-                             bli_enddt,vow_unit,bli_updtby,meu_id)
-                      values(p_bil_id,v_bli_num,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
-                             v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
-                             p_fac_datecalcul,v_vow_unit,v_g_age_id,v_g_meu_id);
-    end if;
-    p_pk_etape := 'Article montant capital';     
-    if to_number(p_capit)>0 then
-      v_bli_num := v_bli_num+1; 
-      v_ite_name:='Montant capital ONAS';
-      v_ite_id  :=1981;
-      v_vow_unit:=4751; 
-      v_tva_id  :=25;
-      v_pta_id  :=2305;
-      v_psl_rank:=1;
-      v_bli_volumebase:= 1;
-      v_bli_volumefact:= 1;
-      v_bli_puht      := p_capit/1000;
-      v_bli_mht       := p_capit/1000;
-      v_bli_mttva     := 0;
-      v_bli_mttc      := p_capit/1000;
-      insert into genbilline(bil_id,bli_number,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
-                             bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
-                             bli_enddt,vow_unit,bli_updtby,meu_id)
-                      values(p_bil_id,v_bli_num,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
-                             v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
-                             p_fac_datecalcul,v_vow_unit,v_g_age_id,v_g_meu_id);
-    end if; 
-    p_pk_etape := 'Article montant Interet'; 
-    if p_inter>0 then
-      v_bli_num := v_bli_num+1;   
-      v_ite_name:='Montant interet ONAS';
-      v_ite_id  :=1978;
-      v_vow_unit:=4751;
-      v_tva_id  :=25;
-      v_pta_id  :=2302;
-      v_psl_rank:=1;
-      v_bli_volumebase:= 1;
-      v_bli_volumefact:= 1;
-      v_bli_puht      := p_inter/1000;
-      v_bli_mht       := p_inter/1000;
-      v_bli_mttva     := 0;
-      v_bli_mttc      := p_inter/1000;
-      insert into genbilline(bil_id,bli_number,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
-                           bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
-                           bli_enddt,vow_unit,bli_updtby,meu_id)
-                    values(p_bil_id,v_bli_num,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
-                           v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
-                           p_fac_datecalcul,v_vow_unit,v_g_age_id,v_g_meu_id);
-    end if;       
-    p_pk_etape := 'Article montant report';  
-    if p_arepor>0 then
-      v_bli_num := v_bli_num+1; 
-      v_ite_name:='Ancien report';
-      v_ite_id  :=1983;
-      v_vow_unit:=4751; 
-      v_tva_id  :=25;
-      v_pta_id  :=2307;
-      v_psl_rank:=1; 
-      v_bli_volumebase:= 1;
-      v_bli_volumefact:= 1; 
-      v_bli_puht      := p_caron*(p_arepor/1000); 
-      v_bli_mht       := p_caron*(p_arepor/1000);
-      v_bli_mttva     := 0;
-      v_bli_mttc      := p_caron*(p_arepor/1000);
-      insert into genbilline(bil_id,bli_number,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
-                             bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
-                             bli_enddt,vow_unit,bli_updtby,meu_id)
-                      values(p_bil_id,v_bli_num,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
-                             v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
-                             p_fac_datecalcul,v_vow_unit,v_g_age_id,v_g_meu_id);
-    end if; 
-    p_pk_etape := 'Article Arrondissement';
-    if to_number(p_narond)>0 then
-      v_bli_num := v_bli_num+1; 
-      V_ite_name:='Nouveau report';
-      v_ite_id  :=1980;
-      v_vow_unit:=4751;
-      v_tva_id  :=25;
-      v_pta_id  :=2304;
-      v_psl_rank:=1; 
-      v_bli_volumebase:= 1;
-      v_bli_volumefact:= 1;
-      v_bli_puht      := (p_caron*(p_narond/1000));
-      v_bli_mht       := (p_caron*(p_narond/1000));
-      v_bli_mttva     := 0;
-      v_bli_mttc      := (p_caron*(p_narond/1000));
-      insert into genbilline(bil_id,bli_number,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
-                           bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
-                           bli_enddt,vow_unit,bli_updtby,meu_id)
-                    values(p_bil_id,v_bli_num,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
-                           v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
-                           p_fac_datecalcul,v_vow_unit,v_g_age_id,v_g_meu_id);
-    end if;  
-    p_pk_etape := 'Article de reprise SONEDE';
-    if (p_reprise_S>0) then          
-      v_bli_num := v_bli_num+1; 
-      v_ite_id  :=329;
-      v_ite_name:='Article de reprise SONEDE';
-      v_vow_unit:=4104;
-      v_tva_id  := 25;
-      v_pta_id  :=325;
-      v_psl_rank:=1; 
-      v_bli_volumebase:= 0;
-      v_bli_volumefact:= 0;
-      v_bli_puht      := 0;
-      v_bli_mht       := (p_reprise_S)/1000;
-      v_bli_mttva     := 0;
-      v_bli_mttc      := (p_reprise_S)/1000;
-      insert into genbilline(bil_id,bli_number,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
-                           bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
-                           bli_enddt,vow_unit,bli_updtby,meu_id)
-                    values(p_bil_id,v_bli_num,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
-                           v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
-                           p_fac_datecalcul,v_vow_unit,v_g_age_id,v_g_meu_id);
-    end if;           
-    p_pk_etape := 'Article de reprise ONAS';
-    if (p_reprise_O>0) then
-      v_bli_num := v_bli_num+1;
-      v_ite_id  :=330;
-      v_ite_name:='Article de reprise ONAS';
-      v_vow_unit:=4104;
-      v_tva_id  := 25;
-      v_pta_id  :=324;
-      v_psl_rank:=1;
-      v_bli_volumebase:= 0;
-      v_bli_volumefact:= 0;
-      v_bli_puht      := 0;
-      v_bli_mht       := p_reprise_O/1000;
-      v_bli_mttva     := 0;
-      v_bli_mttc      := p_reprise_O/1000;
-      insert into genbilline(bil_id,bli_number,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
-                           bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,bli_mttc,bli_startdt,
-                           bli_enddt,vow_unit,bli_updtby,meu_id)
-                    values(p_bil_id,v_bli_num,v_ite_name,p_annee,v_ite_id,v_pta_id,v_psl_rank,
-                           v_bli_volumebase,v_bli_volumefact,v_bli_puht,v_tva_id,v_bli_mht,v_bli_mttva,v_bli_mttc,p_fac_datecalcul,
-                           p_fac_datecalcul,v_vow_unit,v_g_age_id,v_g_meu_id);
-   end if;
+    insert into genbilline(bil_id,bli_number,bli_name,bli_exercice,ite_id,pta_id,psl_rank,
+                         bli_volumebase,bli_volumefact,bli_puht,tva_id,bli_mht,bli_mttva,
+                         bli_mttc,bli_startdt,bli_enddt,vow_unit,bli_updtby,meu_id)   
+    select p_bil_id,rownum,ligne.ite_name,p_annee,ligne.ite_id,ligne.pta_id,ligne.psl_rank,
+           ligne.vol_base,ligne.vol_fact,ligne.prixht,ligne.tva_id,ligne.mntht,ligne.mnttva,
+           ligne.mntttc,p_fac_datecalcul,p_fac_datecalcul,ligne.vow_unit,v_g_age_id,ligne.meu_id
+    from
+    (                     
+      select 'Consommation EAU' ite_name,320 ite_id,760 vow_unit,2112 pta_id,1 psl_rank,v_tva_id tva_id,p_qteconso vol_base,
+             p_qteconso vol_fact,p_prixconso/1000 prixht,p_mntconso/1000 mntht,p_tvacons/1000 mnttva,
+             (p_mntconso+p_tvacons)/1000 mntttc, v_g_meu_id meu_id from dual
+      union all
+      select 'Redevance variable ONAS' ite_name,350 ite_id,760 vow_unit,403 pta_id,1 psl_rank,25 tva_id,p_volonas1 vol_base,
+             p_volonas1 vol_fact,p_prixonas1/1000 prixht,p_mntonas1/1000 mntht,0/1000 mnttva,
+             p_mntonas1/1000 mntttc, v_g_meu_id meu_id from dual
+      union all
+      select 'Redevance variable ONAS' ite_name,350 ite_id,760 vow_unit,4087 pta_id,2 psl_rank,25 tva_id,p_volonas2 vol_base,
+             p_volonas2 vol_fact,p_prixonas2/1000 prixht,p_mntonas2/1000 mntht,0/1000 mnttva,
+             p_mntonas2/1000 mntttc, v_g_meu_id meu_id  from dual
       
-end;  
+      union all
+      select 'Redevance variable ONAS ' ite_name,350 ite_id,760 vow_unit,4087 pta_id,2 psl_rank,25 tva_id,p_volonas3 vol_base,
+             p_volonas3 vol_fact,p_prixonas3/1000 prixht,p_mntonas3/1000 mntht,0/1000 mnttva,
+             p_mntonas3/1000 mntttc, v_g_meu_id meu_id from dual
+      union all
+      select 'Redevance fixe ONAS' ite_name,351 ite_id,4104 vow_unit,409 pta_id,1 psl_rank,25 tva_id,1 vol_base,
+             1 vol_fact,p_fixonas/1000 prixht,p_fixonas/1000 mntht,0/1000 mnttva,
+             p_fixonas/1000 mntttc, v_g_meu_id meu_id  from dual
+      union all
+      select 'Frais fixe' ite_name,326 ite_id,4104 vow_unit,341 pta_id,1 psl_rank,v_tva_id tva_id,1 vol_base,
+             1 vol_fact,p_fraisctr/1000 prixht,p_fraisctr/1000 mntht,p_tva_ff/1000 mnttva,
+             (p_fraisctr+p_tva_ff)/1000 mntttc, null meu_id  from dual
+      union all
+      select 'Frais de coupure suite à non paiement' ite_name,335 ite_id,4104 vow_unit,365 pta_id,1 psl_rank,v_tva_id tva_id,1 vol_base,
+             1 vol_fact,p_fermeture/1000 prixht,p_fermeture/1000 mntht,p_tvaferm/1000 mnttva,
+             (p_fermeture+p_tvaferm)/1000 mntttc, null meu_id from dual
+      union all
+      select 'Frais de préavis et de rappel de paiement' ite_name,338 ite_id,4104 vow_unit,389 pta_id,1 psl_rank,v_tva_id tva_id,1 vol_base,
+             1 vol_fact,p_preavis/1000 prixht,p_preavis/1000 mntht,p_tva_preav/1000 mnttva,
+             (p_preavis+p_tva_preav)/1000  mntttc, null meu_id  from dual
+      union all
+      select 'Frais de déplacement' ite_name,1764 ite_id,4104 vow_unit,5624 pta_id,1 psl_rank,v_tva_id tva_id,1 vol_base,
+             1 vol_fact,p_deplacement/1000 prixht,p_deplacement/1000 mntht,p_tvadeplac/1000 mnttva,
+             (p_deplacement+p_tvadeplac)/1000 mntttc,  null meu_id  from dual
+      union all
+      select 'Frais de dépose ou repose suite à la demande du client' ite_name,355 ite_id,4104 vow_unit,414 pta_id,1 psl_rank,v_tva_id tva_id,1 vol_base,
+             1 vol_fact,p_depose_dem/1000 prixht,p_depose_dem/1000 mntht,p_tvadepose_dem/1000 mnttva,
+             (p_depose_dem+p_tvadepose_dem)/1000 mntttc, null meu_id from dual
+      union all
+      select 'Frais de dépose ou repose compteur suite à non paiement' ite_name,336 ite_id,4104 vow_unit,377 pta_id,1 psl_rank,v_tva_id tva_id,1 vol_base,
+             1 vol_fact,p_depose_def/1000 prixht,p_depose_def/1000 mntht,p_tvadepose_def/1000 mnttva,
+             (p_depose_def+p_tvadepose_def)/1000 mntttc, null meu_id   from dual
+      union all
+      select 'Montant extention' ite_name,1979 ite_id,4104 vow_unit,2303 pta_id,1 psl_rank,v_tva_id tva_id,1 vol_base,
+             1 vol_fact,p_extention/1000 prixht,p_extention/1000 mntht,p_tva_capit/1000 mnttva,
+             (p_extention+p_tva_capit)/1000 mntttc, null meu_id  from  dual
+      union all
+      select 'Produit financier' ite_name,1982 ite_id,4104 vow_unit,2306 pta_id,1 psl_rank,v_tva_id tva_id,1 vol_base,
+             1 vol_fact,p_pfinancier/1000 prixht,p_pfinancier/1000 mntht,p_tva_pfin/1000 mnttva,
+             (p_pfinancier+p_tva_pfin)/1000 mntttc, null meu_id   from dual
+      union all
+      select 'Montant capital ONAS' ite_name,1981 ite_id,4104 vow_unit,2305 pta_id,1 psl_rank,25 tva_id,1 vol_base,
+             1 vol_fact,p_capit/1000 prixht,p_capit/1000 mntht,0/1000 mnttva,
+             p_capit/1000 mntttc , null meu_id  from dual
+      union all
+      select 'Montant interet ONAS' ite_name,1978 ite_id,4104 vow_unit,2302 pta_id,1 psl_rank,25 tva_id,1 vol_base,
+             1 vol_fact,p_inter/1000 prixht,p_inter/1000 mntht,0/1000 mnttva,
+             p_inter/1000 mntttc , null meu_id  from dual
+      union all
+      select 'Ancien report' ite_name,1983 ite_id,4104 vow_unit,2307 pta_id,1 psl_rank,25 tva_id,1 vol_base,
+             1 vol_fact,p_caron*(p_arepor/1000) prixht,p_caron*(p_arepor/1000) mntht,0/1000 mnttva,
+             p_caron*(p_arepor/1000) mntttc , null meu_id  from dual
+      union all
+      select 'Nouveau report' ite_name,1980 ite_id,4104 vow_unit,2304 pta_id,1 psl_rank,25 tva_id,1 vol_base,
+             1 vol_fact,p_narond/1000 prixht,p_narond/1000 mntht,0/1000 mnttva,
+             p_narond/1000 mntttc , null meu_id  from dual
+      union all
+      select 'Article de reprise SONEDE' ite_name,329 ite_id,4104 vow_unit,325 pta_id,1 psl_rank,25 tva_id,1 vol_base,
+             1 vol_fact,p_reprise_S/1000 prixht,p_reprise_S/1000 mntht,0/1000 mnttva,
+             p_reprise_S/1000 mntttc , null meu_id  from dual
+      union all
+      select 'Article de reprise ONAS' ite_name,330 ite_id,4104 vow_unit,324 pta_id,1 psl_rank,25 tva_id,1 vol_base,
+             1 vol_fact,p_reprise_O/1000 prixht,p_reprise_O/1000 mntht,0/1000 mnttva,
+             p_reprise_O/1000 mntttc, null meu_id from dual   
+    ) ligne
+    where ligne.mntttc>0;
+EXCEPTION WHEN OTHERS THEN
+   v_g_err_code := SQLCODE;
+   v_g_err_msg := SUBSTR(SQLERRM, 1, 200);
+   p_pk_exception := v_g_err_code || ' : ' ||  v_g_err_msg;       
+END;  
 
 
 --------------------------------------------------------------------------------------------------------------------
@@ -3136,8 +2762,6 @@ PROCEDURE MigrationDossierEnCours
         v_j:= v_j+1;  
       end;
     end loop;
-    
-    
   END;
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
@@ -3154,9 +2778,9 @@ PROCEDURE MigrationFactureAS400
              (f.net-f.arriere) nett,f.monttrim,nvl(nvl(f.montt1,f.montt2),f.montt3) montt,nvl(nvl(const1,const2),const3)const,nvl(nvl(f.tauxt1,f.tauxt2),f.tauxt3) taux,f.mon1,
              f.volon1,f.tauon1,f.mon2,f.volon2,f.tauon2,f.mon3,f.volon3,f.tauon3,f.fixonas,f.fraisctr,f.fermeture,f.preavis,
              f.deplacement,f.depose_dem,f.depose_def,f.rbranche,f.rfacade,f.pfinancier,f.capit,f.inter,f.arepor,f.nindex,f.cons,f.prorata,
-             f.narond,f.annee,f.periode,f.tiers,f.six ,f.cle_role,f.type,f.rowid,
-             b.spt_id,b.mtc_id,b.equ_id,b.sag_id,b.par_id,b.aco_id,b.adr_id,b.date_creation,
-             r.datexp fac_datecalcul,r.datl  fac_datelim       
+             f.narond,f.annee,f.periode,f.tiers,f.six ,f.cle_role,f.type,f.rowid row_id,
+             b.date_creation,r.datexp fac_datecalcul,r.datl  fac_datelim,
+             b.spt_id,b.mtc_id,b.equ_id,b.sag_id,b.par_id,b.aco_id,b.adr_id,b.org_id       
       from test.src_facture_as400 f
         inner join test.branchement b 
         on  lpad(trim(b.district),2,'0')= lpad(trim(f.dist),2,'0')
@@ -3171,11 +2795,8 @@ PROCEDURE MigrationFactureAS400
         and   lpad(trim(r.police),5,'0')= lpad(trim(f.pol),5,'0')       
         and   r.cle_role= f.cle_role 
       where f.bil_id is null;
- 
-   v_org_id number;
-   --v_adr_id number;
+   
    v_run_id number;
-  -- v_aco_id number;
    v_bil_id number;
    v_deb_id number;
    v_mrd_id number;
@@ -3199,68 +2820,93 @@ PROCEDURE MigrationFactureAS400
    p_pk_exception  varchar2(400);
   BEGIN     
     for s1 in c1 loop
-      p_pk_etape := 'Initialisation param facture_as400';
-      v_bil_id  := null;
-      v_deb_id  := null;
-      v_mrd_id  := null;
-      v_org_id  := null;
-      --v_adr_id  := null;
-      v_run_id  := null;
-      --v_aco_id  := null;
-      v_annee   := null;
-      v_tva     := null;
-      v_periode := null;
-      v_tot_ttc := null;
-      v_tot_ht  := null;
-      v_tot_tva := null;
-      v_index   := null;
-      v_cons_releve := null;
-      v_prorata := null;
-      v_vow_agrbilltype  := null;
-      v_date          := null;
-      v_fac_datecalcul:= null;
-      v_fac_datelim   := null;
-      v_ref_facture   := null;
-      v_fac_comment   := null;
-      p_pk_etape      := null;
-      p_pk_exception  := null;
-      
-      p_pk_etape := 'Initialisation pour creation facture_as400';
-      select max(org_id)
-      into   v_org_id
-      from   genorganization
-      where  org_code = s1.district; 
-      v_tva :=(s1.tvacons+s1.tva_ff+s1.tvaferm+s1.tva_preav+s1.tvadeplac+s1.tvadepose_dem+s1.tvadepose_def+s1.tva_capit+s1.tva_pfin)/1000;   
-      v_fac_comment :=s1.district||s1.police||s1.tourne||s1.ordre;  
-      v_annee   := to_number(s1.annee);
-      v_periode := lpad(trim(s1.periode),2,'0');
       begin
-        p_pk_etape := 'Recupere date calcul facture';
-        v_fac_datecalcul  :=to_date(lpad(trim(s1.fac_datecalcul),8,'0'),'ddmmyyyy');
-      exception when others then
-        p_pk_etape := 'Calcul date depuis mois 3';
-        select decode(s1.periode,1,3,2,6,3,9,12) into v_mois from dual;
-        if (v_mois=12) then
-          v_fac_datecalcul :=to_date('08/'||'01'||'/'||s1.annee+1,'dd/mm/yyyy');
-        else
-          v_fac_datecalcul :=to_date('08/'||lpad(v_mois+1,2,'0')||'/'||s1.annee,'dd/mm/yyyy');
+        p_pk_etape := 'Initialisation param facture_as400';
+        v_bil_id  := null;
+        v_deb_id  := null;
+        v_mrd_id  := null;
+        v_run_id  := null;
+        v_annee   := null;
+        v_tva     := null;
+        v_periode := null;
+        v_tot_ttc := null;
+        v_tot_ht  := null;
+        v_tot_tva := null;
+        v_index   := null;
+        v_cons_releve := null;
+        v_prorata := null;
+        v_vow_agrbilltype  := null;
+        v_date          := null;
+        v_fac_datecalcul:= null;
+        v_fac_datelim   := null;
+        v_ref_facture   := null;
+        v_fac_comment   := null;
+        p_pk_etape      := null;
+        p_pk_exception  := null;
+        
+        p_pk_etape := 'Initialisation pour creation facture_as400';
+        v_tva :=(s1.tvacons+s1.tva_ff+s1.tvaferm+s1.tva_preav+s1.tvadeplac+s1.tvadepose_dem+s1.tvadepose_def+s1.tva_capit+s1.tva_pfin)/1000;   
+        v_fac_comment :=s1.district||s1.police||s1.tourne||s1.ordre;  
+        v_annee   := to_number(s1.annee);
+        v_periode := lpad(trim(s1.periode),2,'0');
+
+        begin
+          p_pk_etape := 'Recupere date calcul facture';
+          v_fac_datecalcul  :=to_date(lpad(trim(s1.fac_datecalcul),8,'0'),'dd/mm/yyyy');
+        exception when others then
+          p_pk_etape := 'Calcul date depuis mois';
+          if s1.type='TRIM' then
+            select decode(s1.periode,1,3,2,6,3,9,12) into v_mois from dual;
+          else
+            v_mois := s1.periode;
+          end if;
+          if (v_mois=12) then
+            v_fac_datecalcul :=to_date('21/'||'01'||'/'||to_char(s1.annee+1),'dd/mm/yyyy');
+          else
+            v_fac_datecalcul :=to_date('21/'||lpad(v_mois+1,2,'0')||'/'||to_char(s1.annee),'dd/mm/yyyy');
+          end if; 
+        end;
+        
+        if v_fac_datecalcul is null then
+          p_pk_etape := 'Calcul date depuis mois';
+          if s1.type='TRIM' then
+            select decode(s1.periode,1,3,2,6,3,9,12) into v_mois from dual;
+          else
+            v_mois := s1.periode;
+          end if;
+          if (v_mois=12) then
+            v_fac_datecalcul :=to_date('21/'||'01'||'/'||to_char(s1.annee+1),'dd/mm/yyyy');
+          else
+            v_fac_datecalcul :=to_date('21/'||lpad(to_char(v_mois+1),2,'0')||'/'||to_char(s1.annee),'dd/mm/yyyy');
+          end if;
         end if; 
-      end;
-     
-      if s1.type='TRIM'then 
-        begin
-          p_pk_etape := 'Recupere date limt  facture trim';
-          v_fac_datecalcul  :=to_date(lpad(trim(s1.fac_datelim),8,'0'),'ddmmyyyy');
-        exception when others then
-          v_fac_datelim    := v_fac_datecalcul+37;
-        end;
-      else
-        begin
-          p_pk_etape := 'Recupere date limt  facture mens';
-          v_fac_datecalcul  :=to_date(lpad(trim(s1.fac_datelim),8,'0'),'ddmmyyyy');
-        exception when others then
-          v_fac_datelim    := v_fac_datecalcul+21;
-        end;
+       
+        if s1.type='TRIM'then 
+          begin
+            p_pk_etape := 'Recupere date limt  facture trim';
+            v_fac_datelim  :=to_date(lpad(trim(s1.fac_datelim),8,'0'),'ddmmyyyy');
+          exception when others then
+            v_fac_datelim    := v_fac_datecalcul+37;
+          end;
+          
+          if v_fac_datelim is null then
+            v_fac_datelim    := v_fac_datecalcul+37;
+          end if;
+        else
+          begin
+            p_pk_etape := 'Recupere date limt  facture mens';
+            v_fac_datelim  :=to_date(lpad(trim(s1.fac_datelim),8,'0'),'ddmmyyyy');
+          exception when others then
+            v_fac_datelim    := v_fac_datecalcul+21;
+          end;
+          
+          if v_fac_datelim is null then
+            v_fac_datelim    := v_fac_datecalcul+21;
+          end if;
+             
+        end if;   
+        
+        if s1.type<>'TRIM'then 
           p_pk_etape := 'Initialisation pour creation releve_gc';
           v_index      :=to_number(s1.nindex);
           v_cons_releve:=to_number(s1.cons);
@@ -3268,39 +2914,45 @@ PROCEDURE MigrationFactureAS400
           MigrationReleve(p_pk_etape,p_pk_exception,v_mrd_id,v_annee,v_periode,v_index,v_cons_releve,v_prorata,
                           null,null,null,null,null,null,v_fac_datecalcul,
                           null,null,null,null,'RELEVE_AS400_GC',v_g_vow_readreason_t,1,
-                          s1.equ_id,s1.mtc_id,s1.spt_id,v_g_age_id); 
-      end if;   
-      v_tot_ttc     := (s1.nett+v_tva)/1000;
-      v_tot_ht      := (s1.nett-v_tva)/1000;
-      v_tot_tva     := v_tva;
-      v_ref_facture := s1.district||s1.tourne||s1.ordre||to_char(v_annee)||v_periode||'0';  
-       
-      MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,v_periode,v_annee,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,
-                      v_fac_datecalcul,v_fac_datelim,v_fac_comment,s1.const,s1.montt,s1.taux,s1.tvacons,s1.fraisctr,s1.tva_ff,
-                      s1.mon1,s1.volon1,s1.tauon1,s1.mon2,s1.volon2,s1.tauon2,s1.mon3,s1.volon3,s1.tauon3,s1.fixonas,
-                      s1.preavis,s1.tva_preav,s1.fermeture,s1.tvaferm,s1.deplacement,s1.tvadeplac,s1.depose_dem,s1.tvadepose_dem,
-                      s1.depose_def,s1.tvadepose_def,s1.extention,s1.tva_capit,s1.pfinancier,s1.tva_pfin,s1.capit,s1.inter,s1.arepor,
-                      s1.narond,s1.caron,0,0,null,null,s1.spt_id,v_g_imp_id,s1.sag_id,s1.par_id,s1.adr_id,v_org_id,v_g_vow_agrbilltype,v_g_vow_debtype,
-                      v_g_vow_settlemode_a,v_g_vow_modefact,v_run_id,s1.aco_id); 
-      
-      if p_pk_exception is not null then
+                          s1.equ_id,s1.mtc_id,s1.spt_id,v_g_age_id);
+          if p_pk_exception is not null then
+            EXCEPTION_FACTURE(s1.district||s1.tourne||s1.ordre||s1.police||'-'||v_annee||'-'||v_periode,null,p_pk_exception,p_pk_etape);
+          end if;
+        end if;
+        
+        
+        v_tot_ttc     := s1.nett/1000;
+        v_tot_ht      := s1.nett/1000 - v_tva;
+        v_tot_tva     := v_tva;
+        v_ref_facture := s1.district||s1.tourne||s1.ordre||to_char(v_annee)||lpad(to_char(v_periode),2,'0')||'0';  
+         
+        MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,v_annee,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,
+                        v_fac_datecalcul,v_fac_datelim,v_fac_comment,s1.const,s1.montt,s1.taux,s1.tvacons,s1.fraisctr,s1.tva_ff,
+                        s1.mon1,s1.volon1,s1.tauon1,s1.mon2,s1.volon2,s1.tauon2,s1.mon3,s1.volon3,s1.tauon3,s1.fixonas,
+                        s1.preavis,s1.tva_preav,s1.fermeture,s1.tvaferm,s1.deplacement,s1.tvadeplac,s1.depose_dem,s1.tvadepose_dem,
+                        s1.depose_def,s1.tvadepose_def,s1.extention,s1.tva_capit,s1.pfinancier,s1.tva_pfin,s1.capit,s1.inter,s1.arepor,
+                        s1.narond,s1.caron,0,0,null,null,s1.sag_id,s1.par_id,s1.adr_id,s1.org_id,v_g_vow_agrbilltype,v_g_vow_debtype,
+                        v_g_vow_settlemode_a,v_g_vow_modefact,v_run_id,s1.aco_id); 
+        
+        if p_pk_exception is not null then
+          rollback;
+          EXCEPTION_FACTURE(s1.district||s1.tourne||s1.ordre||s1.police||'-'||v_annee||'-'||v_periode,null,p_pk_exception,p_pk_etape);
+          continue;
+        end if;	
+        if v_bil_id is not null then
+          update test.src_facture_as400
+          set    bil_id= v_bil_id,
+                 deb_id= v_deb_id,
+                 mrd_id = v_mrd_id
+          where  rowid = s1.row_id;
+        end if;
+        commit; 
+      exception when others then
         rollback;
+        p_pk_exception := SQLCODE || ' : ' ||  SUBSTR(SQLERRM, 1, 200);
         EXCEPTION_FACTURE(s1.district||s1.tourne||s1.ordre||s1.police||'-'||v_annee||'-'||v_periode,null,p_pk_exception,p_pk_etape);
         continue;
-      end if;	
-      if v_bil_id is not null then
-        update test.src_facture_as400
-        set    bil_id= v_bil_id,
-               deb_id= v_deb_id
-        where  rowid = s1.rowid;
-      end if;
-      if v_mrd_id is not null then
-        update test.src_facture_as400
-        set    mrd_id = v_mrd_id
-        where  rowid = s1.rowid;
-        commit;
-      end if; 
-      commit; 
+      end;
     end loop;    
   END;
 ----------------------------------------------------------------------------------------------
@@ -3389,12 +3041,12 @@ PROCEDURE MigrationFactureDist
      else  
        v_vow_agrbilltype:=2563;
      end if;
-     MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,s1.periode,s1.annee,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,
+     MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,s1.annee,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,
                       v_fac_datecalcul,v_fac_datelim,v_fac_comment,0,0,0,0,0,0,
                       0,0,0,0,0,0,0,0,0,0,
                       0,0,0,0,0,0,0,0,
                       0,0,0,0,0,0,0,0,0,
-                      0,0,0,0,null,null,s1.spt_id,v_g_imp_id,s1.sag_id,s1.par_id,s1.adr_id,v_org_id,v_vow_agrbilltype,v_g_vow_debtype,
+                      0,0,0,0,null,null,s1.sag_id,s1.par_id,s1.adr_id,v_org_id,v_vow_agrbilltype,v_g_vow_debtype,
                       v_g_vow_settlemode_a,v_g_vow_modefact,v_run_id,s1.aco_id);                       
      if p_pk_exception is not null then
         rollback;
@@ -3522,12 +3174,12 @@ PROCEDURE MigrationFactureVersion
       v_vow_agrbilltype  := 2565;--'FA'; 
       v_fac_comment      := s1.deb_comment;
       
-      MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,s1.periode,s1.annee,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,
+      MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,s1.annee,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,
                        v_fac_datecalcul,v_fac_datelim,v_fac_comment,0,0,0,0,0,0,
                        0,0,0,0,0,0,0,0,0,0,
                        0,0,0,0,0,0,0,0,
                        0,0,0,0,0,0,0,0,0,
-                       0,0,0,0,null,null,s1.spt_id,v_g_imp_id,s1.sag_id,s1.par_id,s1.adr_id,v_org_id,v_vow_agrbilltype,v_g_vow_debtype,
+                       0,0,0,0,null,null,s1.sag_id,s1.par_id,s1.adr_id,v_org_id,v_vow_agrbilltype,v_g_vow_debtype,
                        v_g_vow_settlemode_a,v_g_vow_modefact,v_run_id,s1.aco_id); 
       p_pk_etape := 'la mise a jour de BIL_CANCEL_ID pour la facture fc ';                 
       update genbill b set b.BIL_CANCEL_ID=v_bil_id where b.bil_id=s1.bil_id;
@@ -3576,12 +3228,12 @@ PROCEDURE MigrationFactureVersion
       v_vow_debtype      := 3134;--'FA'
       v_fac_comment      := s1.district||s1.police||s1.tourne||s1.ordre;
       v_bil_bil_id       := s1.bil_id;
-      MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,s1.periode,s1.annee,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,
+      MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,s1.annee,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,
                        v_fac_datecalcul,v_fac_datelim,v_fac_comment,0,0,0,0,0,0,
                        0,0,0,0,0,0,0,0,0,0,
                        0,0,0,0,0,0,0,0,
                        0,0,0,0,0,0,0,0,0,
-                       0,0,0,0,null,v_bil_bil_id,s1.spt_id,v_g_imp_id,s1.sag_id,s1.par_id,s1.adr_id,v_org_id,v_vow_agrbilltype,v_g_vow_debtype,
+                       0,0,0,0,null,v_bil_bil_id,s1.sag_id,s1.par_id,s1.adr_id,v_org_id,v_vow_agrbilltype,v_g_vow_debtype,
                        v_g_vow_settlemode_a,v_g_vow_modefact,v_run_id,s1.aco_id);
     end if;
     end loop;
@@ -3671,9 +3323,9 @@ PROCEDURE MigrationFactureImpayee
     v_tot_ht   :=v_tothte+v_tothta;
     v_tot_tva  :=v_tva+v_tottvaa;  
     v_fac_comment:=s1.district||s1.police||s1.tourne||s1.ordre;    
-    MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,s1.periode,s1.annee,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,
+    MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,s1.annee,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,
                     v_fac_datecalcul,v_fac_datelim,v_fac_comment,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-                    0,0,s1.reprise_s,s1.reprise_o,null,null,s1.spt_id,v_g_imp_id,s1.sag_id,s1.par_id,s1.adr_id,v_org_id,v_g_vow_agrbilltype,v_g_vow_debtype,
+                    0,0,s1.reprise_s,s1.reprise_o,null,null,s1.sag_id,s1.par_id,s1.adr_id,v_org_id,v_g_vow_agrbilltype,v_g_vow_debtype,
                     v_g_vow_settlemode_a,v_g_vow_modefact,null,s1.aco_id);                    
                                             
     if p_pk_exception is not null then
