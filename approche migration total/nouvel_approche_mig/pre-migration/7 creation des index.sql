@@ -15,8 +15,11 @@ create index indx5_branchement
 on branchement (lpad(trim(district),2,'0'),lpad(trim(tourne),3,'0'),lpad(trim(ordre),3,'0'),spt_id,mtc_id,equ_id);
 
 create index indx6_branchement 
-on branchement(lpad(trim(district),2,'0'),lpad(trim(categorie_actuel),2,'0'),upper(trim(client_actuel)));create index indx6_branchement 
 on branchement(lpad(trim(district),2,'0'),lpad(trim(categorie_actuel),2,'0'),upper(trim(client_actuel)));
+
+create index indx7_branchement 
+on branchement(lpad(trim(district),2,'0'),lpad(trim(tourne),3,'0'),lpad(trim(ordre),3,'0'),lpad(trim(police),5,'0'),sag_id );
+
 -----client 
 create index indx1_client
 on client (par_id);
@@ -69,7 +72,16 @@ on src_fiche_releve(lpad(trim(district),2,'0'),lpad(trim(tourne),3,'0'));
 ---param_tourne
 create index indx1_param_tournee 
 on param_tournee (lpad(trim(district),2,'0'),trim,tier,six);   
+-------SRC_facture_as400
+create index indx1_src_fc400
+on src_facture_as400(lpad(trim(dist),2,'0'),lpad(trim(tou),3,'0'),lpad(trim(ord),3,'0'),lpad(trim(pol),5,'0'));
 
+create index indx2_src_fc400
+on src_facture_as400(lpad(trim(dist),2,'0'),lpad(trim(tou),3,'0'),lpad(trim(ord),3,'0'),lpad(trim(pol),5,'0'),cle_role);
 
-
+create index indx3_src_fc400
+on src_facture_as400(bil_id);
+-------SRC_role
+create index indx1_src_role
+on src_role(lpad(trim(distr),2,'0'),lpad(trim(tour),3,'0'),lpad(trim(ordr),3,'0'),lpad(trim(police),5,'0'),cle_role);
  
