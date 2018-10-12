@@ -62,6 +62,34 @@ select dist,pol,tou,ord,caron,refc01,refc02,refc03,refc04,tvacons,tva_ff,tvaferm
        narond,refc02 annee,refc01 periode,tiers,six,to_char('20'||refc02)||to_char(refc01) cle_role,'MENS' type
 from fich24_gc  f
 
+----------------------------src_facture_as400_2 
+insert into src_facture_as400_2 
+select dist,pol,tou,ord,caron,refc01,refc02,refc03,refc04,tvacons,tva_ff,tvaferm,tva_preav,
+       tvadeplac,tvadepose_dem,tvadepose_def,tva_capit,tva_pfin,arriere,rbranche,rfacade,
+       net,monttrim,montt1,montt2,montt3 ,const1,const2,const3,tauxt1,tauxt2,tauxt3 ,mon1,
+       volon1,tauon1,mon2,volon2,tauon2,mon3,volon3,tauon3,fixonas,fraisctr,fermeture,preavis,
+       deplacement,depose_dem,depose_def,pfinancier,capit,inter,arepor,nindex,cons,prorata,
+       narond,annee,trimestre periode ,tiers,six,to_char(annee)||to_char(trimestre)||to_char(tiers)||to_char(six) cle_role,'TRIM' type,null,null,null
+from fich24_trim_suit@migration12  f;
+ 
+ 
+   insert into src_facture_as400_2 
+ (DIST,POL,TOU,ORD,CARON,REFC01,REFC02,REFC03,REFC04,TVACONS,TVA_FF,TVAFERM,TVA_PREAV,
+  TVADEPLAC,TVADEPOSE_DEM,TVADEPOSE_DEF,TVA_CAPIT,TVA_PFIN,ARRIERE,RBRANCHE,RFACADE,
+  NET,MONTTRIM,MONTT1,MONTT2,MONTT3,CONST1,CONST2,CONST3,TAUXT1,TAUXT2,TAUXT3,MON1,
+  VOLON1,TAUON1,MON2,VOLON2,TAUON2,MON3,VOLON3,TAUON3,FIXONAS,FRAISCTR,FERMETURE,PREAVIS,
+  DEPLACEMENT,DEPOSE_DEM,DEPOSE_DEF,PFINANCIER,CAPIT,INTER,AREPOR,NINDEX,CONS,PRORATA,
+  NAROND,ANNEE,PERIODE,TIERS,SIX,CLE_ROLE,TYPE,BIL_ID,DEB_ID,MRD_ID)
+  ( select dist,pol,tou,ord,caron,refc01,refc02,refc03,refc04,tvacons,tva_ff,tvaferm,tva_preav,
+       tvadeplac,tvadepose_dem,tvadepose_def,tva_capit,tva_pfin, 0 arriere,rbranche,rfacade,
+       monttrim net,monttrim,montt1,montt2,montt3 ,const1,const2,const3,tauxt1,tauxt2,tauxt3 ,mon1,
+       volon1,tauon1,mon2,volon2,tauon2,mon3,volon3,tauon3,fixonas,fraisctr,fermeture,preavis,
+       deplacement,depose_dem,depose_def,pfinancier,capit,inter,arepor,nindex,cons,prorata,
+       narond,refc02 annee,refc01 periode,null tiers,null six,to_char('20'||refc02)||to_char(refc01) cle_role,'MENS' type,null,null,null
+from fich24_gc@migration12  
+)
+
+
 ----creation des facture
 create table src_facture as
 select * from facture f
