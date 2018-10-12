@@ -3368,28 +3368,30 @@ PROCEDURE MigrationFactureImpayee
   IS   
   cursor c
   is 
-  select lpad(trim(t.dist),2,'0') district ,lpad(trim(t.pol),5,'0') police,lpad(trim(t.CATEGORIE_SIC),2,'0'),
-       t.dexp fac_datecalcul,t.dat  fac_datelim,t.net,v.vow_id,
-       t.rowid row_id,p.par_id,o.org_id,o.org_code,c.aco_id
-  from test.src_b1 t ,genparty p,genorganization o,genaccount c,genvocword v
-  where 'DISTRICT'||lpad(trim(t.dist),2,'0')=p.par_refe
-  and o.org_code=lpad(trim(t.dist),2,'0')
-  and c.par_id=p.par_id 
-  and c.vow_acotp=v.vow_id   
-  and  'B1'||decode(lpad(trim(t.CATEGORIE_SIC),2,'0'),01,01,02,02,03,10,04,04,06,06,08,08)=v.vow_code;
+  select decode(lpad(trim(t.dist),2,'0'),02,'X',lpad(trim(t.dist),2,'0')) district,lpad(trim(t.pol),5,'0') police,
+         lpad(trim(t.CATEGORIE_SIC),2,'0') categorie,t.adm,
+         t.dexp fac_datecalcul,t.dat  fac_datelim,t.net,v.vow_id,
+         t.rowid row_id,p.par_id,o.org_id,o.org_code,c.aco_id
+  from  test.src_b1 t
+  inner join genparty p
+  on 'DISTRICT'||decode(lpad(trim(t.dist),2,'0'),02,'X',lpad(trim(t.dist),2,'0'))=p.par_refe
+  left join genorganization o
+  on  o.org_code= decode(lpad(trim(t.dist),2,'0'),02,'ORGSONEDE',lpad(trim(t.dist),2,'0'))  
+  left join genvocword v
+  on  'B1'||decode(lpad(trim(t.CATEGORIE_SIC),2,'0'),01,01,02,02,03,10,04,04,06,06,08,08)=v.vow_code
+  left join genaccount c
+  on   c.par_id=p.par_id 
+  and  c.vow_acotp=v.vow_id;   
    
  
   v_run_id number;
   v_bil_id number;
   v_deb_id number;
-  v_mrd_id number;
-  v_mois    number;
   v_tva     number;
   v_tot_ttc number(25,10);
   v_tot_ht  number(25,10);
   v_tot_tva number(25,10);
   v_vow_agrbilltype number;
-  v_date    date;
   v_fac_datecalcul date;
   v_fac_datelim    date;
   v_ref_facture   varchar2(100);
@@ -3402,14 +3404,12 @@ PROCEDURE MigrationFactureImpayee
         p_pk_etape := 'Initialisation param B1';
         v_bil_id  := null;
         v_deb_id  := null;
-        v_mrd_id  := null;
         v_run_id  := null;
         v_tva     := null;
         v_tot_ttc := null;
         v_tot_ht  := null;
         v_tot_tva := null;
         v_vow_agrbilltype  := null;
-        v_date          := null;
         v_fac_datecalcul:= null;
         v_fac_datelim   := null;
         v_ref_facture   := null;
@@ -3419,20 +3419,21 @@ PROCEDURE MigrationFactureImpayee
         
         p_pk_etape := 'Initialisation pour creation B1';
         v_tva :=0;
-        v_fac_comment :=s1.district||s1.police;
+        v_fac_comment :='CATEGORIE: '||s1.CATEGORIE||' DISTRICT: ' ||s1.district||' POLICE: '||s1.POLICE||' CODE_ADM: '||s1.ADM;
         p_pk_etape := 'Recupere date calcul facture';
         v_fac_datecalcul  :=to_date(lpad(trim(s1.fac_datecalcul),8,'0'),'dd/mm/yyyy');
         v_tot_ttc     := s1.net/1000;
         v_tot_ht      := s1.net/1000 -v_tva;
         v_tot_tva     := v_tva;
         v_ref_facture := 'B1'||s1.org_code||v_deb_id;  
+        v_vow_agrbilltype:=4086;--'FWOR'
           MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,null,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,
-                    v_fac_datecalcul,v_fac_datelim,v_fac_comment,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-                    0,0,0,0,1,1,null,null,null,s1.par_id,0,s1.org_id,v_g_vow_agrbilltype,v_g_vow_debtype,
-                    v_g_vow_settlemode_a,v_g_vow_modefact,null,s1.aco_id);  
+                           v_fac_datecalcul,v_fac_datelim,v_fac_comment,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                           0,0,0,0,s1.net,0,null,null,null,s1.par_id,0,s1.org_id,v_vow_agrbilltype,v_g_vow_debtype,
+                           v_g_vow_settlemode_a,v_g_vow_modefact,null,s1.aco_id);  
         if p_pk_exception is not null then
           rollback;
-          EXCEPTION_FACTURE(s1.district||'-'||s1.police,null,p_pk_exception,p_pk_etape);
+          EXCEPTION_FACTURE(s1.district||'-'||s1.police||'-'||s1.categorie||'-'||s1.net,null,p_pk_exception,p_pk_etape);
           continue;
         end if;	
         if v_bil_id is not null then
@@ -3445,7 +3446,95 @@ PROCEDURE MigrationFactureImpayee
       exception when others then
         rollback;
         p_pk_exception := SQLCODE || ' : ' ||  SUBSTR(SQLERRM, 1, 200);
-        EXCEPTION_FACTURE(s1.district||'-'||s1.police,null,p_pk_exception,p_pk_etape);
+        EXCEPTION_FACTURE(s1.district||'-'||s1.police||'-'||s1.categorie||'-'||s1.net,null,p_pk_exception,p_pk_etape);
+        continue;    
+       end; 
+    end loop;
+  END;
+    PROCEDURE MigrationFactureB2
+  (
+    p_param in number default 0
+  )
+  IS   
+  cursor c
+  is 
+  select lpad(trim(t.dist),2,'0') district ,lpad(trim(t.pol),5,'0') police,
+         lpad(trim(t.CATEGORIE_SIC),2,'0') categorie,t.adm,
+         t.dexp fac_datecalcul,t.dat fac_datelim,t.net,v.vow_id,
+         t.rowid row_id,p.par_id,o.org_id,o.org_code,c.aco_id
+  from  test.src_b2 t
+  inner join genparty p
+  on 'DISTRICT'||decode(lpad(trim(t.dist),2,'0'),02,'X',lpad(trim(t.dist),2,'0'))=p.par_refe
+  left join genorganization o
+  on  o.org_code= decode(lpad(trim(t.dist),2,'0'),02,'ORGSONEDE',lpad(trim(t.dist),2,'0'))  
+  left join genvocword v
+  on  'B2'||decode(lpad(trim(t.CATEGORIE_SIC),2,'0'),01,01,02,02,03,10,04,04,06,06,08,08)=v.vow_code
+  left join genaccount c
+  on   c.par_id=p.par_id 
+  and  c.vow_acotp=v.vow_id;   
+  v_run_id  number;
+  v_bil_id  number;
+  v_deb_id  number;
+  v_tva     number;
+  v_tot_ttc number(25,10);
+  v_tot_ht  number(25,10);
+  v_tot_tva number(25,10);
+  v_vow_agrbilltype number;
+  v_fac_datecalcul date;
+  v_fac_datelim    date;
+  v_ref_facture   varchar2(100);
+  v_fac_comment   varchar2(100);
+  p_pk_etape      varchar2(400);
+  p_pk_exception  varchar2(400);
+  BEGIN
+    for s1 in c loop
+       begin
+        p_pk_etape := 'Initialisation param B2';
+        v_bil_id  := null;
+        v_deb_id  := null;
+        v_run_id  := null;
+        v_tva     := null;
+        v_tot_ttc := null;
+        v_tot_ht  := null;
+        v_tot_tva := null;
+        v_vow_agrbilltype  := null;
+        v_fac_datecalcul:= null;
+        v_fac_datelim   := null;
+        v_ref_facture   := null;
+        v_fac_comment   := null;
+        p_pk_etape      := null;
+        p_pk_exception  := null;
+        
+        p_pk_etape := 'Initialisation pour creation B2';
+        v_fac_comment :='CATEGORIE: '||s1.CATEGORIE||' DISTRICT: ' ||s1.district||' POLICE: '||s1.POLICE||' CODE_ADM: '||s1.ADM;
+        p_pk_etape := 'Recupere date calcul facture';
+        v_fac_datecalcul  :=to_date(lpad(trim(s1.fac_datecalcul),8,'0'),'dd/mm/yyyy');
+        v_tva :=0;
+        v_tot_ttc     := s1.net/1000;
+        v_tot_ht      := s1.net/1000 -v_tva;
+        v_tot_tva     := v_tva;
+        v_ref_facture := 'B2'||s1.org_code||v_deb_id;  
+        v_vow_agrbilltype:=4086;--'FWOR'
+          MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,null,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,
+                           v_fac_datecalcul,v_fac_datelim,v_fac_comment,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                           0,0,0,0,0,s1.net,null,null,null,s1.par_id,0,s1.org_id,v_vow_agrbilltype,v_g_vow_debtype,
+                           v_g_vow_settlemode_a,v_g_vow_modefact,null,s1.aco_id);  
+        if p_pk_exception is not null then
+          rollback;
+          EXCEPTION_FACTURE(s1.district||'-'||s1.police||'-'||s1.categorie||'-'||s1.net,null,p_pk_exception,p_pk_etape);
+          continue;
+        end if;	
+        if v_bil_id is not null then
+          update test.src_b2
+          set    bil_id= v_bil_id,
+                 deb_id= v_deb_id
+          where  rowid = s1.row_id;
+        end if;
+        commit; 
+      exception when others then
+        rollback;
+        p_pk_exception := SQLCODE || ' : ' ||  SUBSTR(SQLERRM, 1, 200);
+        EXCEPTION_FACTURE(s1.district||'-'||s1.police||'-'||s1.categorie||'-'||s1.net,null,p_pk_exception,p_pk_etape);
         continue;    
        end; 
     end loop;

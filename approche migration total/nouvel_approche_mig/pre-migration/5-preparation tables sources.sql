@@ -100,3 +100,7 @@ where trim(r.annee)>=2015;
 create table src_tourne as
 select distinct district, code,ntiers,nsixieme
 from tourne;
+--------b1
+create table src_b1 as select * from b1_sic;
+--------b2
+create table src_b2 as select * from b2_sic;
