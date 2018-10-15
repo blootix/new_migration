@@ -81,7 +81,33 @@ on src_facture_as400(lpad(trim(dist),2,'0'),lpad(trim(tou),3,'0'),lpad(trim(ord)
 
 create index indx3_src_fc400
 on src_facture_as400(bil_id);
+-----------src_facture_as400_2
+create index indx1_src_fc400_2
+on src_facture_as400_2(lpad(trim(dist),2,'0'),lpad(trim(tou),3,'0'),lpad(trim(ord),3,'0'),lpad(trim(pol),5,'0'));
+
+create index indx2_src_fc400_2
+on src_facture_as400_2(lpad(trim(dist),2,'0'),lpad(trim(tou),3,'0'),lpad(trim(ord),3,'0'),lpad(trim(pol),5,'0'),cle_role);
+
+create index indx3_src_fc400_2
+on src_facture_as400_2(bil_id);
+
+
+
 -------SRC_role
 create index indx1_src_role
 on src_role(lpad(trim(distr),2,'0'),lpad(trim(tour),3,'0'),lpad(trim(ordr),3,'0'),lpad(trim(police),5,'0'),cle_role);
  
+
+ 
+ create index indx_src_b1
+ on src_b1('DISTRICT'||decode(lpad(trim(dist),2,'0'),'02','X',lpad(trim(dist),2,'0')));
+ 
+  create index indx2_src_b1
+ on src_b1(decode(lpad(trim(dist),2,'0'),'02','ORGSONEDE',lpad(trim(dist),2,'0')));
+ 
+ create index indx_src_b2
+ on src_b2('DISTRICT'||decode(lpad(trim(dist),2,'0'),'02','X',lpad(trim(dist),2,'0'))); 
+   create index indx2_src_b2
+ on src_b2(decode(lpad(trim(dist),2,'0'),'02','ORGSONEDE',lpad(trim(dist),2,'0')));
+ 
+  
