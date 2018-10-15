@@ -51,7 +51,10 @@ PROCEDURE MigrationFactureB2
 (
    p_param in number default 0
 );
-  
+  PROCEDURE MigrationReleveManquant
+  (
+    p_param in number default 0
+  );
 PROCEDURE MigrationDossierEnCours
   (
     p_pk_etape out varchar2,
@@ -1963,7 +1966,7 @@ PROCEDURE MigrationReleveT
       begin
         p_pk_etape := 'Initialisation param releve';
         v_date_rel := null;
-        v_mrd_id := null;
+        v_mrd_id   := null;
         v_index := null;
         v_conso := null;
         v_prorata := null;
@@ -3360,7 +3363,8 @@ PROCEDURE MigrationFactureImpayee
     commit;  
     end loop;
   END;
-  
+----------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------  
   PROCEDURE MigrationFactureB1
   (
     p_param in number default 0
@@ -3451,6 +3455,8 @@ PROCEDURE MigrationFactureImpayee
        end; 
     end loop;
   END;
+----------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------
     PROCEDURE MigrationFactureB2
   (
     p_param in number default 0
@@ -3538,6 +3544,46 @@ PROCEDURE MigrationFactureImpayee
         continue;    
        end; 
     end loop;
-  END;  
+  END;
+----------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------   
+  PROCEDURE MigrationDebtFacture
+   (
+     p_param in number default 0
+   )
+   IS
+   cursor C 
+   is 
+   select f.*,d.sag_id,d.deb_refe,substr(d.deb_refe,9,4) annee,substr(d.deb_refe,13,2) periode 
+   from test.src_deb_facture f
+     inner join gendebt d
+           on d.deb_id=f.deb_id
+     inner join agrserviceagr sag 
+           on sag.sag_id=d.sag_id
+     inner join genbill g
+           on f.bil_id =g.bil_id
+     inner join agrbill a
+           on f.bil_id=a.bil_id
+           and a.vow_agrbilltype = 2563;
+   v_date_rel date;
+   v_mois number;
+   v_mrd_id number;
+   v_index number;
+   v_conso number;
+   v_prorata    number;
+   v_compteur_t number;
+   p_pk_etape     varchar2(400);
+   p_pk_exception varchar2(400);
+   v_ite_sonede number := 320;
+   v_ite_onas number := 350;
+  BEGIN
+    for s1 in c1 loop   
+      
+      insert into TECREADITEBILL(BIL_ID,ITE_ID,MRD_ID)
+                          values(s1.bil_id,s1.ite_id,s1.mrd_id);
+                          
+                          
+    end loop;  
+  END;
 end PK_MIGRATION;
 /
