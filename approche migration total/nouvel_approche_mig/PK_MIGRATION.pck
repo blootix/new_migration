@@ -60,7 +60,10 @@ PROCEDURE MigrationFactureB2
 (
    p_param in number default 0
 );
-  
+  PROCEDURE MigrationAttachFactureReleve
+  (
+    p_param in number default 0
+  );
 PROCEDURE MigrationDossierEnCours
   (
     p_pk_etape out varchar2,
@@ -106,6 +109,7 @@ v_g_vow_agrcontacttp_p number := 4848;
 v_g_vow_partytp_a    number := 2887;
 v_g_vow_readorig     number := 5536;--'migration'-03
 v_g_vow_readmeth     number := 5537;--inconn(migration)
+v_g_vow_readmeth_g   number := 5863;--Generer
 v_g_vow_readreason_t number := 5538;
 v_g_vow_readreason_c number := 4895;
 v_g_mrd_etatfact number:=0;
@@ -1316,6 +1320,7 @@ procedure MigrationReleve
     p_message_temporaire in varchar2,
     p_message_temporaire_a in varchar2,
     p_vow_readreason  in number,
+    p_vow_readmeth  in number,
     p_mrd_usecr in number,
     p_equ_id       in number,
     p_mtc_id       in number,
@@ -1382,7 +1387,7 @@ procedure MigrationReleve
                  vow_readorig,vow_readmeth,vow_readreason,mrd_comment,mrd_agrtype,mrd_techtype,
                  mrd_etatfact,age_id,mrd_usecr,mrd_year,mrd_multicad,mrd_comment_a) 
             values(p_mrd_id,p_equ_id,p_mtc_id,p_date_releve,p_spt_id,v_vow_comm1,v_vow_comm2,v_vow_comm3,
-                 v_g_vow_readorig,v_g_vow_readmeth,p_vow_readreason,p_message_temporaire,v_g_mrd_agrtype,v_g_mrd_techtype,
+                 v_g_vow_readorig,p_vow_readmeth,p_vow_readreason,p_message_temporaire,v_g_mrd_agrtype,v_g_mrd_techtype,
                  v_g_mrd_etatfact,p_age_id,p_mrd_usecr,p_annee,p_periode,p_message_temporaire_a);
     
     p_pk_etape := 'Ajouter index eau'; 
@@ -1955,7 +1960,7 @@ PROCEDURE MigrationHistoriqueReleveTrim
         MigrationReleve(p_pk_etape,p_pk_exception,v_mrd_id,s1.annee,s1.trim,v_index,v_conso,v_prorata,v_avis_f,
                         v_tentatif2,v_tentatif3,v_tentatif4,v_tentatif5,v_compteur_t,v_date_rel, 
                         substr(s1.anomalie,13,2),substr(s1.anomalie,7,2),substr(s1.anomalie,1,2),
-                        trim(s1.message_temporaire),null,v_g_vow_readreason_t,1,s1.equ_id,s1.mtc_id,s1.spt_id,
+                        trim(s1.message_temporaire),null,v_g_vow_readreason_t,v_g_vow_readmeth,1,s1.equ_id,s1.mtc_id,s1.spt_id,
                         v_g_age_id);
                         
         if p_pk_exception is not null then
@@ -2028,7 +2033,7 @@ PROCEDURE MigrationReleveT
       begin
         p_pk_etape := 'Initialisation param releve';
         v_date_rel := null;
-        v_mrd_id := null;
+        v_mrd_id   := null;
         v_index := null;
         v_conso := null;
         v_prorata := null;
@@ -2063,7 +2068,7 @@ PROCEDURE MigrationReleveT
         MigrationReleve(p_pk_etape,p_pk_exception,v_mrd_id,s1.annee,s1.trimestre,v_index,v_conso,v_prorata,null,
                         null,null,null,null,v_compteur_t,v_date_rel, 
                         trim(s1.anomalie_fuite),trim(s1.anomalie_niche),trim(s1.anomalie_compteur),
-                        null,'RELEVET',v_g_vow_readreason_t,1,s1.equ_id,s1.mtc_id,s1.spt_id,
+                        null,'RELEVET',v_g_vow_readreason_t,v_g_vow_readmeth,1,s1.equ_id,s1.mtc_id,s1.spt_id,
                         v_g_age_id);
         
         if p_pk_exception is not null then
@@ -2171,7 +2176,7 @@ PROCEDURE MigrationReleveGC
         MigrationReleve(p_pk_etape,p_pk_exception,v_mrd_id,s1.annee,s1.mois,v_index,v_conso,v_prorata,null,
                         null,null,null,null,v_compteur_t,v_date_rel, 
                         trim(s1.anomalie_fuite),trim(s1.anomalie_niche),trim(s1.anomalie_compteur),
-                        null,'RELEVEGC',v_g_vow_readreason_t,1,s1.equ_id,s1.mtc_id,s1.spt_id,
+                        null,'RELEVEGC',v_g_vow_readreason_t,v_g_vow_readmeth,1,s1.equ_id,s1.mtc_id,s1.spt_id,
                         v_g_age_id);
         
         if p_pk_exception is not null then
@@ -3098,7 +3103,7 @@ PROCEDURE MigrationFactureAS400
           p_pk_etape := 'Creation releve';
           MigrationReleve(p_pk_etape,p_pk_exception,v_mrd_id,v_annee,v_periode,v_index,v_cons_releve,v_prorata,
                           null,null,null,null,null,null,v_fac_datecalcul,
-                          null,null,null,null,'RELEVE_AS400_GC',v_g_vow_readreason_t,1,
+                          null,null,null,null,'RELEVE_AS400_GC',v_g_vow_readreason_t,v_g_vow_readmeth,1,
                           s1.equ_id,s1.mtc_id,s1.spt_id,v_g_age_id);
           if p_pk_exception is not null then
             EXCEPTION_FACTURE(s1.district||s1.tourne||s1.ordre||s1.police||'-'||v_annee||'-'||v_periode,null,p_pk_exception,p_pk_etape);
@@ -3723,6 +3728,68 @@ PROCEDURE MigrationFactureB2
         continue;    
        end; 
     end loop;
-  END;  
+  END;
+----------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------   
+  PROCEDURE MigrationAttachFactureReleve
+   (
+     p_param in number default 0
+   )
+   IS
+   cursor c1
+   is 
+   select sag.spt_id,deb.deb_date,deb.deb_refe,substr(deb.deb_refe,9,4) annee,substr(deb.deb_refe,13,2) periode,
+          bil.bil_id,equ.equ_id,equ.mtc_id,fact.nindex,fact.cons,fact.prorata 
+   from test.src_deb_facture fact
+     inner join gendebt deb
+           on deb.deb_id=fact.deb_id
+     inner join agrserviceagr sag 
+           on sag.sag_id=deb.sag_id
+     inner join genbill bil
+           on deb.deb_id =bil.bil_id
+     inner join agrbill abi
+           on bil.bil_id=abi.bil_id
+           and abi.vow_agrbilltype = 2563
+     inner join tecservicepoint spt
+           on spt.spt_id = sag.spt_id
+     inner join techequipment heq
+           on spt.spt_id = heq.spt_id
+     inner join tecmeter equ
+           on heq.equ_id = equ.equ_id;
+   v_date_rel date;
+   v_mois number;
+   v_mrd_id number;
+   v_index number;
+   v_conso number;
+   v_prorata    number;
+   v_compteur_t number;
+   p_pk_etape     varchar2(400);
+   p_pk_exception varchar2(400);
+   v_ite_sonede number := 320;
+   v_ite_onas number := 350;
+  BEGIN
+    for s1 in c1 loop   
+      select max(mrd_id)
+      into   v_mrd_id
+      from   tecmtrread
+      where  spt_id = s1.spt_id
+      and    mrd_year = to_number(s1.annee)
+      and    mrd_multicad = to_number(s1.periode);
+      
+      if v_mrd_id is null then
+        MigrationReleve(p_pk_exception,p_pk_etape,v_mrd_id,to_number(s1.annee),to_number(s1.periode),
+                         s1.nindex,s1.cons,s1.prorata,null,null,null,null,null,null,s1.deb_date-7,null,
+                         null,null,null,'RELEVE_GENERER',v_g_vow_readreason_t,v_g_vow_readmeth_g,0,
+                         s1.equ_id,s1.mtc_id,s1.spt_id,v_g_age_id);
+                         
+      end if;
+      insert into TECREADITEBILL(BIL_ID,ITE_ID,MRD_ID,RIB_UPDTBY)
+               select s1.bil_id bil_id,v_ite_sonede ite_id,v_mrd_id mrd_id,v_g_age_id age_id from dual
+               union
+               select s1.bil_id bil_id,v_ite_onas ite_id,v_mrd_id mrd_id,v_g_age_id age_id from dual;
+                          
+      commit;                 
+    end loop;  
+  END;
 end PK_MIGRATION;
 /

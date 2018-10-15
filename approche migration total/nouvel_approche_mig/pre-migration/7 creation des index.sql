@@ -79,8 +79,13 @@ on src_facture_as400(lpad(trim(dist),2,'0'),lpad(trim(tou),3,'0'),lpad(trim(ord)
 create index indx2_src_fc400
 on src_facture_as400(lpad(trim(dist),2,'0'),lpad(trim(tou),3,'0'),lpad(trim(ord),3,'0'),lpad(trim(pol),5,'0'),cle_role);
 
-create index indx3_src_fc400
-on src_facture_as400(bil_id);
+create index indx3_src_fc400 on src_facture_as400(bil_id);
+
+create idx4_src_fac400 
+on src_facture_as400(lpad(trim(dist),2,'0'),lpad(trim(tou),3,'0'),lpad(trim(ord),3,'0'),lpad(trim(pol),5,'0'),deb_id,to_number(annee||periode));	
+
+
+
 -----------src_facture_as400_2
 create index indx1_src_fc400_2
 on src_facture_as400_2(lpad(trim(dist),2,'0'),lpad(trim(tou),3,'0'),lpad(trim(ord),3,'0'),lpad(trim(pol),5,'0'));
@@ -90,8 +95,6 @@ on src_facture_as400_2(lpad(trim(dist),2,'0'),lpad(trim(tou),3,'0'),lpad(trim(or
 
 create index indx3_src_fc400_2
 on src_facture_as400_2(bil_id);
-
-
 
 -------SRC_role
 create index indx1_src_role
