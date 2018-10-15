@@ -132,3 +132,17 @@ from tourne;
 create table src_b1 as select * from b1_sic;
 --------b2
 create table src_b2 as select * from b2_sic;
+--
+create table src_deb_facture
+as
+select *
+from   src_facture_as400
+where  deb_id is not null
+union
+select *
+from   src_facture_as400_2
+where  deb_id is not null
+union
+select *
+from   src_facture_as400_3
+where  deb_id is not null
