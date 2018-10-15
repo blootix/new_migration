@@ -4,6 +4,9 @@ create table prob_mig_contrat(obj_refe varchar2(400),code_except varchar2(400),m
 create table prob_mig_releve(obj_refe varchar2(400),code_except varchar2(400),message_except varchar2(400),pk_etape varchar2(400),date_except date);
 create table prob_mig_facture(obj_refe varchar2(400),code_except varchar2(400),message_except varchar2(400),pk_etape varchar2(400),date_except date);
 create table prob_mig_relevet(obj_refe varchar2(400),code_except varchar2(400),message_except varchar2(400),pk_etape varchar2(400),date_except date);
+create table prob_mig_b1(obj_refe varchar2(400),code_except varchar2(400),message_except varchar2(400),pk_etape varchar2(400),date_except date);
+create table prob_mig_b2(obj_refe varchar2(400),code_except varchar2(400),message_except varchar2(400),pk_etape varchar2(400),date_except date);
+create table prob_mig_relevegc(obj_refe varchar2(400),code_except varchar2(400),message_except varchar2(400),pk_etape varchar2(400),date_except date);
 
 alter table genstreet modify str_name varchar2(400);
 alter table genstreet modify str_namek varchar2(400);
@@ -32,6 +35,7 @@ alter table src_impayee  add deb_id number(10);
 alter table src_clients add par_id number(10);
 alter table anomalie  add deb_id number(10);
 alter table anomalie_travaux  add deb_id number(10);
+alter table relevegc add mrd_id number(10);
 
 
 update client set par_id = null where par_id is not null;
