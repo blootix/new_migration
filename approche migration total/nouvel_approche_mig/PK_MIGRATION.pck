@@ -21,6 +21,11 @@ PROCEDURE MigrationReleveT
   (
     p_param in number default 0
   );
+  
+PROCEDURE MigrationReleveGC
+  (
+    p_param in number default 0
+  );
  
 PROCEDURE MigrationFactureAS400
   (
@@ -262,6 +267,54 @@ PROCEDURE EXCEPTION_RELEVET
   PRAGMA AUTONOMOUS_TRANSACTION;
  BEGIN
     insert into prob_mig_relevet(obj_refe,code_except,message_except,pk_etape,date_except)
+                         values(p_obj_refe,p_code_except,p_message_except,p_pk_etape,sysdate);
+    commit;
+ END;
+-------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------
+PROCEDURE EXCEPTION_RELEVEGC
+  (
+    p_obj_refe in varchar2,
+    p_code_except in varchar2,
+    p_message_except in varchar2,
+    p_pk_etape in varchar2
+  )
+ IS
+  PRAGMA AUTONOMOUS_TRANSACTION;
+ BEGIN
+    insert into prob_mig_relevegc(obj_refe,code_except,message_except,pk_etape,date_except)
+                         values(p_obj_refe,p_code_except,p_message_except,p_pk_etape,sysdate);
+    commit;
+ END;
+-------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------
+PROCEDURE EXCEPTION_B1
+  (
+    p_obj_refe in varchar2,
+    p_code_except in varchar2,
+    p_message_except in varchar2,
+    p_pk_etape in varchar2
+  )
+ IS
+  PRAGMA AUTONOMOUS_TRANSACTION;
+ BEGIN
+    insert into prob_mig_b1(obj_refe,code_except,message_except,pk_etape,date_except)
+                         values(p_obj_refe,p_code_except,p_message_except,p_pk_etape,sysdate);
+    commit;
+ END;
+-------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------
+PROCEDURE EXCEPTION_B2
+  (
+    p_obj_refe in varchar2,
+    p_code_except in varchar2,
+    p_message_except in varchar2,
+    p_pk_etape in varchar2
+  )
+ IS
+  PRAGMA AUTONOMOUS_TRANSACTION;
+ BEGIN
+    insert into prob_mig_b2(obj_refe,code_except,message_except,pk_etape,date_except)
                          values(p_obj_refe,p_code_except,p_message_except,p_pk_etape,sysdate);
     commit;
  END;
@@ -1404,7 +1457,7 @@ procedure MigrationFacture
     p_bil_id       out number,
     p_deb_id       out number,
     p_annee        in number,
-    p_ref_facture  in varchar2,
+    p_ref_facture  in out varchar2,
     p_tot_ttc      in number,
     p_tot_ht       in number,
     p_tot_tva      in number,
@@ -1465,9 +1518,17 @@ procedure MigrationFacture
   ) 
   IS 
     v_tva_id           number;
-  begin                              
+  begin                    
+           
     p_pk_etape := 'Creation gendebt';
     select seq_gendebt.nextval into p_deb_id from dual; 
+    if p_ref_facture is null then 
+      if p_reprise_B1>0then
+        p_ref_facture := 'B1_'||p_deb_id;
+      elsif p_reprise_B2>0 then
+        p_ref_facture := 'B2_'||p_deb_id;  
+      end if;
+    end if;  
     insert into gendebt(deb_id,deb_refe,org_id,par_id,adr_id,deb_date,deb_duedt,deb_printdt,
                         deb_amountinit,vow_settlemode,aco_id,
                         deb_updtby,deb_comment,deb_amount_cash,sag_id,vow_debtype)
@@ -2023,7 +2084,114 @@ PROCEDURE MigrationReleveT
       end;
     end loop;
   END;
-
+--------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------
+PROCEDURE MigrationReleveGC
+  (
+    p_param in number default 0
+  )
+  IS
+    cursor c1
+    is
+      select lpad(trim(r.district),2,'0') district, lpad(trim(r.tourne),3,'0') tourne, lpad(trim(r.ordre),3,'0') ordre, lpad(trim(r.police),5,'0') police,
+             to_number(trim(r.annee)) annee, to_number(trim(r.mois)) mois, r.indexr,r.consommation,
+             r.prorata,r.cpt_tourne,r.anomalie_niche,r.anomalie_compteur,r.anomalie_fuite,r.date_releve,
+             b.spt_id,b.mtc_id,b.equ_id, r.rowid row_id
+      from   test.relevegc r,  
+             test.branchement b
+      where  to_number(trim(r.annee))>0
+      and    to_number(trim(r.mois))>0
+      and    r.mrd_id is null 
+      and    lpad(trim(r.district),2,'0') = lpad(trim(b.district),2,'0')
+      and    lpad(trim(r.tourne),3,'0') = lpad(trim(b.tourne),3,'0')
+      and    lpad(trim(r.ordre),3,'0') = lpad(trim(b.ordre),3,'0')
+      and    lpad(trim(r.police),5,'0') = lpad(trim(b.police),5,'0') 
+      and    not exists(select 1
+                        from   tecservicepoint spt,
+                               tecmtrread mrd
+                        where  spt.spt_refe = lpad(trim(r.district),2,'0')||lpad(trim(r.tourne),3,'0')
+                                              ||lpad(trim(r.ordre),3,'0')||lpad(trim(r.police),5,'0')
+                        and    spt.spt_id = mrd.spt_id
+                        and    mrd.mrd_year = to_number(trim(r.annee))
+                        and    mrd.mrd_multicad = to_number(trim(r.mois))  
+                        );
+   
+    v_date_rel date;
+    v_mois3 number;
+    v_mrd_id number;
+    v_index number;
+    v_conso number;
+    v_prorata number;
+    v_compteur_t number;
+    p_pk_etape     varchar2(400);
+    p_pk_exception varchar2(400);
+  BEGIN
+    --Securite
+    if p_param <> 3 then
+      return;
+    end if;
+    
+    for s1 in c1 loop
+      begin
+        p_pk_etape := 'Initialisation param releve';
+        v_date_rel := null;
+        v_mrd_id := null;
+        v_index := null;
+        v_conso := null;
+        v_prorata := null;
+        v_compteur_t := null;
+        p_pk_exception := null;
+        begin
+          p_pk_etape := 'Recupere date depuis releveGC';
+          v_date_rel  :=to_date(s1.date_releve);
+        exception when others then
+          p_pk_etape := 'Calcul date depuis mois 3';
+          select decode(s1.mois,1,3,2,6,3,9,12) into v_mois3 from dual;
+          if (v_mois3=12) then
+            v_date_rel :=to_date('02/'||'01'||'/'||to_char(s1.annee+1),'dd/mm/yyyy');
+          else
+            v_date_rel:=to_date('02/'||lpad(to_char(v_mois3+1),2,'0')||'/'||to_char(s1.annee),'dd/mm/yyyy');
+          end if; 
+        end;
+        
+        p_pk_etape := 'Recuperer index';
+        v_index := to_number(trim(s1.indexr));
+        p_pk_etape := 'Recuperer conso';
+        v_conso := to_number(trim(s1.consommation));
+        p_pk_etape := 'Recuperer prorata';
+        v_prorata := to_number(trim(s1.prorata));      
+        p_pk_etape := 'Recuperer compteur T';
+        begin
+          select decode(nvl(trim(s1.cpt_tourne),'0'),'0',0,1) into v_compteur_t from dual;
+        exception when others then
+          v_compteur_t := 0;
+        end;
+        
+        MigrationReleve(p_pk_etape,p_pk_exception,v_mrd_id,s1.annee,s1.mois,v_index,v_conso,v_prorata,null,
+                        null,null,null,null,v_compteur_t,v_date_rel, 
+                        trim(s1.anomalie_fuite),trim(s1.anomalie_niche),trim(s1.anomalie_compteur),
+                        null,'RELEVEGC',v_g_vow_readreason_t,1,s1.equ_id,s1.mtc_id,s1.spt_id,
+                        v_g_age_id);
+        
+        if p_pk_exception is not null then
+          rollback;
+          EXCEPTION_RELEVEGC(s1.district||s1.tourne||s1.ordre||s1.police||'-'||s1.annee||'-'||s1.mois,null,p_pk_exception,p_pk_etape);
+          continue;
+        end if;
+        if v_mrd_id is not null then
+          update test.relevegc
+          set    mrd_id = v_mrd_id
+          where  rowid = s1.row_id;
+        end if;
+        commit;       
+      exception when others then
+        rollback;
+        p_pk_exception := SQLCODE || ' : ' ||  SUBSTR(SQLERRM, 1, 200);
+        EXCEPTION_RELEVEGC(s1.district||s1.tourne||s1.ordre||s1.police||'-'||s1.annee||'-'||s1.mois,null,p_pk_exception,p_pk_etape);
+        continue;
+      end;
+    end loop;
+  END;
 ---------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------  
 PROCEDURE MigrationTousClients
@@ -2802,7 +2970,7 @@ PROCEDURE MigrationFactureAS400
              f.narond,f.annee,f.periode,f.tiers,f.six ,f.cle_role,f.type,f.rowid row_id,
              b.date_creation,r.datexp fac_datecalcul,r.datl  fac_datelim,
              b.spt_id,b.mtc_id,b.equ_id,b.sag_id,b.par_id,b.aco_id,b.adr_id,b.org_id       
-      from test.src_facture_as400 f
+      from test.src_facture_as400_3 f
         inner join test.branchement b 
         on  lpad(trim(b.district),2,'0')= lpad(trim(f.dist),2,'0')
         and lpad(trim(b.tourne),3,'0')  = lpad(trim(f.tou),3,'0')   
@@ -2815,7 +2983,9 @@ PROCEDURE MigrationFactureAS400
         and   lpad(trim(r.ordr),3,'0')  = lpad(trim(f.ord),3,'0')
         and   lpad(trim(r.police),5,'0')= lpad(trim(f.pol),5,'0')       
         and   r.cle_role= f.cle_role 
-      where f.bil_id is null;
+      where f.bil_id is null
+      /*and   lpad(trim(f.dist),2,'0')||lpad(trim(f.tou),3,'0')
+          ||lpad(trim(f.ord),3,'0')||f.annee||lpad(trim(to_char(f.periode)),2,'0')||'0' = '161697702018070'*/;
    
    v_run_id number;
    v_bil_id number;
@@ -2866,27 +3036,18 @@ PROCEDURE MigrationFactureAS400
         p_pk_exception  := null;
         
         p_pk_etape := 'Initialisation pour creation facture_as400';
-        v_tva :=(s1.tvacons+s1.tva_ff+s1.tvaferm+s1.tva_preav+s1.tvadeplac+s1.tvadepose_dem+s1.tvadepose_def+s1.tva_capit+s1.tva_pfin)/1000;   
+        v_tva :=(nvl(s1.tvacons,0)+nvl(s1.tva_ff,0)+nvl(s1.tvaferm,0)+nvl(s1.tva_preav,0)+nvl(s1.tvadeplac,0)+nvl(s1.tvadepose_dem,0)+nvl(s1.tvadepose_def,0)+nvl(s1.tva_capit,0)+nvl(s1.tva_pfin,0))/1000;   
         v_fac_comment :=s1.district||s1.police||s1.tourne||s1.ordre;  
         v_annee   := to_number(s1.annee);
         v_periode := lpad(trim(s1.periode),2,'0');
-
-        begin
-          p_pk_etape := 'Recupere date calcul facture';
-          v_fac_datecalcul  :=to_date(lpad(trim(s1.fac_datecalcul),8,'0'),'dd/mm/yyyy');
-        exception when others then
-          p_pk_etape := 'Calcul date depuis mois';
-          if s1.type='TRIM' then
-            select decode(s1.periode,1,3,2,6,3,9,12) into v_mois from dual;
-          else
-            v_mois := s1.periode;
-          end if;
-          if (v_mois=12) then
-            v_fac_datecalcul :=to_date('21/'||'01'||'/'||to_char(s1.annee+1),'dd/mm/yyyy');
-          else
-            v_fac_datecalcul :=to_date('21/'||lpad(v_mois+1,2,'0')||'/'||to_char(s1.annee),'dd/mm/yyyy');
-          end if; 
-        end;
+        if trim(s1.fac_datecalcul) is not null then
+          begin
+            p_pk_etape := 'Recupere date calcul facture';
+            v_fac_datecalcul  :=to_date(lpad(trim(s1.fac_datecalcul),8,'0'),'dd/mm/yyyy');
+          exception when others then
+            v_fac_datecalcul := null;
+          end;
+        end if;
         
         if v_fac_datecalcul is null then
           p_pk_etape := 'Calcul date depuis mois';
@@ -2901,37 +3062,39 @@ PROCEDURE MigrationFactureAS400
             v_fac_datecalcul :=to_date('21/'||lpad(to_char(v_mois+1),2,'0')||'/'||to_char(s1.annee),'dd/mm/yyyy');
           end if;
         end if; 
-       
-        if s1.type='TRIM'then 
-          begin
-            p_pk_etape := 'Recupere date limt  facture trim';
-            v_fac_datelim  :=to_date(lpad(trim(s1.fac_datelim),8,'0'),'ddmmyyyy');
-          exception when others then
-            v_fac_datelim    := v_fac_datecalcul+37;
-          end;
-          
-          if v_fac_datelim is null then
-            v_fac_datelim    := v_fac_datecalcul+37;
+        if trim(s1.fac_datelim) is not null then
+          if s1.type='TRIM'then 
+            begin
+              p_pk_etape := 'Recupere date limt  facture trim';
+              v_fac_datelim  :=to_date(lpad(trim(s1.fac_datelim),8,'0'),'ddmmyyyy');
+            exception when others then
+              v_fac_datelim    := null;
+            end;
+          else
+            begin
+              p_pk_etape := 'Recupere date limt  facture mens';
+              v_fac_datelim  :=to_date(lpad(trim(s1.fac_datelim),8,'0'),'ddmmyyyy');
+            exception when others then
+              v_fac_datelim    := null;
+            end;
           end if;
-        else
-          begin
-            p_pk_etape := 'Recupere date limt  facture mens';
-            v_fac_datelim  :=to_date(lpad(trim(s1.fac_datelim),8,'0'),'ddmmyyyy');
-          exception when others then
-            v_fac_datelim    := v_fac_datecalcul+21;
-          end;
-          
-          if v_fac_datelim is null then
-            v_fac_datelim    := v_fac_datecalcul+21;
+        end if;
+        
+        if v_fac_datelim is null then
+          if s1.type='TRIM'then
+             v_fac_datelim    := v_fac_datecalcul+37;
+          else
+             v_fac_datelim    := v_fac_datecalcul+21;
           end if;
-             
-        end if;   
+        end if;
+           
         
         if s1.type<>'TRIM'then 
           p_pk_etape := 'Initialisation pour creation releve_gc';
           v_index      :=to_number(s1.nindex);
           v_cons_releve:=to_number(s1.cons);
           v_prorata    :=to_number(s1.prorata);
+          p_pk_etape := 'Creation releve';
           MigrationReleve(p_pk_etape,p_pk_exception,v_mrd_id,v_annee,v_periode,v_index,v_cons_releve,v_prorata,
                           null,null,null,null,null,null,v_fac_datecalcul,
                           null,null,null,null,'RELEVE_AS400_GC',v_g_vow_readreason_t,1,
@@ -2946,13 +3109,13 @@ PROCEDURE MigrationFactureAS400
         v_tot_ht      := s1.nett/1000 - v_tva;
         v_tot_tva     := v_tva;
         v_ref_facture := s1.district||s1.tourne||s1.ordre||to_char(v_annee)||lpad(to_char(v_periode),2,'0')||'0';  
-         
+         p_pk_etape := 'Creation facture';
         MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,v_annee,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,
-                        v_fac_datecalcul,v_fac_datelim,v_fac_comment,s1.const,s1.montt,s1.taux,s1.tvacons,s1.fraisctr,s1.tva_ff,
-                        s1.mon1,s1.volon1,s1.tauon1,s1.mon2,s1.volon2,s1.tauon2,s1.mon3,s1.volon3,s1.tauon3,s1.fixonas,
-                        s1.preavis,s1.tva_preav,s1.fermeture,s1.tvaferm,s1.deplacement,s1.tvadeplac,s1.depose_dem,s1.tvadepose_dem,
-                        s1.depose_def,s1.tvadepose_def,s1.extention,s1.tva_capit,s1.pfinancier,s1.tva_pfin,s1.capit,s1.inter,s1.arepor,
-                        s1.narond,s1.caron,0,0,0,0,null,null,s1.sag_id,s1.par_id,s1.adr_id,s1.org_id,v_g_vow_agrbilltype,v_g_vow_debtype,
+                        v_fac_datecalcul,v_fac_datelim,v_fac_comment,nvl(s1.const,0),nvl(s1.montt,0),nvl(s1.taux,0),nvl(s1.tvacons,0),nvl(s1.fraisctr,0),nvl(s1.tva_ff,0),
+                        nvl(s1.mon1,0),nvl(s1.volon1,0),nvl(s1.tauon1,0),nvl(s1.mon2,0),nvl(s1.volon2,0),nvl(s1.tauon2,0),nvl(s1.mon3,0),nvl(s1.volon3,0),nvl(s1.tauon3,0),nvl(s1.fixonas,0),
+                        nvl(s1.preavis,0),nvl(s1.tva_preav,0),nvl(s1.fermeture,0),nvl(s1.tvaferm,0),nvl(s1.deplacement,0),nvl(s1.tvadeplac,0),nvl(s1.depose_dem,0),nvl(s1.tvadepose_dem,0),
+                        nvl(s1.depose_def,0),nvl(s1.tvadepose_def,0),nvl(s1.extention,0),nvl(s1.tva_capit,0),nvl(s1.pfinancier,0),nvl(s1.tva_pfin,0),nvl(s1.capit,0),nvl(s1.inter,0),nvl(s1.arepor,0),
+                        nvl(s1.narond,0),s1.caron,0,0,0,0,null,null,s1.sag_id,s1.par_id,s1.adr_id,s1.org_id,v_g_vow_agrbilltype,v_g_vow_debtype,
                         v_g_vow_settlemode_a,v_g_vow_modefact,v_run_id,s1.aco_id); 
         
         if p_pk_exception is not null then
@@ -2961,7 +3124,7 @@ PROCEDURE MigrationFactureAS400
           continue;
         end if;	
         if v_bil_id is not null then
-          update test.src_facture_as400
+          update test.src_facture_as400_3
           set    bil_id= v_bil_id,
                  deb_id= v_deb_id,
                  mrd_id = v_mrd_id
@@ -3372,20 +3535,20 @@ PROCEDURE MigrationFactureImpayee
   IS   
   cursor c
   is 
-  select decode(lpad(trim(t.dist),2,'0'),02,'X',lpad(trim(t.dist),2,'0')) district,lpad(trim(t.pol),5,'0') police,
-         lpad(trim(t.CATEGORIE_SIC),2,'0') categorie,t.adm,
-         t.dexp fac_datecalcul,t.dat  fac_datelim,t.net,v.vow_id,
-         t.rowid row_id,p.par_id,o.org_id,o.org_code,c.aco_id
-  from  test.src_b1 t
-  inner join genparty p
-  on 'DISTRICT'||decode(lpad(trim(t.dist),2,'0'),02,'X',lpad(trim(t.dist),2,'0'))=p.par_refe
-  left join genorganization o
-  on  o.org_code= decode(lpad(trim(t.dist),2,'0'),02,'ORGSONEDE',lpad(trim(t.dist),2,'0'))  
-  left join genvocword v
-  on  'B1'||decode(lpad(trim(t.CATEGORIE_SIC),2,'0'),01,01,02,02,03,10,04,04,06,06,08,08)=v.vow_code
-  left join genaccount c
-  on   c.par_id=p.par_id 
-  and  c.vow_acotp=v.vow_id;   
+    select decode(lpad(trim(t.dist),2,'0'),02,'X',lpad(trim(t.dist),2,'0')) district,lpad(trim(t.pol),5,'0') police,
+           lpad(trim(t.CATEGORIE_SIC),2,'0') categorie,t.adm,
+           t.dexp fac_datecalcul,t.dat  fac_datelim,t.net,v.vow_id,
+           t.rowid row_id,p.par_id,o.org_id,o.org_code,c.aco_id
+    from  test.src_b1 t
+      inner join genparty p
+      on 'DISTRICT'||decode(lpad(trim(t.dist),2,'0'),'02','X',lpad(trim(t.dist),2,'0'))=p.par_refe
+      inner join genaccount c
+      on   c.par_id=p.par_id 
+      inner join genvocword v
+      on  'B1'||decode(lpad(trim(t.CATEGORIE_SIC),2,'0'),'01','01','02','02','03','10','04','04','06','06','08','08','01')=v.vow_code
+      and c.vow_acotp=v.vow_id
+      inner join genorganization o
+      on  o.org_code= decode(lpad(trim(t.dist),2,'0'),'02','ORGSONEDE',lpad(trim(t.dist),2,'0'));  
    
  
   v_run_id number;
@@ -3423,21 +3586,23 @@ PROCEDURE MigrationFactureImpayee
         
         p_pk_etape := 'Initialisation pour creation B1';
         v_tva :=0;
-        v_fac_comment :='CATEGORIE: '||s1.CATEGORIE||' DISTRICT: ' ||s1.district||' POLICE: '||s1.POLICE||' CODE_ADM: '||s1.ADM;
+        
+        v_fac_comment :='CATEGORIE:'||s1.CATEGORIE||'| POLICE:'||s1.POLICE||'| TOURNEE:'||''||
+         '| ORDRE:'||''||'| CODE_CARTE:'||''||'| CODE_CAISSE:'||''||
+         '| CODE_ADM:'||s1.ADM;
         p_pk_etape := 'Recupere date calcul facture';
         v_fac_datecalcul  :=to_date(lpad(trim(s1.fac_datecalcul),8,'0'),'dd/mm/yyyy');
         v_tot_ttc     := s1.net/1000;
         v_tot_ht      := s1.net/1000 -v_tva;
         v_tot_tva     := v_tva;
-        v_ref_facture := 'B1'||s1.org_code||v_deb_id;  
         v_vow_agrbilltype:=4086;--'FWOR'
           MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,null,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,
-                           v_fac_datecalcul,v_fac_datelim,v_fac_comment,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                           v_fac_datecalcul,v_fac_datecalcul,v_fac_comment,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
                            0,0,0,0,s1.net,0,null,null,null,s1.par_id,0,s1.org_id,v_vow_agrbilltype,v_g_vow_debtype,
                            v_g_vow_settlemode_a,v_g_vow_modefact,null,s1.aco_id);  
         if p_pk_exception is not null then
           rollback;
-          EXCEPTION_FACTURE(s1.district||'-'||s1.police||'-'||s1.categorie||'-'||s1.net,null,p_pk_exception,p_pk_etape);
+          EXCEPTION_B1(s1.district||'-'||s1.police||'-'||s1.categorie||'-'||s1.net,null,p_pk_exception,p_pk_etape);
           continue;
         end if;	
         if v_bil_id is not null then
@@ -3450,7 +3615,7 @@ PROCEDURE MigrationFactureImpayee
       exception when others then
         rollback;
         p_pk_exception := SQLCODE || ' : ' ||  SUBSTR(SQLERRM, 1, 200);
-        EXCEPTION_FACTURE(s1.district||'-'||s1.police||'-'||s1.categorie||'-'||s1.net,null,p_pk_exception,p_pk_etape);
+        EXCEPTION_B1(s1.district||'-'||s1.police||'-'||s1.categorie||'-'||s1.net,null,p_pk_exception,p_pk_etape);
         continue;    
        end; 
     end loop;
@@ -3465,19 +3630,19 @@ PROCEDURE MigrationFactureImpayee
   cursor c
   is 
   select lpad(trim(t.dist),2,'0') district ,lpad(trim(t.pol),5,'0') police,
-         lpad(trim(t.CATEGORIE_SIC),2,'0') categorie,t.adm,
-         t.dexp fac_datecalcul,t.dat fac_datelim,t.net,v.vow_id,
-         t.rowid row_id,p.par_id,o.org_id,o.org_code,c.aco_id
+       lpad(trim(t.CATEGORIE_SIC),2,'0') categorie,t.adm,
+       t.dexp fac_datecalcul,t.dat fac_datelim,t.net,v.vow_id,
+       t.rowid row_id,p.par_id,o.org_id,o.org_code,c.aco_id
   from  test.src_b2 t
-  inner join genparty p
-  on 'DISTRICT'||decode(lpad(trim(t.dist),2,'0'),02,'X',lpad(trim(t.dist),2,'0'))=p.par_refe
-  left join genorganization o
-  on  o.org_code= decode(lpad(trim(t.dist),2,'0'),02,'ORGSONEDE',lpad(trim(t.dist),2,'0'))  
-  left join genvocword v
-  on  'B2'||decode(lpad(trim(t.CATEGORIE_SIC),2,'0'),01,01,02,02,03,10,04,04,06,06,08,08)=v.vow_code
-  left join genaccount c
-  on   c.par_id=p.par_id 
-  and  c.vow_acotp=v.vow_id;   
+    inner join genparty p
+    on 'DISTRICT'||decode(lpad(trim(t.dist),2,'0'),'02','X',lpad(trim(t.dist),2,'0'))=p.par_refe
+    inner join genaccount c
+    on   c.par_id=p.par_id 
+    inner join genvocword v
+    on  'B2'||decode(lpad(trim(t.CATEGORIE_SIC),2,'0'),'01','01','02','02','03','10','04','04','06','06','08','08')=v.vow_code
+    and  c.vow_acotp=v.vow_id
+    left join genorganization o
+    on  o.org_code= decode(lpad(trim(t.dist),2,'0'),'02','ORGSONEDE',lpad(trim(t.dist),2,'0'));  
   v_run_id  number;
   v_bil_id  number;
   v_deb_id  number;
@@ -3512,17 +3677,19 @@ PROCEDURE MigrationFactureImpayee
         p_pk_exception  := null;
         
         p_pk_etape := 'Initialisation pour creation B2';
-        v_fac_comment :='CATEGORIE: '||s1.CATEGORIE||' DISTRICT: ' ||s1.district||' POLICE: '||s1.POLICE||' CODE_ADM: '||s1.ADM;
+        
+        v_fac_comment :='CATEGORIE:'||s1.CATEGORIE||'| POLICE:'||s1.POLICE||'| TOURNEE:'||''||
+         '| ORDRE:'||''||'| CODE_CARTE:'||''||'| CODE_CAISSE:'||''||
+         '| CODE_ADM:'||s1.ADM;
         p_pk_etape := 'Recupere date calcul facture';
         v_fac_datecalcul  :=to_date(lpad(trim(s1.fac_datecalcul),8,'0'),'dd/mm/yyyy');
         v_tva :=0;
         v_tot_ttc     := s1.net/1000;
         v_tot_ht      := s1.net/1000 -v_tva;
-        v_tot_tva     := v_tva;
-        v_ref_facture := 'B2'||s1.org_code||v_deb_id;  
+        v_tot_tva     := v_tva; 
         v_vow_agrbilltype:=4086;--'FWOR'
           MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,null,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,
-                           v_fac_datecalcul,v_fac_datelim,v_fac_comment,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                           v_fac_datecalcul,v_fac_datecalcul,v_fac_comment,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
                            0,0,0,0,0,s1.net,null,null,null,s1.par_id,0,s1.org_id,v_vow_agrbilltype,v_g_vow_debtype,
                            v_g_vow_settlemode_a,v_g_vow_modefact,null,s1.aco_id);  
         if p_pk_exception is not null then
