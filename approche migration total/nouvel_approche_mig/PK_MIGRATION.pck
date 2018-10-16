@@ -42,6 +42,10 @@ PROCEDURE MigrationFactureVersion
     p_param in number default 0
   );
   
+PROCEDURE MigrationMAJImpayees
+  (
+    p_param in number default 0    
+  )  
     
 PROCEDURE MigrationFactureImpayee
   (
@@ -3528,9 +3532,20 @@ PROCEDURE MigrationFactureImpayee
     commit;  
     end loop;
   END;
-----------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------  
-  PROCEDURE MigrationFactureB1
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+PROCEDURE MigrationMAJImpayees
+  (
+    p_param in number default 0    
+  )
+  IS
+    
+  BEGIN
+    null;
+  END;
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------  
+PROCEDURE MigrationFactureB1
   (
     p_param in number default 0
   )
@@ -3622,9 +3637,9 @@ PROCEDURE MigrationFactureImpayee
        end; 
     end loop;
   END;
-----------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------
-    PROCEDURE MigrationFactureB2
+---------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------
+PROCEDURE MigrationFactureB2
   (
     p_param in number default 0
   )
