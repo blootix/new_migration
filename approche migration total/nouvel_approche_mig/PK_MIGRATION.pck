@@ -45,7 +45,7 @@ PROCEDURE MigrationFactureVersion
 PROCEDURE MigrationMAJImpayees
   (
     p_param in number default 0    
-  )  
+  )  ;
     
 PROCEDURE MigrationFactureImpayee
   (
@@ -1467,6 +1467,7 @@ procedure MigrationFacture
     p_tot_ttc      in number,
     p_tot_ht       in number,
     p_tot_tva      in number,
+    p_mt_paye      in number,
     p_fac_datecalcul in date,
     p_fac_datelim    in date,
     p_fac_comment  in varchar2,
@@ -1540,7 +1541,7 @@ procedure MigrationFacture
                         deb_updtby,deb_comment,deb_amount_cash,sag_id,vow_debtype)
                 values (p_deb_id,p_ref_facture,p_org_id,p_par_id,p_adr_id,p_fac_datecalcul,p_fac_datelim,p_fac_datecalcul,
                         p_tot_ttc,p_vow_settlemode,p_aco_id,
-                        v_g_age_id,p_fac_comment,0,p_sag_id,p_vow_debtype);
+                        v_g_age_id,p_fac_comment,p_mt_paye,p_sag_id,p_vow_debtype);
                           
     p_pk_etape := 'Creation agrbill';                         
     select seq_agrbill.nextval into p_bil_id from dual; 
@@ -3116,7 +3117,7 @@ PROCEDURE MigrationFactureAS400
         v_tot_tva     := v_tva;
         v_ref_facture := s1.district||s1.tourne||s1.ordre||to_char(v_annee)||lpad(to_char(v_periode),2,'0')||'0';  
          p_pk_etape := 'Creation facture';
-        MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,v_annee,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,
+        MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,v_annee,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,v_tot_ttc,
                         v_fac_datecalcul,v_fac_datelim,v_fac_comment,nvl(s1.const,0),nvl(s1.montt,0),nvl(s1.taux,0),nvl(s1.tvacons,0),nvl(s1.fraisctr,0),nvl(s1.tva_ff,0),
                         nvl(s1.mon1,0),nvl(s1.volon1,0),nvl(s1.tauon1,0),nvl(s1.mon2,0),nvl(s1.volon2,0),nvl(s1.tauon2,0),nvl(s1.mon3,0),nvl(s1.volon3,0),nvl(s1.tauon3,0),nvl(s1.fixonas,0),
                         nvl(s1.preavis,0),nvl(s1.tva_preav,0),nvl(s1.fermeture,0),nvl(s1.tvaferm,0),nvl(s1.deplacement,0),nvl(s1.tvadeplac,0),nvl(s1.depose_dem,0),nvl(s1.tvadepose_dem,0),
@@ -3231,7 +3232,7 @@ PROCEDURE MigrationFactureDist
      else  
        v_vow_agrbilltype:=2563;
      end if;
-     MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,s1.annee,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,
+     MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,s1.annee,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,v_tot_ttc,
                       v_fac_datecalcul,v_fac_datelim,v_fac_comment,0,0,0,0,0,0,
                       0,0,0,0,0,0,0,0,0,0,
                       0,0,0,0,0,0,0,0,
@@ -3364,7 +3365,7 @@ PROCEDURE MigrationFactureVersion
       v_vow_agrbilltype  := 2565;--'FA'; 
       v_fac_comment      := s1.deb_comment;
       
-      MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,s1.annee,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,
+      MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,s1.annee,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,v_tot_ttc,
                        v_fac_datecalcul,v_fac_datelim,v_fac_comment,0,0,0,0,0,0,
                        0,0,0,0,0,0,0,0,0,0,
                        0,0,0,0,0,0,0,0,
@@ -3418,7 +3419,7 @@ PROCEDURE MigrationFactureVersion
       v_vow_debtype      := 3134;--'FA'
       v_fac_comment      := s1.district||s1.police||s1.tourne||s1.ordre;
       v_bil_bil_id       := s1.bil_id;
-      MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,s1.annee,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,
+      MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,s1.annee,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,v_tot_ttc,
                        v_fac_datecalcul,v_fac_datelim,v_fac_comment,0,0,0,0,0,0,
                        0,0,0,0,0,0,0,0,0,0,
                        0,0,0,0,0,0,0,0,
@@ -3437,19 +3438,19 @@ PROCEDURE MigrationFactureImpayee
   IS
     cursor c1
     is
-     select lpad(trim(f.district),2,'0') district,lpad(trim(f.police),5,'0') police,lpad(trim(f.tournee),3,'0') tourne,
+     select lpad(trim(f.district),2,'0') district,lpad(trim(f.police),5,'0') police,lpad(trim(f.tourne),3,'0') tourne,
              lpad(trim(f.ordre),3,'0') ordre ,f.annee,f.periode,f.net,f.rowid,(f.net-f.mtonas) reprise_s,f.mtonas reprise_o,
              b.spt_id,b.sag_id,b.par_id,b.aco_id,b.adr_id
-     from  test.src_impayee f
+     from  test.src_impayees f
       left join  test.branchement b 
       on   lpad(trim(b.district),2,'0')= lpad(trim(f.district),2,'0')
-      and  lpad(trim(b.tourne),3,'0')  = lpad(trim(f.tournee),3,'0')   
+      and  lpad(trim(b.tourne),3,'0')  = lpad(trim(f.tourne),3,'0')   
       and  lpad(trim(b.ordre),3,'0')   = lpad(trim(f.ordre),3,'0') 
       and  lpad(trim(b.police),5,'0')  = lpad(trim(f.police),3,'0')
       and b.spt_id is not null
       and b.equ_id is not null 
       and b.mtc_id is not null
-      and b.sag_id is not null 
+      and b.sag_id is not null
      where f.bil_id is null;
   
    v_org_id  number;
@@ -3513,7 +3514,7 @@ PROCEDURE MigrationFactureImpayee
     v_tot_ht   :=v_tothte+v_tothta;
     v_tot_tva  :=v_tva+v_tottvaa;  
     v_fac_comment:=s1.district||s1.police||s1.tourne||s1.ordre;    
-    MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,s1.annee,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,
+    MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,s1.annee,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,0,
                     v_fac_datecalcul,v_fac_datelim,v_fac_comment,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
                     0,0,s1.reprise_s,s1.reprise_o,0,0,null,null,s1.sag_id,s1.par_id,s1.adr_id,v_org_id,v_g_vow_agrbilltype,v_g_vow_debtype,
                     v_g_vow_settlemode_a,v_g_vow_modefact,null,s1.aco_id);                    
@@ -3539,9 +3540,25 @@ PROCEDURE MigrationMAJImpayees
     p_param in number default 0    
   )
   IS
-    
+  cursor c1 
+  is
+    select deb.deb_id, ipy.mtpaye
+    from   test.src_impayees ipy,
+           gendebt deb,
+           genbill bil,
+           agrbill abi
+    where  deb.deb_refe = ipy.district||ipy.tourne||ipy.ordre||
+                          to_char(ipy.annee)||lpad(to_char(ipy.periode),2,'0')||'0'
+    and    deb.deb_id = bil.deb_id
+    and    bil.bil_id = abi.bil_id
+    and    abi.vow_agrbilltype = 2563;
   BEGIN
-    null;
+    for s1 in c1 loop
+      update gendebt
+      set    deb_amount_cash = nvl(s1.mtpaye,0)
+      where  deb_id = s1.deb_id;
+      commit;
+    end loop;
   END;
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------  
@@ -3613,7 +3630,7 @@ PROCEDURE MigrationFactureB1
         v_tot_ht      := s1.net/1000 -v_tva;
         v_tot_tva     := v_tva;
         v_vow_agrbilltype:=4086;--'FWOR'
-          MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,null,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,
+          MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,null,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,0,
                            v_fac_datecalcul,v_fac_datecalcul,v_fac_comment,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
                            0,0,0,0,s1.net,0,null,null,null,s1.par_id,0,s1.org_id,v_vow_agrbilltype,v_g_vow_debtype,
                            v_g_vow_settlemode_a,v_g_vow_modefact,null,s1.aco_id);  
@@ -3705,7 +3722,7 @@ PROCEDURE MigrationFactureB2
         v_tot_ht      := s1.net/1000 -v_tva;
         v_tot_tva     := v_tva; 
         v_vow_agrbilltype:=4086;--'FWOR'
-          MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,null,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,
+          MigrationFacture(p_pk_etape,p_pk_exception,v_bil_id,v_deb_id,null,v_ref_facture,v_tot_ttc,v_tot_ht,v_tot_tva,0,
                            v_fac_datecalcul,v_fac_datecalcul,v_fac_comment,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
                            0,0,0,0,0,s1.net,null,null,null,s1.par_id,0,s1.org_id,v_vow_agrbilltype,v_g_vow_debtype,
                            v_g_vow_settlemode_a,v_g_vow_modefact,null,s1.aco_id);  
