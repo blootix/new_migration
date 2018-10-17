@@ -96,17 +96,17 @@ select * from facture f
 where to_number(f.annee) >=2015;
 
 ---creation facture impayee
-create table src_impayee
-as 
-select district,police,tournee,ordre,adm,consfac,consred,tarifonas,mtonas,net,mtpaye,datepaye,codpaye,annee,trimestre periode,
-mtson,mtimpson,mtimponas,categorie,gros_consommateur,mtimpaye,tiers
-from imp_sic
-where trim(net)<>trim(mtpaye)
-union 
-select district,police,tournee,ordre,adm,consfac,consred,tarifonas,mtonas,net,mtpaye,datepaye,codpaye,annee,mois periode,
-mtson,mtimpson,mtimponas,categorie,gros_consommateur,mtimp mtimpaye, null tiers
-from impgc_sic
-where trim(net)<>trim(mtpaye);
+create table src_impayees
+as
+select lpad(trim(it.DISTRICT),2,'0') district,lpad(trim(it.POLICE),5,'0') police,lpad(trim(it.TOURNEE),3,0) tourne,lpad(trim(it.ORDRE),3,'0') ordre,lpad(trim(it.CATEGORIE),2,0) categorie,
+       it.ADM,it.CONSFAC,it.CONSRED,it.TARIFONAS,it.MTONAS,it.NET,it.MTPAYE,it.DATEPAYE,it.CODPAYE,it.ANNEE,it.TRIMESTRE periode,it.USAG,it.TARIF,it.MTSON,it.MTIMPAYE MTIMPAYE,
+       it.MTIMPSON,it.MTIMPONAS,it.CATEGORIE_SIC,it.GROS_CONSOMMATEUR
+from   imp_trim@migration12 it
+union
+select lpad(trim(ig.DISTRICT),2,'0') district,lpad(trim(ig.POLICE),5,'0') police,lpad(trim(ig.TOURNEE),3,0) tourne,lpad(trim(ig.ORDRE),3,'0') ordre,lpad(trim(ig.CATEGORIE),2,0) categorie,
+       ig.ADM,ig.CONSFAC,ig.CONSRED,ig.TARIFONAS,ig.MTONAS,ig.NET,ig.MTPAYE,ig.DATEPAYE,ig.CODPAYE,ig.ANNEE,ig.MOIS periode,ig.USAG,ig.TARIF,ig.MTSON,ig.MTIMP MTIMPAYE,
+       ig.MTIMPSON,ig.MTIMPONAS,ig.CATEGORIE_SIC,ig.GROS_CONSOMMATEUR
+from   imp_gc@migration12 ig;
 ----creation role 
 create  table src_role as
 select  distinct lpad(to_char(trim(distr)),2,'0') DISTR,lpad(to_char(police),5,'0') police,lpad(to_char(tour),3,'0') tour,lpad(to_char(ordr),3,'0') ordr,
@@ -146,3 +146,8 @@ union
 select *
 from   src_facture_as400_3
 where  deb_id is not null
+
+create table src_compte_attente
+as 
+select * 
+from   compte_attente@migration12;
