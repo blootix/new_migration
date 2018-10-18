@@ -147,7 +147,18 @@ select *
 from   src_facture_as400_3
 where  deb_id is not null
 
+--compte d'attente as400
 create table src_compte_attente
 as 
 select * 
 from   compte_attente@migration12;
+--anomalie eau as400
+create table src_ano_eau_as400
+as
+select *
+from   anomalie_eauas400@migration12;
+--anomalie trv as400
+create table src_ano_trv_as400
+as
+select *
+from   anomalie_trvas400@migration12;

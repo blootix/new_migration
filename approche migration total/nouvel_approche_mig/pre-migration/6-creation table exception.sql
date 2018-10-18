@@ -41,6 +41,9 @@ alter table src_b1 add deb_id number(10);
 alter table src_b2 add bil_id number(10);
 alter table src_b2 add deb_id number(10);
 alter table src_impayees add deb_id number(10);
+alter table src_compte_attente add deb_id number(10);
+alter table src_ano_eau_as400 add deb_id number(10);
+alter table src_ano_trv_as400 add deb_id number(10);
 
 
 update client set par_id = null where par_id is not null;

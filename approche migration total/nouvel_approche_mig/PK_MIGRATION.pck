@@ -3542,7 +3542,7 @@ PROCEDURE MigrationMAJImpayees
   IS
   cursor c1 
   is
-    select deb.deb_id, ipy.mtpaye
+    select deb.deb_id, ipy.mtpaye, ipy.net, deb.deb_amountinit
     from   test.src_impayees ipy,
            gendebt deb,
            genbill bil,
@@ -3554,9 +3554,15 @@ PROCEDURE MigrationMAJImpayees
     and    abi.vow_agrbilltype = 2563;
   BEGIN
     for s1 in c1 loop
-      update gendebt
-      set    deb_amount_cash = nvl(s1.mtpaye,0)
-      where  deb_id = s1.deb_id;
+      if s1.net/1000 <> s1.deb_amountinit then
+        update gendebt
+        set    deb_amount_cash = deb_amountinit
+        where  deb_id = s1.deb_id;
+      else
+        update gendebt
+        set    deb_amount_cash = nvl(s1.mtpaye,0)/1000
+        where  deb_id = s1.deb_id;
+      end if;
       commit;
     end loop;
   END;
