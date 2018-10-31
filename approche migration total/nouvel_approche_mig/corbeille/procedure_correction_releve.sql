@@ -49,7 +49,7 @@
            v_mrd_id :=null;
            v_fac_datecalcul:=null;
            v_min:=to_number(s2.mrd_year||s2.mrd_multicad);        
-           while v_min<=20182 loop
+           while v_min<=20181 loop
               v_annee  :=null;
               v_periode:=null;
               if s2.mrd_multicad=4 then 
@@ -65,15 +65,23 @@
               v_prorata :=0;
               v_fac_datecalcul:=s2.mrd_dt+90;
               p_pk_etape := 'Creation releve de correction';
-              MigrationReleve(p_pk_etape,p_pk_exception,v_mrd_id,v_annee,v_periode,v_index,v_conso,v_prorata,
-                              null,null,null,null,null,null,v_fac_datecalcul,
-                              null,null,null,null,'correction_releve',v_g_vow_readreason_t,v_g_vow_readmeth,1,
-                              s2.equ_id,s2.mtc_id,s2.spt_id,v_g_age_id);              
+			  select max(mrd_id)
+			  into   v_mrd_id
+			  from   tecmtrread
+			  where  spt_id = s1.spt_id
+			  and    mrd_year = v_annee
+			  and    mrd_multicad = v_periode;
+			  if v_mrd_id is null then
+				  MigrationReleve(p_pk_etape,p_pk_exception,v_mrd_id,v_annee,v_periode,v_index,v_conso,v_prorata,
+								  null,null,null,null,null,null,v_fac_datecalcul,
+								  null,null,null,null,'correction_releve',v_g_vow_readreason_t,v_g_vow_readmeth,1,
+								  s2.equ_id,s2.mtc_id,s2.spt_id,v_g_age_id);  
+              end if;
+              update tecmtrread
+              set    mrd_previous_id = s2.mrd_id
+              where  mrd_id = v_mrd_id;			  
               v_min:=to_number(v_annee||v_periode)+1;                 
            end loop; 
-           update tecmtrread t set t.mrd_previous_id=s2.mrd_id
-           where t.spt_id=s2.spt_id
-           and to_number(t.mrd_year||t.mrd_multicad)>to_number(s2.mrd_year||s2.mrd_multicad); 
          exception when others then
            rollback;
            p_pk_exception := SQLCODE|| ' : '||SUBSTR(SQLERRM, 1, 200);
@@ -107,6 +115,12 @@
               v_conso   :=0;
               v_prorata :=0;
               v_fac_datecalcul:=s2.mrd_dt+30;
+			  select max(mrd_id)
+			  into   v_mrd_id
+			  from   tecmtrread
+			  where  spt_id = s1.spt_id
+			  and    mrd_year = v_annee
+			  and    mrd_multicad = v_periode;
               p_pk_etape := 'Creation releve de correction';
               MigrationReleve(p_pk_etape,p_pk_exception,v_mrd_id,v_annee,v_periode,v_index,v_conso,v_prorata,
                               null,null,null,null,null,null,v_fac_datecalcul,

@@ -114,4 +114,6 @@ on src_role(lpad(trim(distr),2,'0'),lpad(trim(tour),3,'0'),lpad(trim(ordr),3,'0'
    create index indx2_src_b2
  on src_b2(decode(lpad(trim(dist),2,'0'),'02','ORGSONEDE',lpad(trim(dist),2,'0')));
  
+ 
+ create index indx01_migbli on genbilline(bil_id,ite_id);
   

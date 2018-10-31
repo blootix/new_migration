@@ -162,3 +162,55 @@ create table src_ano_trv_as400
 as
 select *
 from   anomalie_trvas400@migration12;
+
+--facture annuler et facture districtcreate table src_fac_annule
+create table src_fac_annule
+as 
+select *
+from   fac_annule@migration12;
+
+--fiche 24 suit 3
+create table src_facture_as400_4
+as
+select dist,pol,tou,ord,caron,refc01,refc02,refc03,refc04,tvacons,tva_ff,tvaferm,tva_preav,
+       tvadeplac,tvadepose_dem,tvadepose_def,tva_capit,tva_pfin,arriere,rbranche,rfacade,
+       net,monttrim,montt1,montt2,montt3 ,const1,const2,const3,tauxt1,tauxt2,tauxt3 ,mon1,
+       volon1,tauon1,mon2,volon2,tauon2,mon3,volon3,tauon3,fixonas,fraisctr,fermeture,preavis,
+       deplacement,depose_dem,depose_def,pfinancier,capit,inter,arepor,nindex,cons,prorata,
+       narond,annee,trimestre periode ,tiers,six,to_char(annee)||to_char(trimestre)||to_char(tiers)||to_char(six) cle_role,'TRIM' type
+from FICH24_TRIM_SUIT3@Migration12
+
+---creation fiche_releve corriger
+create table src_fiche_releve_corrig as
+select r.* from fiche_releve_corrig@migration12 r
+where trim(r.annee)>=2015;
+
+--fiche 24 suit 4
+create table src_facture_as400_5
+as
+select dist,pol,tou,ord,caron,refc01,refc02,refc03,refc04,tvacons,tva_ff,tvaferm,tva_preav,
+       tvadeplac,tvadepose_dem,tvadepose_def,tva_capit,tva_pfin,arriere,rbranche,rfacade,
+       net,monttrim,montt1,montt2,montt3 ,const1,const2,const3,tauxt1,tauxt2,tauxt3 ,mon1,
+       volon1,tauon1,mon2,volon2,tauon2,mon3,volon3,tauon3,fixonas,fraisctr,fermeture,preavis,
+       deplacement,depose_dem,depose_def,pfinancier,capit,inter,arepor,nindex,cons,prorata,
+       narond,annee,trimestre periode ,tiers,six,to_char(annee)||to_char(trimestre)||to_char(tiers)||to_char(six) cle_role,'TRIM' type
+from FICH24_TRIM_SUIT4@Migration12;
+
+--fiche 24 suit 5
+create table src_facture_as400_6
+as
+select dist,pol,tou,ord,caron,refc01,refc02,refc03,refc04,tvacons,tva_ff,tvaferm,tva_preav,
+       tvadeplac,tvadepose_dem,tvadepose_def,tva_capit,tva_pfin,arriere,rbranche,rfacade,
+       net,monttrim,montt1,montt2,montt3 ,const1,const2,const3,tauxt1,tauxt2,tauxt3 ,mon1,
+       volon1,tauon1,mon2,volon2,tauon2,mon3,volon3,tauon3,fixonas,fraisctr,fermeture,preavis,
+       deplacement,depose_dem,depose_def,pfinancier,capit,inter,arepor,nindex,cons,prorata,
+       narond,annee,trimestre periode ,tiers,six,to_char(annee)||to_char(trimestre)||to_char(tiers)||to_char(six) cle_role,'TRIM' type
+from FICH24_TRIM_SUIT5@Migration12
+
+--impayees 2 
+create table src_impayees_2
+as
+select lpad(trim(ig.DISTRICT),2,'0') district,lpad(trim(ig.POLICE),5,'0') police,lpad(trim(ig.TOURNEE),3,0) tourne,lpad(trim(ig.ORDRE),3,'0') ordre,lpad(trim(ig.CATEGORIE),2,0) categorie,
+       ig.ADM,ig.CONSFAC,ig.CONSRED,ig.TARIFONAS,ig.MTONAS,ig.NET,ig.MTPAYE,ig.DATEPAYE,ig.CODPAYE,ig.ANNEE,ig.MOIS periode,ig.USAG,ig.TARIF,ig.MTSON,ig.MTIMP MTIMPAYE,
+       ig.MTIMPSON,ig.MTIMPONAS,ig.CATEGORIE_SIC,ig.GROS_CONSOMMATEUR
+from   imp_gc_complement@migration12 ig;
