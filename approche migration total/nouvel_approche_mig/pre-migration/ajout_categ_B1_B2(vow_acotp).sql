@@ -94,4 +94,33 @@ for s1 in c loop
    end loop;              
 end loop;
 end;
+---------------------------Ajout genaccount pour DISTRICT80
+declare
+cursor c
+is 
+select par_id
+from genparty 
+where par_refe like'DISTRICT80%';
+cursor v 
+is 
+select vow_id
+from genvocword
+where voc_id=169
+and vow_id in(5751,5686,5881);---9999/ANOMALIE/ANOMLIE_TRAVEAUX
+ 
+v_aco_id number;
+begin
+for s1 in c loop
+  for x in v loop
+      select max(aco_id)+1
+      into v_aco_id
+      from genaccount;
+      
+      insert into genaccount(aco_id,aco_amount,par_id,imp_id,rec_id,aco_norecovery,
+                             vow_acotp,aco_status,ACO_UPDTBY)
+                       values(v_aco_id,0,s1.par_id,5,4,1,x.vow_id,0,0); 
+   end loop;              
+end loop;
+end;
+
 
