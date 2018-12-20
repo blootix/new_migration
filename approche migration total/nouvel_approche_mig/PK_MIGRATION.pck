@@ -3694,7 +3694,7 @@ PROCEDURE MigrationFactureB2
        lpad(trim(t.CATEGORIE_SIC),2,'0') categorie,t.adm,t.ndevi,
        t.dexp fac_datecalcul,t.dat fac_datelim,t.net,v.vow_id,
        t.rowid row_id,p.par_id,o.org_id,o.org_code,c.aco_id
-  from   src_b2@test26 t
+  from   test.src_b2 t
     inner join genparty p
     on 'DISTRICT'||decode(lpad(trim(t.dist),2,'0'),'35','32',lpad(trim(t.dist),2,'0'))=p.par_refe
     inner join genaccount c
@@ -3703,7 +3703,7 @@ PROCEDURE MigrationFactureB2
     on  'B2'||decode(lpad(trim(t.CATEGORIE_SIC),2,'0'),'01','01','02','02','03','10','04','04','06','06','08','08')=v.vow_code
     and  c.vow_acotp=v.vow_id
     left join genorganization o
-    on  o.org_code= decode(lpad(trim(t.dist),2,'0'),'02','ORGSONEDE',lpad(trim(t.dist),2,'0'));
+    on  o.org_code= decode(lpad(trim(t.dist),2,'0'),'35','32',lpad(trim(t.dist),2,'0'));
   v_run_id  number;
   v_bil_id  number;
   v_deb_id  number;
