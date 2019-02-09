@@ -7,6 +7,7 @@ create table prob_mig_relevet(obj_refe varchar2(400),code_except varchar2(400),m
 create table prob_mig_b1(obj_refe varchar2(400),code_except varchar2(400),message_except varchar2(400),pk_etape varchar2(400),date_except date);
 create table prob_mig_b2(obj_refe varchar2(400),code_except varchar2(400),message_except varchar2(400),pk_etape varchar2(400),date_except date);
 create table prob_mig_relevegc(obj_refe varchar2(400),code_except varchar2(400),message_except varchar2(400),pk_etape varchar2(400),date_except date);
+create table prob_mig_dossier(obj_refe varchar2(400),code_except varchar2(400),message_except varchar2(400),pk_etape varchar2(400),date_except date);
 
 alter table genstreet modify str_name varchar2(400);
 alter table genstreet modify str_namek varchar2(400);
@@ -53,6 +54,10 @@ alter table src_facture_as400_5 add deb_id number(10);
 alter table src_facture_as400_5 add mrd_id number(10);
 alter table src_impayees_2 add deb_id number(10);
 alter table src_impayees_2 add deb_id_41 number(10);
+alter table demande_ds add dos_id number(10);
+alter table src_facture_as400_7 add bil_id_41 number(10);
+alter table src_facture_as400_7 add deb_id_41 number(10);
+alter table src_facture_as400_7 add mrd_id_41 number(10);
 
 
 update client set par_id = null where par_id is not null;

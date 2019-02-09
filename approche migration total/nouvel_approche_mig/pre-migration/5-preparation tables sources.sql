@@ -214,3 +214,22 @@ select lpad(trim(ig.DISTRICT),2,'0') district,lpad(trim(ig.POLICE),5,'0') police
        ig.ADM,ig.CONSFAC,ig.CONSRED,ig.TARIFONAS,ig.MTONAS,ig.NET,ig.MTPAYE,ig.DATEPAYE,ig.CODPAYE,ig.ANNEE,ig.MOIS periode,ig.USAG,ig.TARIF,ig.MTSON,ig.MTIMP MTIMPAYE,
        ig.MTIMPSON,ig.MTIMPONAS,ig.CATEGORIE_SIC,ig.GROS_CONSOMMATEUR
 from   imp_gc_complement@migration12 ig;
+
+--fiche 24 suit 6 et 7
+create table src_facture_as400_7
+as
+select dist,pol,tou,ord,caron,refc01,refc02,refc03,refc04,tvacons,tva_ff,tvaferm,tva_preav,
+       tvadeplac,tvadepose_dem,tvadepose_def,tva_capit,tva_pfin,arriere,rbranche,rfacade,
+       net,monttrim,montt1,montt2,montt3 ,const1,const2,const3,tauxt1,tauxt2,tauxt3 ,mon1,
+       volon1,tauon1,mon2,volon2,tauon2,mon3,volon3,tauon3,fixonas,fraisctr,fermeture,preavis,
+       deplacement,depose_dem,depose_def,pfinancier,capit,inter,arepor,nindex,cons,prorata,
+       narond,annee,trimestre periode ,tiers,six,to_char(annee)||to_char(trimestre)||to_char(tiers)||to_char(six) cle_role,'TRIM' type
+from FICH24_TRIM_SUIT6@Migration12
+union all
+select dist,pol,tou,ord,caron,refc01,refc02,refc03,refc04,tvacons,tva_ff,tvaferm,tva_preav,
+       tvadeplac,tvadepose_dem,tvadepose_def,tva_capit,tva_pfin,arriere,rbranche,rfacade,
+       net,monttrim,montt1,montt2,montt3 ,const1,const2,const3,tauxt1,tauxt2,tauxt3 ,mon1,
+       volon1,tauon1,mon2,volon2,tauon2,mon3,volon3,tauon3,fixonas,fraisctr,fermeture,preavis,
+       deplacement,depose_dem,depose_def,pfinancier,capit,inter,arepor,nindex,cons,prorata,
+       narond,annee,trimestre periode ,tiers,six,to_char(annee)||to_char(trimestre)||to_char(tiers)||to_char(six) cle_role,'TRIM' type
+from FICH24_TRIM_SUIT7@Migration12;
